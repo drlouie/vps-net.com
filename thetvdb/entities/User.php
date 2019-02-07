@@ -1,11 +1,11 @@
 <?php
 ##################################################################
-#	Program: 		TheTVDB Guide (RESTful)                      #
-#	Author: 		Luis Gustavo Rodriguez (drlouie)             #
-#	Copyright: 	    (c) 2018 Luis G. Rodriguez                   #
-#	Licensing:		MIT License                                  #
+#   Program:        TheTVDB Guide (RESTful)                      #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2018 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
 #                                                                #
-#	About                                                        #
+#   About                                                        #
 #        Type:          RESTful_User class                       #
 ##################################################################
 ##################################################################################
