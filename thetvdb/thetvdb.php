@@ -1,15 +1,15 @@
 <?php
 ##################################################################
-#	Program: 		TheTVDB Guide (RESTful)                      #
-#	Author: 		Luis Gustavo Rodriguez (drlouie)             #
-#	Copyright: 	    (c) 2018 Luis G. Rodriguez                   #
-#	Licensing:		MIT License                                  #
+#   Program:        TheTVDB Guide (RESTful)                      #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2018 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
 #                                                                #
-#	About                                                        #
-#        Type: 			API Strap                                #
-#        Source:		TheTVDB.com                              #
-#        Type: 			Web Application                          #
-#        Dependencies:	PHP::TVDB library (included)             #
+#   About                                                        #
+#        Type:          API Strap                                #
+#        Source:        TheTVDB.com                              #
+#        Type:          Web Application                          #
+#        Dependencies:  PHP::TVDB library (included)             #
 ##################################################################################
 # Permission is hereby granted, free of charge, to any person obtaining a copy   #
 # of this software and associated documentation files (the "Software"), to deal  #
