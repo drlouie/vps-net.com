@@ -1,0 +1,63 @@
+1.0.1 10/18/2016
+
+Updates
+- Mobile App Published
+  - The first revision of the mobile app, for iOS and Android, has been relesed
+- Web-Based Application Finalized
+  - The web-based application encompasses all interfaces including all mobile app and web browser variations
+
+
+0.9.2 10/02/2016
+
+Updates
+- Added 'Sort domain list' functionality to the main menu
+  - Allows for quick sorting of domain list, either chronologically or by name
+
+
+0.9.1 09/15/2016
+
+Changes
+- Fly in menu updated with new layout
+  - Removed all titles, except for the new title for 'Whats new' content
+  - Removed left-side icons from main menu items
+  - Enlarged text on menu items and menu title
+  - Mobile-esque swipe scroller added
+- Sign out button on main menu has been moved to its own sub-menu area
+- Google-esque auto-complete domain extension suggestions added to search
+
+Fixes
+- Main menu 'Save taken domains automatically' checkbox bug cleared
+
+Pending
+- Change log feature implementated: 'Whats new'
+
+
+0.8.1 09/07/2016
+
+Changes
+- Added 'Refresh domain list' button to the app main menu
+  - Upon picking it, the domain list is refreshed to reflect its default loadtime state
+
+Fixes
+- Sign out and in procedures streamlines
+  - No more load time hiccups in the process
+
+
+0.7.1 09/07/2016
+
+Changes
+- Main menu replaced with new 'Fly in menu'
+  - Better user experience
+  - Pushes main content left while being shown
+  - Allows for simple and quick menu navigation
+  - Gives us room to place other content and functionality, such as 'Whats new', etc.
+
+
+0.6.1 09/07/2016
+
+Updates
+- (Mobile) Added 'Sign out' main menu button
+  - Signs user out to 'DOMapp signed out' screen
+- (Mobile) Added 'Sign back in' screen and button
+  - User can 'Sign back in' with a tap: Upon signing back in, domain list is reloaded to reflect its default loadtime state
+	

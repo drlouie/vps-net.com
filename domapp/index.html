@@ -1,0 +1,272 @@
+<!--
+################################################################
+#   Program:    DOMapp                                         #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+#   About                                                      #
+#        Type:  Domain Name Search, Save and Registration App  #
+#        For:   Godaddy, 1and1, domain.com                     #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>DOMapp</title>
+<meta content="VPS-NET-COM" name="GENERATOR" />
+<meta name="viewport" content="width=screen-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<link rel="stylesheet" href="css/font-awesome.css" />
+<!--[if lt IE 9]>
+  <script src="js/html5shiv.js"></script>
+<![endif]-->
+<link href="css/domapp.css" type="text/css" rel="stylesheet" />
+<link href="css/autocomplete.css" rel="stylesheet" type="text/css" />
+<script src="js/jquery-1.9.1.js"></script>
+<script src="js/modernizr.js"></script>
+<script src="js/jquery.mousewheel.js"></script>
+<script src="js/jquery-scrollto.js"></script>
+<script src="js/jquery-localscroll.js"></script>
+<script src="js/jquery-ui-1.10.3.js"></script>
+<script src="js/jquery-plugin-placeholder.js"></script>
+<script src="js/jquery-form.js"></script>
+<script src="js/doubletap.js"></script>
+<script src="js/jquery.elastic.source.js"></script>
+<script src="js/iscroll.js"></script>
+<script src="js/iscrollv5.js"></script>
+<script src="js/fastclick.js"></script>
+<script src="js/jquery-idle-timer.js"></script>
+<script src="js/mobiscroll.custom-2.15.1.min.js" type="text/javascript"></script>
+<script src="js/jquery-autocomplete.js" type="text/javascript"></script>
+<script src="js/toastr.min.js"></script>
+<script src="js/jquery-plugin-touchSwipe.js"></script>
+<script src="/domapp/domapp.js"></script>
+</head>
+<body>
+<div id="loadtime" style="position:fixed;left:50%;top:50%;margin-left:-38px;margin-top:-50px;"><div id="loaderImage"></div></div>
+<a name="topmost" id="topmost"></a>
+<header>
+	<!--559px width for traditional clients/browsers, whereas dynamically set for touch device[viewport] calls to 450 -->
+	<div id="DynamicEventsMenu" style="margin:0 auto 0 auto;height: 60px;">
+		<table width="100%" border="0" cellpadding="0" cellspacing="0">
+			<tr>
+				<td width="100%">
+					<div class="main-menu">
+						<div class="main-menu-wrapper">
+							
+
+							<div id="dd" class="main-menu-dropdown" tabindex="1">
+								<span id="Reporter"></span>
+								<span id="DocumentLoading"></span>
+								<span id="DocumentTitle"><span id="State"></span> Account</span>
+								<div id="VirtualPrivateButtons">
+									<div class="Add"><div><button name="Add" id="Add" tabindex="36">Save</button></div></div>
+									<div class="Delete" style="display:none;"><div style="display:none;"><button name="Delete" id="Delete" tabindex="37">Delete Event</button></div></div>
+									<div class="New" style="display:none;"><div><button name="New" id="New" tabindex="38">Reset</button></div></div>
+								</div>
+								<ul class="dropdown" tabindex="1"></ul>
+								<div id="domapplogo" style="left:-23px; position:absolute;top: 0;padding: 0;margin: 0;max-width:61px;max-height:67px;display:none;"><img src="images/domapp_mini.png" style="padding: 15px 18px;"></div>
+								<form name="QuickSearch" id="QuickSearch" class="search" style="position: absolute;top:8px;left: 0px;min-width:509px;">
+									<ul id="Search-Domain-Names-IP-Address-Lookup">
+										<li id="message">
+											<span class="textwrap"><span class="text">www.</span></span>
+											<span id="pa-rappa-the-rappa">
+												<span class="domain-name-search-form-control-wrap">
+													<input name="websearch" id="WebSearch" class="WebSearch" value="" type="text" placeholder="mydomain.com" tabindex="1" style="min-width:509px;" autocomplete="off">
+												</span>
+											</span>
+										</li>
+										<li id="mainsubmit">
+											<input type="submit" value="Find Domain" style="display:none;">
+										</li>
+									</ul>
+								</form>
+							</div>
+						</div>
+					</div>
+				</td>
+				<td>
+					<div id="TopBar" class="top-bar-wrapper">
+						<div id="back-to-top" style="display:none;">
+							<span class="glyphicon glyphicon-calendar"></span>
+						</div>
+					</div>
+				</td>
+				<td>
+					<div class="app-menu">
+						<div class="app-menu-wrapper">
+							<div>
+								<a><span style="position:relative;left:7px;top:3px"><i class="loader fa fa-cog fa-spin fa-2x fa-fw margin-bottom" style="color:rgba(71,71,71,0.2);"></i></span></a>
+							</div>
+						</div>
+						<div id="AppMenu">
+							<div class="inner">
+								<div style="font-size:13px;line-height:16px;text-align:left;width:auto;position:relative;">
+									<div style="padding:0;z-index:2;position:relative;">
+										<div id="NewAppEventsAvailable" class="AppMainMenuItem" style="display:none;"><div><span><div style="width:100%;">Refresh Your App<a></a></div></span></div></div>
+										<div class="AppMainMenuSpacer" style="width:100%;height:2px;border-top:rgba(212,215,212,0.4) 2px solid;position:relative;top:1px;"></div>
+										<div id="LogOutTrigger" class="AppMainMenuItem"><div><span><div style="width:100%;">Log Out<a></a></div></span></div></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</td>
+			</tr>
+		</table>
+
+	</div>
+</header>
+<div id="FlyInMenu">
+	<div id="FlyInMenuHeader">
+		<div class="welcome">
+			<div class="main-title">DOMapp</div>
+			<div id="AppVersion"><div class="welcome-prompt">Build <span class="version" rel="1.02.7">1.2</span></div></div>
+		</div>
+		<div class="back-to-list"><img src="images/domapp_mini_too.png"></div>
+	</div>
+	<div id="FlyInMenuContentWrapper">
+		<div id="FlyInMenuContent">
+			<div id="OptionsMenu" class="menu-content">
+				<div class="menu-content-header">
+					Options
+				</div>
+				<div class="menu-content-items">
+					<div class="menu-content-item link app-settings">
+						<label for="SaveTaken" class="CheckboxLabel">
+							<div class="inner">
+								<fieldset class="GeneralInformationField KeyPressCheckbox" style="padding:0;border:0;background:none;">
+									<div class="RightBorderDivider" style="font-size: 20px;">
+										Save taken domains automatically
+									</div>
+									<div class="SaveTaken">
+										<div class="CommonCheckbox">
+											<input id="SaveTaken" type="text" value="0" name="SaveTaken" tabindex="3" style="display:none;">
+											<div class="icon"><i class="fa fa-square-o fa-2x"></i></div>
+										</div>
+									</div>
+								</fieldset>
+							</div>
+						</label>
+					</div>
+					<div class="menu-content-spacer"></div>
+					
+					<div id="AppOptions" class="menu-content-item app-settings extra hidden">
+						<div class="inner">
+							Sort <span id="OrderByMe">domain list by </span>
+							<i class="righter fa fa-chevron-down"></i>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			
+			<div class="menu-content">
+				<div class="menu-content-header">
+					Actions
+				</div>
+				<div class="menu-content-items">
+					<div class="menu-content-item link app-refresh">
+						<div class="inner">
+							Refresh domain list
+							<i class="righter fa fa-refresh fa-1_2x"></i>
+						</div>
+					</div>
+					<div class="menu-content-spacer app-refresh-spacer"></div>
+					<div class="menu-content-item link app-logout logout">
+						<div class="inner">
+							Sign out
+							<i class="righter fa fa-sign-out fa-1_5x"></i>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="menu-content">
+				<div class="menu-content-header">
+					Whats new
+				</div>
+				<div class="menu-content-items">
+					<div class="menu-content-item app-settings">
+						<div class="inner" id="WhatsNew">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="AppList">
+
+	<div id="AppHolderWrapper">
+		<div class="AppHolder">
+			<div class="app-wrapper">
+				<div id="pullDown">
+					<span class="pullDownIcon"></span><span class="pullDownLabel">Pull down to refresh...</span>
+				</div>
+				<div id="app-list"></div>
+				<div id="pullUp">
+					<span class="pullUpIcon"></span><span class="pullUpLabel">Pull up to refresh...</span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+
+<div id="SearchForm">
+	<div id="SearchFormHolder">
+	
+	</div>
+</div>
+
+<form id="isearch" class="isearch" method="post">
+    <h1>Loading</h1>
+	<div id="LoadInitialization">
+		<div style="width:100%;height:140px;"></div>
+	</div>
+	<div id="InitialSearchForm" style="display:none;">
+	    <fieldset id="inputs">
+    	    <input id="email" name="email" type="email" value="" placeholder="Enter your email address" required="">
+	    </fieldset>
+    	<fieldset id="actions">
+			<div id="VirtualPrivateLoginActions" align="center" style="height:50px;"><span id="VirtualPrivateLoginActivity"></span><span id="VirtualPrivateCommentButtons"><button name="submit" id="submit">Log In</button></span></div>
+	    </fieldset>
+		<div id="isearch-message" class="isearch-message-error"><!--ERROR--></div>
+	</div>
+</form>
+<footer id="footer">
+	<div id="DynamicEventsFooter">
+		<div class="dynamic-footer-wrapper">
+			<table width="100%" border="0" cellpadding="0" cellspacing="0">
+				<tbody>
+					<tr>
+						<td width="100%">
+							<div id="footer-content">
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</footer>
+</body>
+</html>
