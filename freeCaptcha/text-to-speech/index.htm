@@ -1,0 +1,136 @@
+#!/usr/bin/perl -s
+
+##################################################################
+#   Program:        FreeCaptcha                                  #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      Captcha Generator : Visual and Audible       #
+#        Module:    Core Program: Audible (TTS)                  #
+#                                                                #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+############################################################################################
+#                              What does Captcha mean?                                     #
+# (C)ompletely (A)utomated (P)ublic (T)uring test to tell (C)omputers and (H)umans (A)part #
+############################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$pathToEspeak = "H:/espeak/command_line/espeak";
+}
+else { 
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/'; 
+	$pathToEspeak = "/usr/bin/espeak";
+}
+
+#################################################################################################
+###### GENERATE AUDIBLE CONFIRMATION WAV FILE BY USING ENCRYPTED CODE
+###### Spit dynamic wav file back to end-user [by reading in cookie: elCrypto]
+#################################################################################################
+
+$|=1;
+
+##-> Snif cookie, find cookie data [test for logged in status]
+$logreq = 0; ##-> [logreq = 0] LOGin IS NOT REQuired ( but we remove this checker to customize our login prompt )
+$ECkey = 'chuiechuie'; ##-> set cookie key for IMVER [only for eyeCaptcha functions]
+require ($HTTPRoot."cookiesnif.nsp");
+##-> load query parser [get/post]
+require ($HTTPRoot."q.nsp");
+
+
+
+
+##-- LOGIC
+##-- $Cookies{'IMVER'} :: captchaCode = removeFirst(2) + encrypt(tea)
+##-- $Cookies{'VPSFC'} :: captchaCode = removeFirst(2) + encrypt(tea) + encrypt(db)
+
+
+##-- $ECcode :: decrypt($Cookies{'IMVER'} - the actual decrypted freeCaptcha code is
+##-- [ $ECcode MUST BE 6 CHAR LENGTH OTHERWISE ITS HACKED ]
+if (length($ECcode) == 6) {
+
+	##-- encrypt IMVER to see if EXACTLY SAME as VPSFC
+	##-- encrypt futher by adding another layer	
+	use Crypt::UnixCrypt;
+  	my $newCrypto = crypt("$Cookies{'IMVER'}",":X");
+	
+	##-- remove the key	
+	$theCrypto = substr $newCrypto, 2;
+	
+	##-- if encrypt IMVER MATCHES VPSFC [is good to go]
+	if ("$theCrypto" eq "$Cookies{'VPSFC'}") {
+
+		##- the file name [IS $Cookies{'IMVER'}]
+		$tfn = "$Cookies{'IMVER'}";
+
+		##add spacing to the code so its easier to hear when being spoken back	
+		@elCodo = split(//,$ECcode);$codado = join(' ',@elCodo);
+
+		#> PRINTOUT for TESTING 
+		#>print "Content-type: text/html\n\n";
+		#>print "$tfn - $ECcode - $theCrypto - $Cookies{'VPSFC'} - $codado";
+
+		#> set CONDADO for TESTING 
+		#>$codado = "a b c d e f g";
+	
+		#> INSTILL SOME PRONUNCIATION ASSISTANCE [for en-uk]
+		$codado =~ s/a/aih/gi;
+		$codado =~ s/b/bee/gi;
+		$codado =~ s/l/elle/gi;
+		$codado =~ s/m/emme/gi;
+		$codado =~ s/n/enh/gi;
+		$codado =~ s/p/pea/gi;
+		$codado =~ s/q/qeu/gi;
+		$codado =~ s/r/aarrr/gi;
+		$codado =~ s/z/zee/gi;
+		$codado =~ s/1/wone/gi;
+		$codado =~ s/4/fore/gi;
+		$codado =~ s/7/seven/gi;
+		$codado =~ s/0/zeero/gi;
+	
+		my $cvcl = $pathToEspeak. " \"$codado\" -w ".$HTTPRoot."freeCaptcha/text-to-speech/tts/".$tfn.".wav -g 60  -p 70 -s 100 -v en-uk";
+		system($cvcl);
+		##-- make sure the wav
+		if (-e $HTTPRoot."freeCaptcha/text-to-speech/tts/$tfn.wav") {
+			print "Content-type: audio/x-wav\n\n";
+			my $wFileName = $HTTPRoot."freeCaptcha/text-to-speech/tts/$tfn.wav";
+			my $waveFile = `cat $wFileName`;
+			print "$waveFile";
+		}
+		else { $ECcode = $Cookies{'IMVER'}; &nofile; }
+	}
+	else { $ECcode = $Cookies{'IMVER'}; &badinput; }
+}
+else { &nofile; &badinput; }
+
+exit;
+
+sub nofile {
+	print "Content-type: text/html\n\n";
+	print "freeCaptcha by VPS-NET<br><br>Customize your freeCaptcha's font, text size, text color, background color, width, height and font. You can also upload your own custom vocalizations so the voice the end-user hears is your very own voice.";
+}
+
+sub badinput {
+	print "Content-type: text/html\n\n";
+	print "Error: That challenge code is incorrect.";
+}
