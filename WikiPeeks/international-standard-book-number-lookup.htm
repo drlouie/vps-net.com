@@ -1,0 +1,531 @@
+#!/usr/bin/perl -s
+
+##################################################################
+#   Program:        ISBN Data Search for Wikipeeks               #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      ISBN                                         #
+#        Source:    ISBNDB                                       #
+#        Example:   Biblio, eBooks, Libraries (WorldCat), Amazon #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+#- As of 2019, this is no longer working for vps-net.com, no data source access to ISBNDB. With access this will work impeccably, so long as all Perl modules dependencies have been met.
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$invHTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/invisibleHTTP/';
+}
+else {
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$invHTTPRoot = '/var/www/vps-net.com/invisibleHTTP/';
+}
+
+#- SAMPLE CALL
+#- /WikiPeeks/international-standard-book-number-lookup.htm?feed=WikiPeeksReferences&ad=a&isbn=0-471-32812-X
+
+use LWP::Simple;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use locale;
+use Text::Autoformat;
+
+#-- just do it this way to defeat warning of used once
+$NOSPAM = 1;
+require($HTTPRoot."q.nsp");
+require($HTTPRoot."dataToolie.nsp");
+
+##-- by international standard book number [anything can be passed in but only alphanumeric will remain]
+if ($FORM{'isbn'} || $isbn) {
+	if ($FORM{'isbn'}) { $isbn = $FORM{'isbn'}; }
+
+	##-- sometimes comes in with multiple
+	if ($isbn =~ ',') { @splitISBNs = split(/,/,$isbn); $isbn = $splitISBNs[0]; }
+	$isbn =~ s/[^0-9A-Za-z]//gi;
+	$ourISBN = "$isbn";
+}
+##--caller
+if ($FORM{'feed'}) { 
+	$feed = $FORM{'feed'};
+}
+
+if (!$INTERNAL) { print "Content-type: text/html\n\n"; }
+#-- kill single use warning
+else { $INTERNAL = $INTERNAL; }
+
+if ($feed eq "WikiPeeksReferences" || $feed eq "WikiPeeksBookReference") {
+
+	$ISBNKey = 'CGW8SD1';
+	use WebService::ISBNDB::API::Books;
+	my $book = WebService::ISBNDB::API::Books->find({ api_key => $ISBNKey, isbn => $ourISBN });
+
+#print qq~
+#<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+#<html xmlns="http://www.w3.org/1999/xhtml" lang="en" dir="ltr">
+#<head>
+#~;
+
+
+use utf8;
+##-- no title no book
+if ($book && ($book->get_longtitle || $book->get_title)) {
+
+	##-- remove unwanteds from entire dataset
+	$book =~ s/\r\n/ /g;
+	$book =~ s/\r/ /g;
+	$book =~ s/\n/ /g;
+	$book =~ s/  / /g;
+
+	##-- if long title
+	if ($book->get_longtitle && (length($book->get_longtitle) >= 1)) { $elTitle = $book->get_longtitle; }
+	##-- if regular title
+	elsif ($book->get_title && (length($book->get_title) >= 1)) { $elTitle = $book->get_title; }
+	##-- if any title
+ 	if ($elTitle) {
+		##--UTF WAS
+		#-utf8::encode($elTitle);
+
+		##--UTF IS
+		$OGelTitle = $elTitle;
+		$isUTF8 = utf8::upgrade($elTitle);
+		$elTitle = $OGelTitle;
+		if ($isUTF8 == 1) { utf8::encode($elTitle); }
+
+		##-->> FORMAT TITLE
+		$elTitleF = $elTitle;
+		$elTitleF = autoformat $elTitleF, { case => 'highlight' };
+		chomp($elTitleF);
+
+		##--remove trailing and leading spaces
+		$elTitleF =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+	}
+	##-- outgoing
+	if ($elTitleF) { $bookTitle = $elTitleF; }
+
+    # set author or editor field
+	if ($book->get_authors_text && (length($book->get_authors_text) >= 1)) {
+    	my $authors = $book->get_authors_text;
+	    # some clean-up
+   		$authors =~ s/^by //;
+	    $authors =~ s/,$//;
+   		#-$authors =~ s/,\s+/ and /g;
+    	#-$authors =~ s/;\s+/ and /g;
+    	# authors or editors ?
+	    if ( $authors =~ /^\s*\[?edited by\s+\]?(.*)$/i ) {
+   		    (my $editors = $1) =~ s/with/and/;
+			$authors = $editors;
+	    }
+   		elsif ( $authors =~ /\(Editor\)/i ) {
+    	    $authors =~ s/\s*\(Editor\)//gi;
+			$authors = $authors;
+    	}
+
+		#-utf8::encode($authors);
+		##--causing Wide Character warnings but prints out as needed, hence isbn:0134578708
+		$OGauthors = $authors;
+		$isUTF8 = utf8::upgrade($authors);
+		$authors = $OGauthors;
+		if ($isUTF8 == 1) { utf8::encode($authors); }
+
+		##-->> FORMAT TITLE
+		$authorsF = $authors;
+		$authorsF = autoformat $authorsF, { case => 'highlight' };
+		chomp($authorsF);
+
+		$authorsF =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+		#-print "$authorsF" . "<br><br>";
+	}
+	##-- outgoing
+	if ($authorsF) { $bookAuthors = $authorsF; }
+	
+   	# parse publisher and edition fields for publisher and year data
+	if ($book->get_publisher_text && (length($book->get_publisher_text) >= 1)) {
+		$elPublisherText = $book->get_publisher_text;
+
+		$OGelPublisherText = $elPublisherText;
+		$isUTF8 = utf8::upgrade($elPublisherText);
+		$elPublisherText = $OGelPublisherText;
+		if ($isUTF8 == 1) { utf8::encode($elPublisherText); }
+
+	    if ( $elPublisherText =~ m/^(.*?),\s+c?(\d{4}).?$/ ) {
+			if ($1 && (length($1) >= 1)) { 
+				$myp = $1;
+				#-utf8::encode($myp);
+				$myp =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+				$thePublisherInfo .= "Published by $myp";
+			}
+			if ($2 && (length($2) >= 1)) { 
+				$myp = $2;
+				#-utf8::encode($myp);
+				$myp =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+				$thePublisherInfo .= ", $myp";
+			}
+		}
+    	else {
+			#-utf8::encode($elPublisherText);
+			$elPublisherText =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+    		$thePublisherInfo .= "$elPublisherText";
+			if ($book->get_edition_info && (length($book->get_edition_info) >= 1)) {
+		        $myEditionInfo = $book->get_edition_info;
+
+				$OGmyEditionInfo = $myEditionInfo;
+				$isUTF8 = utf8::upgrade($myEditionInfo);
+				$myEditionInfo = $OGmyEditionInfo;
+				if ($isUTF8 == 1) { utf8::encode($myEditionInfo); }
+
+				if ( $myEditionInfo =~ m/(\d{4})/ ) {
+					$myp = $1;
+					#-utf8::encode($myp);
+					$myp =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+   	    		    $thePublisherInfo .= ", $myp";
+   		    	}
+			}
+	    }
+	}
+	##-- outgoing
+	if ($thePublisherInfo && (length($thePublisherInfo) >= 1)) { $bookPublishers = $thePublisherInfo; }
+
+   	##- SUMMARY
+    if ($book->get_summary && (length($book->get_summary) >= 1)) {
+		my $abstract = $book->get_summary;
+		$abstract =~ s/--BOOK JACKET//g;
+		$ogabstract = $abstract;
+		$isUTF8 = utf8::upgrade($abstract);
+		$abstract = $ogabstract;
+		if ($isUTF8 == 1) { utf8::encode($abstract); }
+
+		$abstract =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+		#-print "Summary: " . $abstract . "<br><br>";
+	}
+	##-- outgoing
+	if ($abstract && (length($abstract) >= 1)) { $bookSummary = $abstract; }
+
+
+   	##- NOTES [chapters are here if proclaimed]
+    if ($book->get_notes && (length($book->get_notes) >= 1)) {
+		my $notes = $book->get_notes;
+		$cNotes = 0;
+		$losNotes = "";
+		$includesIndex = "Includes index.";
+		$elDouble = ' -- ';
+
+		$OGnotes = $notes;
+		$isUTF8 = utf8::upgrade($notes);
+		$notes = $OGnotes;
+		if ($isUTF8 == 1) { utf8::encode($notes); }
+		
+		if ($notes =~ $includesIndex || $notes =~ $elDouble) {
+			##-- detect indexes, chapters
+			$notes =~ s/$includesIndex//gi;
+			@theListOfNotes = split(/$elDouble/,$notes);
+			if (@theListOfNotes) {
+				foreach $unaNota (@theListOfNotes) {
+					#-utf8::encode($unaNota);
+					$unaNota =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+					$losNotes .= "<li>" . $unaNota . "</li>";
+					$cNotes++;
+				}
+			}
+		}
+		##-- if only notes, not index
+		else { 
+			#-utf8::encode($notes);
+			$notes =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+			$losNotes .= $notes; 
+			$cNotes++; 
+		}
+		if ($cNotes >= 1) {
+			$cualNota = "Notes:";
+			$notesS = "";
+			$notesE = "<br><br>";
+			if ($cNotes >= 2) { $cualNota = "Chapters:"; $notesS = "<ul>"; $notesE = "</ul>"; }
+			$lasNotas = $cualNota . " " . $notesS ."". $losNotes ."". $notesE;
+		}
+	}
+	##-- outgoing
+	if ($lasNotas && (length($lasNotas) >= 1)) { $bookNotes = $lasNotas; }
+
+	
+
+   	##- AWARDS
+    if ($book->get_awardstext && (length($book->get_awardstext) >= 1)) {
+		my $awardstext = $book->get_awardstext;
+
+		#-utf8::encode($awardstext);
+		$OGawardstext = $awardstext;
+		$isUTF8 = utf8::upgrade($awardstext);
+		$awardstext = $OGawardstext;
+		if ($isUTF8 == 1) { utf8::encode($awardstext); }
+
+		$awardstext =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+		#-print "Awards: " . $awardstext . "<br><br>";
+	}
+	##-- outgoing
+	if ($awardstext && (length($awardstext) >= 1)) { $bookAwards = $awardstext; }
+
+   	##- RELATED URLS
+    if ($book->get_urlstext && (length($book->get_urlstext) >= 1)) {
+		my $urlstext = $book->get_urlstext;
+		#-utf8::encode($urlstext);
+
+		$OGurlstext = $urlstext;
+		$isUTF8 = utf8::upgrade($urlstext);
+		$urlstext = $OGurlstext;
+		if ($isUTF8 == 1) { utf8::encode($urlstext); }
+
+		$urlstext =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+		#-print "Related URLs: " . $urlstext . "<br><br>";
+	}
+	##-- outgoing
+	if ($urlstext && (length($urlstext) >= 1)) { $bookURLs = $urlstext; }
+
+	# Look at the subjects [ERRORS]
+	#my $subjects = $book->get_subjects;
+	#if ($subjects) {
+	# Sub-tests for subjects
+	#for $idx (0 .. $#$subjects) {
+	#    	my $subjectline = $subjects->[$idx]->get_id;
+	#		print $subjectline . "<br><br>";
+	#}
+	#}		
+		
+	# Look at MARC data
+	my $marcs = $book->get_marc;
+	if ($marcs && (length($marcs) >= 1)) {
+		$losMARCs = '';
+		for $idx (0 .. $#$marcs) {
+			if ($marcs->[$idx]->{library_name} && (length($marcs->[$idx]->{library_name})>=1)) {
+				$myLibrary = $marcs->[$idx]->{library_name};
+				##-- some titles have delimiters in them, maybe from top level data for its type: remove it [ -- ]
+				$myLibrary =~ s/ -- / /gi;
+				$myLibrary =~ s/--/ /gi;
+
+				#-utf8::encode($myLibrary);
+				$OGmyLibrary = $myLibrary;
+				$isUTF8 = utf8::upgrade($myLibrary);
+				$myLibrary = $OGmyLibrary;
+				if ($isUTF8 == 1) { utf8::encode($myLibrary); }
+
+				$myLibrary =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+				##-- not used, just a file spitting out this same information we are already working with
+				##- $thisURLs="";$thisURLe="";$thisLastUpdate="";
+				##- if ($marcs->[$idx]->{marc_url} && (length($marcs->[$idx]->{marc_url})>=1)) { $thisURLs = "<a href='".$marcs->[$idx]->{marc_url}."'>"; $thisURLe = '</a>'; }
+
+				##-- WAS
+				##-- if ($marcs->[$idx]->{last_update} && (length($marcs->[$idx]->{last_update})>=1)) { $thisLastUpdate = " (Status last checked: " . $marcs->[$idx]->{last_update} . ")"; }
+				##-- $losMARCs .= "<li>" . "" . $myLibrary . "" . $thisLastUpdate . "</li>";
+				##-- IS
+				$losMARCs .= "<li class='CheckItOutLibrary'>" . $myLibrary . "</li>";
+			}
+		}
+		if ($losMARCs ne "") {
+			$availableAt = "<em class='CheckItOutLibraries' style='font-weight:bold;font-style:normal;'><span class='WorldCat'>Available at these libraries:</span></em><ul>" . $losMARCs . "</ul>";
+		}
+	}
+	##-- outgoing [42 is smallest possible markup]
+	if ($availableAt && (length($availableAt) >= 43)) { $bookLibraries = $availableAt; }
+
+
+	# Look at price data
+	if ($book->get_prices && (length($book->get_prices) >= 1)) {
+		my $prices = $book->get_prices;
+		$cAmaz = '';
+		$cBiblio = '';
+		for $idx (0 .. $#$prices) {
+	    	##-TESTING
+			##-print $prices->[$idx]->{store_url} . "<br><br>";
+
+			#--- looking to hook up with BIBLIO and/or these UK based retailers: AbeBooks | Blackwell
+			##-- here we filter stores to only our advertisers
+    		if ($prices->[$idx]->{store_id} && ($prices->[$idx]->{store_id} eq 'amazon' || $prices->[$idx]->{store_id} eq 'biblio')) {
+				my $pricer = $prices->[$idx]->{price};
+				my $storeName = $prices->[$idx]->{store_id};
+				#-utf8::encode($pricer);
+				$OGpricer = $pricer;
+				$isUTF8 = utf8::upgrade($pricer);
+				$pricer = $OGpricer;
+				if ($isUTF8 == 1) { utf8::encode($pricer); }
+
+				$pricer =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+				$whichType = "New from";
+				$storeID = $prices->[$idx]->{store_id};
+
+				$productURL = '';
+				$impressionURL = '';
+				###-- AMAZON || BIBLIO
+				if ($prices->[$idx]->{store_id} eq 'amazon') {
+					if ($cAmaz !~ $prices->[$idx]->{store_url}) {
+						$cAmaz .= $prices->[$idx]->{store_url};
+						$amazonURL = $prices->[$idx]->{store_url};
+					}
+					else {
+						$cAmaz .= $prices->[$idx]->{store_url};
+						$amazonURL = $prices->[$idx]->{store_url};
+					}
+					#-- pricing type toggler [is new, else is used]
+					$bookISNew = $prices->[$idx]->{is_new};
+					if ($bookISNew == 0) { $whichType = "Used from"; }
+					$productURL = $amazonURL;
+				}
+				###-- BIBLIO
+				if ($prices->[$idx]->{store_id} eq 'biblio') {
+					if ($cBiblio !~ $prices->[$idx]->{store_url}) {
+						$cBiblio .= $prices->[$idx]->{store_url};
+						$biblioURL = $prices->[$idx]->{store_url};
+					}
+					else {
+						$cBiblio .= $prices->[$idx]->{store_url};
+						$biblioURL = $prices->[$idx]->{store_url};
+					}
+					#-- biblio only USED price!!!!
+					$whichType = "Used";
+					$productURL = $biblioURL;
+					
+					##-- impression tracking image url [cookie setter]
+					##-- http://www.tqlkg.com/image-3747342-10520851
+
+					##-- version one, using parsed just renaming params
+					#$productURL =~ s/aid=isbn_db/aid=10520851/gi; $productURL = $productURL . '&pid=3747342';
+					##-- version two, using CommissionJunction form params
+
+					$storeISBN = $prices->[$idx]->{store_isbn};
+					$productURL = 'http://www.anrdoezrs.net/interactive?url=http://www.biblio.com/search.php?stage=1&aid=10520851&pid=3747342&keyisbn='.$storeISBN.'';
+					$impressionURL = '<div style="width:1px;height:1px;overflow:hidden;clip:rect(0px,1px,1px,0px);display:none;"><img src="http://www.tqlkg.com/image-3747342-10520851" width="1" height="1" border="0"></div>';
+
+					##--http://www.biblio.com/search.php?PID=3747342&stage=1&keyisbn=0-684-83130-9
+					##--http://www.biblio.com/search.php?stage=1&aid=10520851&pid=3747342&keyisbn='.$storeISBN.'';
+				}
+
+				##-
+				#$myEbooks = get('http://api.ebooks.com/s/getinfo.net?isbn=1841768014');
+				#if ($myEbooks =~ '<ebook>') {
+				#	if ($myEbooks =~ m/(<publicationDate [^>]+?[^>]*>.*?<\/publicationDate>)/) {
+				#		$pubDate = $_;
+				#	}
+				#	$myEbooks =~ s/></>\n</g;
+				#	@myEbook = split(/\n/,$myEbooks);
+				#	foreach $aeb (@myEbook) {
+				#		if ($aeb =~ '<publicationDate >') {
+				#			$pubDate = $aeb;
+				#		}
+				#	}
+				#}
+
+				$storeName = $storeName;
+				$storeName = autoformat $storeName, { case => 'highlight' };
+				chomp($storeName);
+
+				##-- REMEBER TO ADD IMPRESSION TRACKING IMAGE --##
+				##-- <img width="1" height="1" border="0" style="border:none !important; margin:0px !important;" alt="" src="http://www.assoc-amazon.com/e/ir?t=netmsolu-20&l=as2&o=1&a=0684831309"></img>
+
+				##-- make it our own
+				##--amazon
+				$productURL =~ s/1MSEJ95FTDWW20Y4Y4G2/AKIAIUOMM3PFIOCI2KPA/gi;
+				#-- original was netmsolu, now myvirtualpriv
+				$productURL =~ s/wwwcampusboocom486/myvirtualpriv/gi;
+				$u1 = 'camp%3D2025%26creative%3D165953';
+				$u1R = 'camp%3D1789%26creative%3D9325';
+				$productURL =~ s/$u1/$u1R/gi;
+
+				$bookie = "$whichType|nEt|$pricer|nEt|$storeName|nEt|$productURL|nEt|$impressionURL";
+				push(@storeKickbacks,$bookie);
+				#-$storeISBN = $prices->[$idx]->{store_isbn};
+				#-$bookISHistoric = $prices->[$idx]->{is_historic};
+			}
+		}
+	}
+
+	###-- AMAZON PRICE URL + PRINT
+	if ($bookTitle) {
+		if ($feed eq "WikiPeeksReferences") {
+			
+			if (@storeKickbacks) { $losStores = join("|vPs|",@storeKickbacks); }
+
+			$quot = "\&#34;";
+			$bookAuthors =~ s/\"//gi;
+			$bookPublishers =~ s/\"//gi;
+			$bookNotes =~ s/\"//gi;
+			$bookTitle =~ s/\"//gi;
+			$bookAwards =~ s/\"//gi;
+			$bookLibraries =~ s/\"//gi;
+			$losStores =~ s/\"//gi;
+			$bookSummary =~ s/\"//gi;
+
+			##-- reference
+			$outgoingData = '{"ResultSet":{"Result":[{"t":{"Url":"http:\/\/www.vps-net.com\/opencanvas-interactive-website-design\/website-design-template-images.htm?t=&k=t&s=tm","Height":"145","Width":"133"},"s":{"Url":"http:\/\/www.vps-net.com\/opencanvas-interactive-website-design\/website-design-template-images.htm?t=&k=s&s=tm","Height":"145","Width":"133"}, "a":"'.$bookAuthors.'", "p":"'.$bookPublishers.'", "n":"'.$bookNotes.'", "ti":"'.$bookTitle.'", "id":"'.$FORM{'isbn'}.'", "aw":"'.$bookAwards.'", "l":"'.$bookLibraries.'", "st":"'.$losStores.'", "su":"'.$bookSummary.'"}],"totalResultsAvailable":"1","_attributes":{"totalResultsAvailable":"1","xmlns:xsi":"http:\/\/www.w3.org\/2001\/XMLSchema-instance","xmlns":"urn:vpsnet:bookreference","xsi:schemaLocation":"urn:vpsnet:bookreference http:\/\/www.vps-net.com\/WikiPeeks\/BookReferenceSchema.xsd","firstResultPosition":"1","totalResultsReturned":"1"},"firstResultPosition":"1","totalResultsReturned":"1"}}';
+
+			$outgoingData =~ s/'//gi;
+			$outgoingData =~ s/\xa0/ /gi; $outgoingData =~ s/\r//gi; $outgoingData =~ s/\n//gi;
+			print $outgoingData; 
+		}
+		elsif ($feed eq "WikiPeeksBookReference") {
+			if (@storeKickbacks) { $losStores = join("|vPs|",@storeKickbacks); }
+			$outgoingData = "$bookTitle";
+			if ($bookAuthors) { $outgoingData .= '|iSbN|'.$bookAuthors; }
+			if ($bookPublishers) { $outgoingData .= '|iSbN|'.$bookPublishers; }
+			if ($losStores) { $outgoingData .= '|iSbN|'.$losStores; }
+			if ($bookSummary) { $outgoingData .= '|iSbN|'.$bookSummary; }
+			if ($bookNotes) { $outgoingData .= '|iSbN|'.$bookNotes; }
+			if ($bookAwards) { $outgoingData .= '|iSbN|'.$bookAwards; }
+			print "$outgoingData";
+		}
+	}
+	else { print "No data for ISBN: $FORM{'isbn'}"; }
+}
+else { print "No results for ISBN: $FORM{'isbn'}"; }
+}
+else { print "Data requester invalid."; }
+
+exit;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+__END__
+^L
+
+########
+### DOCS 
+########
+
+=head1 DEPARTMENTS
+
+Filtered from chosen advertisers
+
+SAMPLE QUERY STRING [ONLY ISBN queries will be honored through this script!]
+?isbn=0684831309&msit=l&msits=500&feed=ISBNBookReferences
+
+=cut

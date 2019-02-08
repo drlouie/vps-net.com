@@ -1,0 +1,14 @@
+#!/usr/bin/perl -s
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$invHTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/invisibleHTTP/';
+}
+else {
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$invHTTPRoot = '/var/www/vps-net.com/invisibleHTTP/';
+}
+
+## now pulling in wikipedia.pl in order to utilize Notepad++'s Perl syntax color coding
+require($HTTPRoot."/WikiPeeks/w3c.pl");

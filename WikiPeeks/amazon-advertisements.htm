@@ -1,0 +1,788 @@
+#!/usr/bin/perl -s
+
+################################################################
+#   Program:    Book Advertisement Search for Wikipeeks        #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2009 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+#   About                                                      #
+#        Type:  ISBN and Keyword                               #
+#        Name:  Misnomer, it isn't only amazon-advertisements, #
+#               contains eBooks and Biblio book feeds as well  #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+#- As of 2019, this is no longer working for vps-net.com, no data source access to Amazon or ISBNDB. With access this will work impeccably, so long as all Perl modules dependencies have been met.
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$invHTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/invisibleHTTP/';
+}
+else {
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$invHTTPRoot = '/var/www/vps-net.com/invisibleHTTP/';
+}
+
+##-- no warnings, Amazon/Item.pm issue with too many warnings [overflows error_log]
+
+use LWP::Simple;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use locale;
+use utf8;
+use HTML::SimpleLinkExtor;
+use HTML::Obliterate qw(extirpate_html strip_html);
+use Scalar::Util::Numeric qw(isfloat);
+
+
+#-- just do it this way to defeat warning of used once
+if (!$NOSPAM) { $NOSPAM = 1; }
+require($HTTPRoot."q.nsp");
+require($HTTPRoot."dataToolie.nsp");
+
+$ms = $FORM{'st'};
+$cid = $FORM{'cid'};
+$msits = $FORM{'msits'};
+$msit = uc($FORM{'msit'});
+$msitl = lc($FORM{'msitl'});
+$feed = $FORM{'feed'};
+$department = $FORM{'dpt'};
+$maxitems = int($FORM{'max'});
+$store = $FORM{'str'};
+
+##-- lang options [jp, uk, fr, de, ca default us]
+if (!$msitl) { $msitl = 'us'; }
+
+if (!$store) { $store = 'Amazon'; };
+
+##-- UNCOMMENT FOR EASIER TESTING
+##-- string [default: Website Design (=head1 searchTerm)]
+if (!$ms) { $ms = 'Website Design'; }
+
+##-- by international standard book number [anything can be passed in but only alphanumeric will remain]
+if ($FORM{'isbn'} || $isbn) {
+	$isbn = $FORM{'isbn'};
+	$isbn =~ s/ISBN//g;$isbn =~ s/://gi;$isbn =~ s/-//gi;
+	##-- just in case
+	if ($isbn =~ "_") { @splitISBN = split(/_/,$isbn); }
+	elsif ($isbn =~ ",") { @splitISBN = split(/,/,$isbn); }
+	if (@splitISBN) {
+		foreach $unISBN (@splitISBN) {
+			$unISBN =~ s/[^0-9A-Za-z]//gi;
+			if (length($unISBN) == 10 || length($unISBN) == 13) {
+				$isbn = $unISBN;
+			}
+		}
+	}
+	$isbn =~ s/[^0-9A-Za-z]//gi;
+	$ms = "ISBN : $isbn";
+	$maxitems = 1;
+	$department = 'Books';
+}
+
+##- SAMPLE QUERY STRING
+##- http://ecs.amazonaws.com/onca/xml?AWSAccessKeyId=ASIAIUOMM0SDSSDLK823&AssociateTag=myvirtualpriv-20&ItemPage=1&Keywords=TR%20CSS21%20&Operation=ItemSearch&ResponseGroup=Images%2CItemAttributes&SearchIndex=Books&Service=AWSECommerceService&Timestamp=2011-06-26T06%3A09%3A43Z&Version=2009-03-31&Signature=gkQCpvMCWd6Y21C5dc7iISVZjcUsKoe6LtehE20EQn8%3Dhttp://ecs.amazonaws.com/onca/xml?AWSAccessKeyId=ASIAIUOMM0SDSSDLK823&AssociateTag=myvirtualpriv-20&ItemPage=1&Keywords=TR%20CSS21%20&Operation=ItemSearch&ResponseGroup=Images%2CItemAttributes&SearchIndex=Books&Service=AWSECommerceService&Timestamp=2011-06-26T06%3A09%3A43Z&Version=2009-03-31&Signature=gkQCpvMCWd6Y21C5dc7iISVZjcUsKoe6LtehE20EQn8%3D 
+
+##-- department [default: Books (=head1 DEPARTMENTS)]
+if (!$department) { $department = 'Books'; }
+
+##-- force our default size [internal]
+if ($INTERNAL && $fs && $fst) {
+	$msits = $fs;
+	$msit = uc($fst);
+}
+
+if (!$INTERNAL) { print "Cache-Control: must-revalidate\n\n"; }
+
+$elISBN = 'ISBN : ';
+
+##-- EBOOKS [direct/backup image load]
+if (length($ms) >= 2 && $store =~ m/ebooks/i) {
+	$ms =~ s/$elISBN//gi;
+	$ebooksgood = 0;
+	$ebooksgood = &tryEbooks;
+	if ($ebooksgood =~ m/http:\/\//i) {
+		push(@outputCode,$ebooksgood);
+	}
+}
+elsif (length($ms) >= 2 && $store =~ m/biblio/i) {
+	$ms =~ s/$elISBN//gi;
+	$bibliogood = 0;
+	$bibliogood = &tryBiblio;
+	if ($bibliogood =~ m/http:\/\//i) {
+		push(@outputCode,$bibliogood);
+	}
+}
+##-- default AMAZON
+elsif (length($ms) >= 2) {
+	use XML::Amazon;
+	my $amazon = XML::Amazon->new(token => 'ASIAIUOMM0SDSSDLK823',  associate => 'myvirtualpriv-20', sak => 'A16UAxwgAUiVD9JESMYBP/tYiKWp/UHfngwjhyh6', locale => $msitl);
+
+	my $items = '';
+	my $tpage = 0;
+	my $getPage = 0;
+
+	##-- if ISBN : go with that 1st = turn it into numeral string [works 9 times out of 10 to find books not listed by [ISBN : ]
+	##-- my belief is books listed by their ISBN number have same item number as other products in Amazons' product base, which is ISBN : searched books do not come up when looking through our system using just the ISBN number without the donation string [ISBN : ], therefore my reasoning is ISBN is given to those books to make it a cleaner more concise search for affected ISBNs
+	if ($ms =~ $elISBN) {
+		$ms =~ s/$elISBN//gi;
+		$items = $amazon->search(keywords => $ms, type=>, $department);
+		$tpage = 0;
+		$getPage = 1;
+		##-- reset these here since we might have come in from a different angle [meaning straight st= search]
+		$maxitems = 1; $department = 'Books';
+	}
+	else {
+		$items = $amazon->search(keywords => $ms, type=>, $department);
+		$tpage = 0;
+		$getPage = 1;
+	}
+
+	my $totalresults = 0;
+	if ($items && ($items->total_results)) { 
+		$totalresults = $items->total_results; 
+	}
+
+	##-- if more pages of results available, randomize the results
+	if ($items && $totalresults >= 1) {
+		if (!(!$items->total_pages)) {
+			$tpage = int($items->total_pages);
+		}
+		if (int($tpage) > 1) {
+			##-- if more than 20 pages of results, we cut it down to 10 max pages to randomize through, better results
+			if (int($tpage) > 20) { $getPage = int(rand(20)); }
+			else { $getPage = int(rand($tpage)); }
+
+			##-- get new results
+			$items = $amazon->search(keywords => $ms, type=> $department, page => $getPage);
+			if ($items && ($items->total_results)) { 
+				$totalresults = $items->total_results; 
+			}
+		}
+	}
+	##-- feed the results
+	if ($items && $totalresults >= 1) {
+		foreach my $item ($items->collection){
+			my $asin = $item->asin;
+			my $title = $item->title;
+			my $price = $item->price;
+			my $url = $item->url;
+			my $madeby = '';
+			my $authdelim = '';
+			if ($item->authors) {
+				foreach $made ($item->authors){
+					if ($madeby ne '') { $authdelim = ":::"; }
+					$madeby .= $authdelim . $made;
+				}
+			}
+			my $publisher = $item->publisher;
+
+			utf8::encode($madeby);
+			utf8::encode($publisher);
+			utf8::encode($title);
+			utf8::encode($url);
+
+			$url =~ s/camp%3D2025%26creative%3D165953/camp%3D1789%26creative%3D9325/gi;
+			##in order to work with image our way, more flex, set to stable s = SL75 [size-length 75px]
+			my $image = $item->image('s');
+			##be sure its set SL75
+			##-- sometimes price is undefined [so changed to title]
+			##-- for isbn calls only need title [get 5% more results without requring images, perfect for inline loading], other items need title and image [hence FooterAds]
+			if (($FORM{'isbn'} && $title ne '') || (!$FORM{'isbn'} && $title ne '' && $image ne '')) {
+				$imageAmazon = '/web_design_imagery/spacie.gif';
+				if ($image ne '') {
+					if ($image =~ m/SL/ && $image=~'_') {
+						@spimage = split '_', $image;
+						foreach $spi (@spimage) {
+							if ($spi =~ m/^SL/) {
+								$defImgS = $spi;
+							}
+						}
+
+						## footerAds = SL28
+						#if ($image=~'SL75') { $defImgS = 'SL75'; }
+						#elsif ($image=~'SL500') { $defImgS = 'SL75'; }
+
+						if ($msits && $msit) { $mySize = "$msits"; $mySizeType = "$msit"; }
+						else { $mySize = '100'; $mySizeType = 'L'; }
+						my $newImgS = 'S'.$mySizeType.''.$mySize;
+						$image =~ s/$defImgS/$newImgS/;
+						if ($image) {
+							##- AMAZON images don't work with head() test, always positive
+							##-- therefore we test by checking the size of the image instead [this is only for reference calls anyway]
+							$catImage = get($image);
+							if (length($catImage) >= 5) {
+								$imageAmazon = $image;
+							}
+						}
+					}
+				}
+				$imageSizeOutput = "height=\"75\"";
+				$adTracking = "http://www.assoc-amazon.com/e/ir?t=myvirtualpriv-20&l=as2&o=1&a=$asin";
+				if ($mySizeType eq 'L') { $imageSizeOutput = "height=\"$mySize\""; }
+				elsif ($mySizeType eq 'X') { $imageSizeOutput = "width=\"$mySize\""; }
+
+				##-- always end our delimited with delimiter %%% [clean data break at js side]
+				if ($feed eq "WikiBoardBarAd") {
+					##-- span not wrapped around img to keep the default title box from showing up on mouseover
+					push(@outputCode,"<a href=\"$url\" target=\"Amazon\" class=\"WikiPeeksAdLink\" rel=\"$asin%%%$image%%%$department%%%$title%%%$price%%%$madeby%%%$publisher%%%$tpage%%%$getPage%%%$ms%%%$adTracking%%%\"><span title=\"Amazon.com $department [ $title ]\"></span><img src=\"$image\" $imageSizeOutput border=\"0\" class=\"WikiPeeksAdImage\" /></a>");
+				}
+				elsif ($feed eq "WikiPeeksISBN") {
+
+					##-- only this output type uses parses image based on checker mechanism [$imageAmazon everyone else simply pushes its $image no check]
+					##-- if not a good image [amazon ad]
+					if ($imageAmazon !~ m/http:\/\//i) {
+						$refeedgood = 0;
+						$refeedgood = &getMissingImage;
+						##-- feed is good, doesn't mean image is there, just means we got a bite off one of the stores, 
+						##-- WHICH also means, if we got a bite [internal process makes sure there is an validated image if returning good]
+						if ($refeedgood =~ m/http:\/\//i) {
+							if ($myImage && ($myImage =~ m/http:\/\//i)) {
+								$myFeed = $refeedgood;
+								$feedImage = $myImage;
+							}
+						}
+					}
+
+					##-- if no price [amazon ad]
+					##-- missing data looks for price, only if we haven't already parsed a refeed for image, in essence
+					##-- if we've searched for image and found one, use it's dataset, which will also include price, as per its dataset processing
+					if ($price !~ '\$') {
+						$refeedgood = 0;
+						$refeedgood = &getMissingData;
+						##-- feed is good, doesn't mean image is there, just means we got a bite off one of the stores
+						if ($refeedgood =~ m/http:\/\//i) {
+							##-- no matter who the advertiser is now, if image is good by amazon, use it, best quality
+							$myFeed = $refeedgood;
+						}
+					}
+
+					##-- only if we request a refeed for any reason, if so then we parse it instead of default amazon
+					if ($refeedgood && $myFeed && ($myFeed =~ m/http:\/\//i)) {
+
+						##-- if amazon image is good, or secondaryFeedImage is good [choosing which image to display]
+						if ($imageAmazon =~ m/http:\/\//i || $feedImage) {
+						
+							@localFeed = split(/%%%/,$myFeed);
+
+							##-- if amazon image is good we use it, best quality [doesn't matter who the advertiser is]
+							if($imageAmazon =~ m/http:\/\//i) { $localFeed[1] = $imageAmazon; }
+
+							##-- else use replacement feedimage [replacement and/or fallback]
+							else { $localFeed[1] = $feedImage; }
+	
+							$myFeed = join '%%%', @localFeed;
+						}
+
+						##-- if amazon image is good, then we use it, best quality
+						##--cap the feed as per js needs
+						push(@outputCode,$myFeed.'%%%');
+					}
+
+
+					##-- else, haven't parsed yet from other stores, do so now using default AMAZON feed
+					if (!@outputCode) {
+						push(@outputCode,"$asin%%%$imageAmazon%%%$department%%%$title%%%$price%%%$madeby%%%$publisher%%%$tpage%%%$getPage%%%$ms%%%$adTracking%%%$url%%%Amazon%%%");
+					}
+
+
+				}
+				elsif ($feed eq "ISBNBookReferences") {
+					##-- span not wrapped around img to keep the default title box from showing up on mouseover
+					push(@outputCode,"<a href=\"$url\" target=\"Amazon\" class=\"WikiPeeksAdLink\" rel=\"$asin%%%$image%%%$department%%%$title%%%$price%%%$madeby%%%$publisher%%%$tpage%%%$getPage%%%$ms%%%$adTracking%%%\"><span title=\"Amazon.com $department [ $title ]\"></span><img src=\"$image\" $imageSizeOutput border=\"0\" class=\"WikiPeeksAdImage\" /></a>");
+				}
+				else {
+					push(@outputCode,"<a href=\"$url\" target=\"Amazon\" title=\"Amazon.com $department [ $title ]\" class=\"WikiPeeksAdLink\" rel=\"$image\"><img src=\"http://www.assoc-amazon.com/e/ir?t=myvirtualpriv-20&l=as2&o=1&a=$asin\" width=\"1\" height=\"1\" border=\"0\" alt=\"Don Com: Support Free Common \" style=\"border:none !important; margin:0px !important;\" /><img src=\"$image\" $imageSizeOutput border=\"0\" class=\"WikiPeeksAdImage\" alt=\"Amazon.com $department [ $title ]\" /></a>");
+				}
+				$image = '';
+				$price = '';
+			}
+		}
+	}
+}
+##-- return item by asin
+elsif ($cid) {
+	my $item = $amazon->asin($cid);
+	if ($amazon->is_success){
+		my $image = $item->image('s');
+		if ($image) {
+			if ($image=~'SL75') {
+				$defImgS = 'SL75';
+				if ($msits && $msit) { $mySize = "$msits"; $mySizeType = "$msit"; }
+				else { $mySize = '100'; $mySizeType = 'L'; }
+				my $newImgS = 'S'.$mySizeType.''.$mySize;
+				$image =~ s/$defImgS/$newImgS/;
+			}
+			$imageSizeOutput = "height=\"75\"";
+			if ($mySizeType eq 'L') { $imageSizeOutput = "height=\"$mySize\""; }
+			elsif ($mySizeType eq 'X') { $imageSizeOutput = "width=\"$mySize\""; }
+			print qq~<img src="$image" $imageSizeOutput border="0" alt="Amazon.com IT Development [$ms]" style="border:none !important; margin:0px !important;" />~;
+			##-- unflag this function
+			$finalOutputCode = '';
+		}
+	}
+}
+
+if (@outputCode) {
+	##-- dont shuffle if only asking for one item, hence ISBN
+	if ($maxitems != 1) {
+		##-- shuffle the list
+   		fisher_yates_shuffle( \@outputCode );
+	}
+	##-- only print up to maxitems if spec
+	if ($maxitems) {
+		$citems = 0;
+		foreach $moc (@outputCode) {
+			$citems++;
+			if ($citems <= int($maxitems)) {
+				$finalOutputCode .= $moc . "\n";
+			}
+		}
+	}
+	##-- otherwise print all items in this page
+	else { $finalOutputCode = join("\n",@outputCode); }
+	print $finalOutputCode;
+}
+
+##-- fire off blank to finish process according to ajax level
+if (!$finalOutputCode) {
+	print "";
+}
+
+
+
+
+
+
+sub getMissingImage {
+	$biblioDataset = 0;
+	##-- biblio first, best priced, used books [quicker more stable results as well, opposed to ebooks]
+	$biblioDataset = &tryBiblio;
+	##-- if goodimage
+	if ($biblioDataset =~ m/http:\/\//i && $imageBiblio && ($imageBiblio =~ m/http:\/\//i)) {
+		$myImage = $imageBiblio;
+		return $biblioDataset;
+	}
+	else {
+		$ebooksDataset = 0;
+		$ebooksDataset = &tryEbooks;
+		if ($ebooksDataset =~ m/http:\/\//i && $imageEbooks && ($imageEbooks =~ m/http:\/\//i)) {
+			$myImage = $imageEbooks;
+			return $ebooksDataset;
+		}
+	}
+}
+
+sub getMissingData {
+	##-- use same routine
+	&getMissingImage;
+
+	##-- if haven't met all requirements, go with least possible params [ad url and price]
+	if ($biblioDataset =~ m/http:\/\//i && $priceBiblio) {
+		return $biblioDataset;
+	}
+	elsif ($ebooksDataset && ($ebooksDataset =~ m/http:\/\//i && $priceEbooks)) {
+		return $ebooksDataset;
+	}
+
+}
+
+sub tryBiblio {
+	$ms =~ s/$elISBN//gi;
+	##-- super search 
+	##-- http://www.biblio.com/search.php?author=&title=&isbn=0198503407&keywords=&publisher=&illustrator=&minprice=&maxprice=&mindate=&maxdate=&quantity=1&stage=1&cond=&format=&country=&dist=5&zip=&days_back=0&order=priceasc&pageper=1
+
+	my $myFEEDuri = "http://www.biblio.com/search.php?keyisbn=$ms&order=priceasc&pageper=1";
+
+	my $furl = "$myFEEDuri";
+	my $bpage = get ($furl);
+
+	#print "$page";
+	if (length($bpage) >= 0 && $bpage =~ $ms && $bpage =~ m/ISBN/i && $bpage =~ m/title/i && $bpage =~ m/biblio/i) {
+
+		$bhtml = $bpage;
+		##-- setup the document for our parser
+		$bhtml =~ s/<head>/\n<head>\n/gi;
+		$bhtml =~ s/<\/head>/\n<\/head>\n/gi;
+		$bhtml =~ s/<body>/\n<body>\n/gi;
+		$bhtml =~ s/<\/body>/\n<\/body>\n/gi;
+		$bhtml =~ s/<div/\n<div/gi;
+		$bhtml =~ s/<\/div>/<\/div>\n/gi;
+		$bhtml =~ s/<span/\n<span/gi;
+		$bhtml =~ s/<\/span>/<\/span>/gi;
+
+		@losContainers = split(m/(<div\b[^>]*>.*?<\/div>)/,$bhtml);
+
+		#-print "$bhtml";
+		if ($bhtml =~ /(<div)/i && $bhtml =~ /( class=)/i && $bhtml =~ m/sr-cart/ && $bhtml =~ m/sr-detail/) {
+			##-- get body contents
+			my $myResults;
+			foreach $_ (@losContainers){
+				$_ =~ s/<\/div>//gi;
+				$_ =~ s/\n//gi;
+				$_ =~ s/"//g;
+				$_ =~ s/'//g;
+				$_ =~ s/\t//g;
+				$_ =~ s/<br \/>/<br\/>/gi;
+				if ($_ =~ /( class=)/i && $_ =~ m/sr-cart/) {
+					$oxen = m/(<p\b[^>]*>.*?<\/p>)/i;
+					if ($oxen == 1) {
+						$bprice = $1;
+						if ($bprice =~ /(<br\/>)/i) {
+							@splitP = split(/(<br\/>)/i,$bprice);
+							foreach $splp (@splitP) {
+								if ($splp =~ /(Price:)/i && $splp =~ /036/i) {
+									if ($splp =~ /\(/) {
+										@busaprice = split /\(/, $splp;
+										$busaprice = $busaprice[1];
+										$busaprice =~ s/\)//g;
+									}
+									else {
+										$busaprice = $splp;
+									}
+									$busaprice =~ s/&036;/\$/g;
+									$busprice = $busaprice;
+									my $cleanPrice = strip_html( $busprice );
+									if ($cleanPrice =~ ':') {
+										($texto,$busprice) = split(/:/,$cleanPrice);
+									}
+									else {
+										$busprice = $cleanPrice;
+										$busprice =~ s/Price: //gi;
+										$busprice =~ s/ //gi;
+									}
+								}
+								##-- NOT RELIABLE, CONFLICTING DATA
+								elsif ($splp =~ /(Shipping)/i && $splp =~ /USA/i && $splp =~ /036/i) {
+									$bshipping = $splp;
+									my $cleanShipping = strip_html( $bshipping );
+									($texto,$bshipping) = split(/:/,$cleanShipping);
+									$bshipping =~ s/ //gi;
+								}
+							}
+						}
+					}
+				}
+				if ($_ =~ /( class=)/i && $_ =~ m/sr-detail/) {
+					$oxen = m/(<h2\b[^>]*>.*?<\/h2>)/i;
+					if ($oxen == 1) {
+						$btitle = $1;
+						##--clean title
+						my $cleanTitle = extirpate_html( $btitle.">" );
+						$btitle = $cleanTitle;
+					}
+				}
+				if ($_ =~ /( class=)/i && $_ =~ m/sr-author/) {
+					$oxen = m/(<h3\b[^>]*>.*?<\/h3>)/i;
+					if ($oxen == 1) {
+						$bauthor = $1;
+						##--clean author
+						my $cleanAuthor = extirpate_html( $bauthor.">" );
+						$bmadeby = $cleanAuthor;
+						$bmadeby =~ s/By //gi;
+					}
+				}
+				if ($_ =~ /( class=)/i && $_ =~ m/sr-condition/) {
+					$oxen = m/(<p\b[^>]*>.*?<br\/>)/i;
+					if ($oxen == 1) {
+						$bcondition = $1;
+						##--clean condition
+						my $cleanCondition = extirpate_html( $bcondition.">" );
+						$bcondition = $cleanCondition;
+						$bcondition =~ s/Book condition: //gi;
+					}
+				}
+				if ($_ =~ /( class=)/i && $_ =~ m/sr-description/) {
+					$bdescription = $_;
+					@containerSearch = split(m/(<a\b[^>]*>.*?<\/a>)/,$bdescription);
+					foreach $contains (@containerSearch) {
+						if ($contains =~ 'class=sr-readmore') {
+							$readmore = $contains;
+							if ($readmore =~ m/http:\/\//i) {
+								my $extor = HTML::SimpleLinkExtor->new();
+								$extor->parse($readmore);
+								##-- readmore
+								@a_hrefs = $extor->a;
+								$productURL = @a_hrefs[0];
+							}
+						}
+						elsif ($contains =~ m/bookstore/i) {
+							$bpublisher = $contains;
+							if ($bpublisher =~ m/http:\/\//i) {
+								my $extor = HTML::SimpleLinkExtor->new();
+								$extor->parse($bpublisher);
+								##-- publisher
+								@a_hrefs = $extor->a;
+								$publisherURL = @a_hrefs[0];
+							}
+							my $cleanPublisher = strip_html( $bpublisher );
+							$bpublisher = $cleanPublisher;
+						}
+					}
+					##-- remove these from the description
+					$bdescription =~ s/$readmore//gi;
+					$bdescription =~ s/$bookseller//gi;
+					if ($bdescription =~ ' ...') {
+						($bdescription, $moreinfo) = split(/ \.\.\./,$bdescription);
+						$moreinfo =~ s/ <br\/><br\/>//gi;
+						$moreinfo =~ s/<br\/><br\/>//gi;
+					}
+					elsif ($bdescription =~ /(<br\/><br\/>)/i) {
+						($bdescription, $moreinfo) = split(/(<br\/><br\/>)/i,$bdescription);
+					}
+
+					my $cleanDescription = strip_html( $bdescription );
+					$bdescription = $cleanDescription;
+					$bdescription =~ s/  //;
+
+
+					##-- remove publisher from $moreinfo
+					if ($moreinfo && ($moreinfo =~ /(Bookseller:)/i)) {
+						$publisherLoc = $moreinfo;
+						$publisherLoc =~ s/$bpublisher//gi;
+						$publisherLoc =~ s/Bookseller://;
+						$publisherLoc =~ s/\)//;
+						$publisherLoc =~ s/\(//;
+						my $cleanPublisherLoc = strip_html( $publisherLoc );
+						$publisherLoc = $cleanPublisherLoc;
+						$publisherLoc =~ s/  //;
+					}
+				}
+				if ($_ =~ /(<img)/i && $_ =~ m/ class=photo/) {
+					@containerSearch = split(m/(<a\b[^>]*>.*?<\/a>)/,$_);
+					foreach $contains (@containerSearch) {
+						if ($contains =~ 'class=photo') {
+							$bimage = $contains;
+							if ($bimage =~ m/http:\/\//i) {
+								my $extor = HTML::SimpleLinkExtor->new();
+								$extor->parse($bimage);
+								##-- thumbnail
+								@img_srcs = $extor->img;
+								$biclean = @img_srcs[0];
+							}
+						}
+					}
+				}
+			}
+	
+			$bid = $ms;
+			#print "$bid\n\n$btitle\n\n$bcondition\n\n$bmadeby\n\n$description\n\n$biclean\n\n$publisher\n\n$productURL\n\n$usprice\n\n$shipping\n\n$publisherLoc\n\n$publisherURL\n\n";
+		}
+
+		if ($bid) {
+			$bprice = $busprice;
+			$bprice =~ s/\$//g;
+			$bprice =~ s/ //g;
+			##-- only if number do we give it a whirl
+			if (isfloat $bprice) { 
+				$bprice = '$'.$bprice;
+			}
+			$tpage = 1;
+			$getPage = 0;
+			$badTracking = 'http://www.lduhtrp.net/image-3747342-10520851';
+			##- tally the call
+			$bAdSearchURL = 'http://www.dpbolvw.net/interactive?keyisbn='.$ms.'&aid=10520851&pid=3747342&order=priceasc&pageper=1&url=http://www.biblio.com/search.php';
+
+			$imageBiblio = '/web_design_imagery/spacie.gif';
+			##- test image for remote existence, using LWP::Simple, found it
+			##- biclean is small [from search results]
+			if ($biclean) {
+				##-- try for large image [as seen in product page]
+				if ($biclean && $biclean =~ /(.b.jpg)/) { 
+					$blarge = $biclean;
+					$blarge =~ s/(.b.jpg)/.m.jpg/gi;
+				}
+				##-- test for existence of main[large] image [180w x 257h] [http://c2.bibtopia.com/f/026/853/9780521853026.OL.0.m.jpg]
+				if ($blarge && (head($blarge))) {
+					$bimage = $blarge;
+					$imageBiblio = $bimage;
+				}
+				##-- test for existence of browse[medium] image [100w x 143h] [http://c2.bibtopia.com/f/026/853/9780521853026.OL.0.b.jpg]
+				elsif (head($biclean)) {
+					$bimage = $biclean;
+					$imageBiblio = $bimage;
+				}
+				##-- test for existence of small image [50w x 71h] [http://c2.bibtopia.com/f/026/853/9780521853026.OL.0.s.jpg]
+			}
+
+			$idBiblio = $bid;
+			if ($busprice) { $priceBiblio = $bprice; }
+			##-- so long as found, push it back
+			##-- already formatted for WikiPeeksISBN, but re-processable by other
+			return "$idBiblio%%%$imageBiblio%%%$department%%%$btitle%%%$priceBiblio%%%$bmadeby%%%$bpublisher%%%$tpage%%%$getPage%%%$ms%%%$badTracking%%%$bAdSearchURL%%%Biblio%%%";
+		}
+	}
+}
+
+
+
+sub tryEbooks {
+
+	$ms =~ s/$elISBN//gi;
+	my $myXMLuri = "http://api.ebooks.com/s/getinfo.net?isbn=$ms";
+
+	my $xurl = "$myXMLuri";
+	my $epage = get ($xurl);
+
+	$epage =~ s/\n//g;
+	if (length($epage) >= 0 && $epage =~ "xml" && $epage =~ "id" && $epage =~ "title" && $epage =~ "url") {
+		@linearXML = split(/\r/,$epage);
+		$Start1 = "<id>"; $End1 = "</id>";
+		$Start2 = "<url>"; $End2 = "</url>";
+		$Start3 = "<title>"; $End3 = "</title>";
+		$Start4 = "<author>"; $End4 = "</author>";
+		$Start5 = "<publisher>"; $End5 = "</publisher>";
+		$Start6 = "<publicationDate>"; $End6 = "</publicationDate>";
+		$Start7 = "<price ";
+		foreach $lxml (@linearXML) {
+			$lxml =~ s/<!\[CDATA\[//g;
+			$lxml =~ s/\]\]>//g;
+			if ($lxml =~ $Start1 && $lxml =~ $End1) { $eid = $lxml; $eid =~ s/$Start1//gi; $eid =~ s/$End1//gi; }
+			if ($lxml =~ $Start2 && $lxml =~ $End2) { $eurl = $lxml; $eurl =~ s/$Start2//gi; $eurl =~ s/$End2//gi; }
+			if ($lxml =~ $Start3 && $lxml =~ $End3) { $etitle = $lxml; $etitle =~ s/$Start3//gi; $etitle =~ s/$End3//gi; }
+			if ($lxml =~ $Start4 && $lxml =~ $End4) { $emadeby = $lxml; $emadeby =~ s/$Start4//gi; $emadeby =~ s/$End4//gi; }
+			if ($lxml =~ $Start5 && $lxml =~ $End5) { $epublisher = $lxml; $epublisher =~ s/$Start5//gi; $epublisher =~ s/$End5//gi; }
+			if ($lxml =~ $Start6 && $lxml =~ $End6) { $publicationDate = $lxml; $publicationDate =~ s/$Start6//gi; $publicationDate =~ s/$End6//gi; }
+			if ($lxml =~ $Start7) {
+				if ($lxml =~ m/currency/i && $lxml =~ m/USD/i && $lxml !~ m/WORLD/i) {
+					@findprice = split(/ /,$lxml);
+					foreach $aprice (@findprice) {
+						if ($aprice =~ m/value/i) {
+							my ($trashie,$eprice) = split(/=/,$aprice);
+							$eusprice = $eprice;
+							$eusprice =~ s/"//g;
+						}
+					}
+				}
+			}
+		}
+		if ($eid) {
+			$iIDfull = $eid;
+			$iIDfull =~ s/ //gi;
+			$iIDfull =~ s/-//gi;
+			$iID3 = substr($iIDfull,0,3);
+			$iID6 = substr($iIDfull,0,6);
+			$iID9 = substr($iIDfull,0,9);
+
+			$eprice = $eusprice;
+			$eprice =~ s/\$//g;
+			$eprice =~ s/ //g;
+			##-- only if number do we give it a whirl
+			if (isfloat $eprice) { 
+				$eprice = '$'.$eprice;
+			}
+
+			$tpage = 1;
+			$egetPage = 0;
+			$eadTracking = 'http://www.lduhtrp.net/image-3747342-10782032';
+			##- tally the call
+			$eAdSearchURL = 'http://www.dpbolvw.net/interactive?term='.$ms.'&aid=10782032&pid=3747342';
+			##-- 400w x 600h || 
+			##-- eg: [http://i.ebkimg.com/previews/000/000287/000287099/000287099.jpg]
+			$ilarge = "http://i.ebkimg.com/previews/$iID3/$iID9/$iID9/$iIDfull.jpg";
+			##-- 99w x 150h
+			##-- eg: [http://i.ebkimg.com/previews/000/000287/000287099/000287099-sml-1.jpg]
+			$ismall = "http://i.ebkimg.com/previews/$iID3/$iID9/$iID9/$iIDfull-sml-1.jpg";
+			##- test for remote existence, using LWP::Simple, found it
+			if (head($ilarge) || head($ismall)) {
+				if (head($ismall)) { $smallURL = $ismall; }
+				if (head($ilarge)) { $largeURL = $ilarge; }
+
+				##--primary
+				$imageEbooks = '/web_design_imagery/spacie.gif';
+				if ($smallURL) {
+					$imageEbooks = $smallURL;
+				}
+				##--backup
+				elsif ($largeURL) {
+					$imageEbooks = $largeURL;
+				}
+			}
+			else {
+				# print "no image";
+			}
+
+			$idEbooks = $iIDfull;
+			if ($eusprice) { $priceEbooks = $eprice; }
+			##-- so long as found, push it back
+			##-- already formatted for WikiPeeksISBN, but re-processable by other
+			return "$idEbooks%%%$imageEbooks%%%$department%%%$etitle%%%$priceEbooks%%%$emadeby%%%$epublisher%%%$tpage%%%$egetPage%%%$ms%%%$eadTracking%%%$eAdSearchURL%%%eBooks%%%";
+		}
+	}
+}
+
+
+if (!$INTERNAL) {
+	exit;
+}
+1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+__END__
+^L
+
+########
+### DOCS 
+########
+
+=head1 DEPARTMENTS
+
+Filtered from Amazon.com's main home department list [only tested and verified end up here]
+
+Automotive
+Baby
+Beauty
+Apparel
+Electronics
+Grocery
+Industrial
+Jewelry
+Magazines
+DVD
+Music
+Shoes
+Software
+Tools
+Toys
+Watches
+
+
+SAMPLE SEARCH QUERY STRING
+?st=Search String&msit=l&msits=500&feed=WikiBoardBarAd&dpt=Books&max=1
+
+ISBN BOOK QUERY [always defaults to max=1 and dpt=Books]
+?isbn=0684831309&msit=l&msits=500&feed=ISBNBookReferences
+
+=cut
