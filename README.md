@@ -1,6 +1,6 @@
 # vps-net.com
 
-HINT: If you find something in the this directory you will also find it live at: http://vps-net.com/. For instance, in this directory we have WikiPeeks/w3c.htm, therefore if we want to see that live we'd pull it up in our web browser, http://vps-net.com/WikiPeeks/w3c.htm, like so.
+HINT: If you find something in this directory you will also find it live at: http://vps-net.com/. For instance, in this directory we have WikiPeeks/w3c.htm, therefore if we want to see that live we'd pull it up in our web browser, http://vps-net.com/WikiPeeks/w3c.htm, like so.
 
 This repository contains the hard-coded and soft-coded content for vps-net.com as it sits, live, today. I'm posting this today for I've redone my servers to migrate non-essential systems to servers isolated from my mission critical systems. As of now, vps-net.com falls on the non-essential side of the distribution, and as such, I feel the need to publish its guts here.
 
