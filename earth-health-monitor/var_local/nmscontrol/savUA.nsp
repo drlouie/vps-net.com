@@ -1,0 +1,81 @@
+##################################################################
+#   Program:        Earth Health Monitor                         #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2006 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      User Alert Management                        #
+#        Module:    Save Alert                                   #
+#                                                                #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+##-- save global user alerts [ordered by alert type only]
+
+###---TESTED & WORKING 091909 :: LATEST ---###
+
+	##-- clean up any dupes
+	my %seenSAVE = ();
+   	my @uniqueSAVE = grep { ! $seenSAVE{ $_ }++ } @ATSave;
+	foreach $atsAVE (@uniqueSAVE) {
+		$SAs=''; $newAlerts=''; $Aid=''; @losSA=''; @losSAsort='';
+		if ($atsAVE =~ "-" && $atsAVE =~ " %%%%% ") {
+			@splitATSAVE = split(/ %%%%% /,$atsAVE);
+			$Uid = $splitATSAVE[0];
+			$Uem = $splitATSAVE[1];
+			$Aid = $splitATSAVE[2];
+
+			##-- save main remotely
+			my $dbh = DBI->connect("DBI:mysql:DN_Master",$leLU,$leLP) or die "Unable to connect to database: <b>Master</b>\n";
+			$dbh->{RaiseError} = 1;
+
+			my $sth = $dbh->prepare("SELECT * FROM UserBase WHERE CustomerID='$Uid'");
+			$sth->execute or die "Unable to execute query\n";
+			my @row;
+			while(@row = $sth->fetchrow_array) {
+				$SAs = $row[11];
+			}
+			$sth->execute or die "Unable to execute query\n";
+			$sth->finish;
+
+			##-- add to stack
+			@losSA = split(/-----/,$SAs);
+			##-- only add if not already there
+			if ($SAs !~ "$Aid") { push(@losSA,"$Aid"); }
+			##-- sort new stack [sorted according to type hence: e-, l-, v-] [alert order by num is controlled by interfacer/parser]
+			@losSAsort = sort(@losSA);
+			##-- make new stack
+			$newAlerts = join "-----", @losSAsort;
+			$newAlerts =~ s/ //gi; $newAlerts =~ s/\t//gi;
+
+			my $sth = $dbh->prepare("UPDATE LOW_PRIORITY UserBase 
+				SET Alerts='$newAlerts' 
+				WHERE CustomerID='$Uid'");
+			$sth->execute or die "Unable to execute query\n"; 
+			$sth->finish;
+			$dbh->disconnect;
+
+			$numAffected++;
+
+		}
+	}
+
+1;

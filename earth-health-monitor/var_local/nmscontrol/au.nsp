@@ -1,0 +1,21 @@
+if ($aType) {
+	$UID, $UFirst, $ULast, $UEmail, $UID, $alertURL, $emailData = '';
+	my $dbh = DBI->connect("DBI:mysql:DN_Master",$leLU,$leLP) or die "Unable to connect to database: <b>Master: Local</b>\n"; 
+	$dbh->{RaiseError} = 1;
+	my $sth = $dbh->prepare("SELECT CustomerID, FirstName, LastName, Email FROM UserBase");
+	$sth->execute or die "Unable to execute query\n";
+	my @row;
+	while(@row = $sth->fetchrow_array) {
+		$UID = $row[0];
+		$UFirst = $row[1];
+		$ULast = $row[2];
+		$UEmail = $row[3];
+		$UID = int($UID);
+		$alertURL = $aurl . "$UID";
+		$emailData = $aed;
+		&SendAlert1;
+	}
+	$sth->execute or die "Unable to execute query\n";
+	$sth->finish;
+	$dbh->disconnect;
+}
