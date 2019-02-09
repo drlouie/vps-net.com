@@ -1,0 +1,12 @@
+A monitoring system written mainly in Perl, known as Disaster Notify at some point, now called Earth Health Monitor. It is a collection of scripts and programs I created to monitor, well, the health of the Earth. I went about finding as many U.S. government data sources, for their availability, reliability and continuity. So, I went about gathering sources from NOAA, USGS, DHS, FBI, WeatherCom, Weather Underground, US Federal Government, FDA (Food Recalls), Project Safe Kids (Amber Alerts), Red Cross and many more. In essence, an all encompassing type of disaster and 'earth health' monitoring data set.  
+
+In turn I went to work using Perl, alongside a few modules, to write the core for these monitoring systems. From gathering data, to processing that data, minions cleaning data, bots watching for changes within file systems since there wasn't any other way to check for data etc.  All kinds of cool stuff going on, so I figured, lets make it live to let others play learn from it and maybe built upon it.
+
+The idea for this came from some fellow by the name of D. Rhomberg, I decent guy. He simply didn't have the resources capable of keeping this project moving, since there was no budget for this from day one. In essence, his idea, my work. Anyway, there are monitors for Earthquakes, Volcanoes, Tsunamis, Tornadoes, Extreme Weather Alerts, Amber Alerts, some worked fully at some point, now the data is dated but it can be made to work with a bit of effort.
+
+Enjoy.
+
+Luis Gustavo Rodriguez
+drlouie@louierd.com 
+doctorlouie@hotmail.com
+guru@vps-net.com
