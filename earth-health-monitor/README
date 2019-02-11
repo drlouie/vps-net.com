@@ -2,7 +2,9 @@ A monitoring system written mainly in Perl, known as Disaster Notify at some poi
 
 In turn I went to work using Perl, alongside a few modules, to write the core for these monitoring systems. From gathering data, to processing that data, minions cleaning data, bots watching for changes within file systems since there wasn't any other way to check for data etc.  All kinds of cool stuff going on, so I figured, lets make it live to let others play learn from it and maybe built upon it.
 
-The idea for this came from some fellow by the name of David Romberg, I decent guy. He simply didn't have the resources capable of keeping this project moving, since there was no budget for this from day one. In essence, his idea, my work. Anyway, there are monitors for Earthquakes, Volcanoes, Tsunamis, Tornadoes, Extreme Weather Alerts, Amber Alerts, some worked fully at some point, now the data is dated but it can be made to work with a bit of effort.
+The idea for this came from some fellow by the name of David Romberg, a decent fellow who lived on the beach and was afraid he might be hit by a Tsunami one day. However, he simply didn't have the resources capable of keeping this project moving, moreso considering there was no budget for this project from day one. In essence, his idea, my work.
+
+Anyway, there are monitors for Earthquakes, Volcanoes, Tsunamis, Tornadoes, Extreme Weather Alerts, Amber Alerts, some worked fully at some point, now the data is dated but it can be made to work with a bit of effort.
 
 Enjoy.
 
