@@ -1,0 +1,48 @@
+#!/usr/bin/perl -s
+
+#######################################################################################################
+# Company: NetMedia Solutions                                                                         #
+# Date: Saturday, September 21, 2001                                                                  #
+# Location: Los Angeles, California, United States of America                                         #
+# Made By: Luis Rodriguez (drlouie)                                                                   #
+# Email: drlouie@tstonramp.com                                                                        #
+#                                                                                                     #
+# USNightVision.com's command referrer checker. Checks all calls and script data entrances to make   #
+# sure all are being issued from domain itself.                                                       #
+#                                                                                                     #
+#######################################################################################################
+
+@referers = ('www.disasternotify.com','disasternotify.com',
+ 			 'www.disasternotify.org','disasternotify.org',
+			 'www.disasternotify.net','disasternotify.net',
+			 '216.122.237.121','216.122.59.152');
+&check_url;
+sub check_url {
+    # Localize the check_referer flag which determines if user is valid.     #
+    local($check_referer) = 0;
+    # If a referring URL was specified, for each valid referer, make sure    #
+    # that a valid referring URL was passed to FormMail.                     #
+    if ($ENV{'HTTP_REFERER'}) {
+        foreach $referer (@referers) {
+            if ($ENV{'HTTP_REFERER'} =~ m|https?://([^/]*)$referer|i) {
+                $check_referer = 1;
+                last;
+            }
+        }
+    }
+    else {
+        $check_referer = 1;
+    }
+
+    # If the HTTP_REFERER was invalid, send back an error.                   #
+    if ($check_referer != 1) { &bad_referer; }
+}
+
+sub bad_referer {
+	$noaccess = "You cannnot access this area via remote automation!";
+}
+####################
+##End Check Referer#
+####################
+##return =true
+1;

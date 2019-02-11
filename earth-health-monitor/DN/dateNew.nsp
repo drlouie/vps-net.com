@@ -1,0 +1,126 @@
+#!/usr/bin/perl
+
+##--> NO NEED FOR CONTENT TYPE (ALWAYS REQUIRE NEVER STRAIGHT)
+## print "Content-type: text/html \n\n";
+
+##--> UPPERCASE HOMEPAGE DATE/TIME ASSORTMENT
+use locale;
+
+
+##--> FORMAT DATE
+@singulars1 = ('01','02','03','04','05','06','07','08','09');
+
+
+@days   = ('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday');
+@months = ('January','February','March','April','May','June','July','August','September','October','November','December');
+@months2 = ('1','2','3','4','5','6','7','8','9','10','11','12');
+@months3 = ('01','02','03','04','05','06','07','08','09','10','11','12');
+@months4 = ('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec');
+
+##--> GET CURRENT TIME and format the hour, minutes and seconds.  Add 1900 to the year to get the full 4 digit year.
+($sec,$min,$hour,$mday,$mon,$year,$wday) = (localtime(time))[0,1,2,3,4,5,6];
+$time = sprintf("%02d:%02d:%02d",$hour,$min,$sec);
+$year += 1900;
+
+##--> FORMAT THE DATE
+$date = "$days[$wday], $months[$mon] $mday, $year";
+$date2 = "$months2[$mon]/$mday/$year";
+$date3 = "$months2[$mon]" . "$mday" . "$year";
+
+
+($y1,$y2,$y3,$y4) = split(//,$year);
+$twoDigitYear = "$y3" . "" . "$y4";
+
+if ($mday <= 9 && $mday !~ 0) {
+	$twoDigitDay = '0' . $mday;
+}
+else {
+	$twoDigitDay = $mday;
+}
+
+
+use Date::Simple (':all');
+$today = today();
+$yesterday = $today->prev;
+$tomorrow = $today->next;
+
+## if ($mday < 10) { $thisday = $singulars1[$mday]; }
+## else { $thisday = $mday; }
+$datetime = "$today $time";
+
+## backward compat [older date]
+$date1 = "$year" . "-" . "$months3[$mon]" . "-" . "$days[$mday]";
+
+
+##--> HOMEPAGE/LOGIN SCREEN = SCRIPTED PARSE
+if ($getHDT eq 1) { 
+	$days[$wday] = uc($days[$wday]);
+	$months[$mon] = uc($months[$mon]);
+	$date = "$days[$wday] $months[$mon] $mday, $year";
+	print "if (document.getElementById) { if (document.getElementById('dater')) { document.getElementById('dater').innerHTML = '$date'; } }";
+}
+
+##--> WITHOUT NOPARSE PARAM
+elsif ($noDateParse eq 1) { $continueMe = 1; }
+
+##--> OTHERS SIMPLY PARSE
+else { print "$date"; }
+
+
+
+
+
+
+###########################
+### DATE QUERY HELPERS  ###
+### ------------------  ###
+### MONTH/NUMBER HASH 	###
+###########################
+    %los_months = (
+        "January" => "1",
+        "February" => "2",
+        "March" => "3",
+        "April" => "4",
+        "May" => "5",
+        "June" => "6",
+        "July" => "7",
+        "August" => "8",
+        "September" => "9",
+        "October" => "10",
+        "November" => "11",
+        "December" => "12"
+    );
+    %los_months_abrv = (
+        "Jan" => "1",
+        "Feb" => "2",
+        "Mar" => "3",
+        "Apr" => "4",
+        "May" => "5",
+        "Jun" => "6",
+        "Jul" => "7",
+        "Aug" => "8",
+        "Sep" => "9",
+        "Oct" => "10",
+        "Nov" => "11",
+        "Dec" => "12"
+    );
+    %los_months_named = (
+        "1" => "January",
+        "2" => "February",
+        "3" => "March",
+        "4" => "April",
+        "5" => "May",
+        "6" => "June",
+        "7" => "July",
+        "8" => "August",
+        "9" => "September",
+        "10" => "October",
+        "11" => "November",
+        "12" => "December"
+    );
+
+
+
+
+##return =true
+1;

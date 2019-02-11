@@ -1,0 +1,180 @@
+#!/usr/bin/perl -s
+
+##################################################################
+#   Program:        Earth Health Monitor                         #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2006 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      Data Display                                 #
+#        Module:    Weather Markup Parser (By Zip Code)          #
+#        Source:    Weather::Underground Perl API                #
+#                                                                #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+use locale;
+
+require("/var/www/vps-net.com/htdocs/earth-health-monitor/DN/parse_query.nsp");
+
+$CSzip = $FORM{'z'};
+$inCity = $FORM{'c'};
+
+$userZip = int($CSzip);
+if ($userZip > 0) {
+	$theUserZip = "$userZip";
+}
+else {
+	##-- 95814 [sacramento]
+	$theUserZip = "94110";
+}
+$inner = "$theUserZip";
+
+use Weather::Underground;
+$weather = Weather::Underground->new(place => "$inner", debug => 0,) || die $weatherUndergroundError = "Invalid Zip Code Entered";
+if ($weather->get_weather()) {
+	$arrayref = $weather->get_weather() || die $weatherUndergroundError = "Internal Error with Weather Module";
+			
+	$moreInfo = '<table cellpadding="3" cellspacing="0" border="0" style="line-height:12px;font-size:10px;font-family:verdana,arial,helvetica;color:#00469B"><tr><td align="center" colspan="2">';
+			
+   	foreach (@$arrayref) {
+		while (($key, $value) = each %{$_}) {
+			if ($key eq "conditions") { $condition = $value; }
+			if ($key eq "place") { 
+				$sourceCityState = $value;
+				@losPieces = split(/, /,$sourceCityState);
+				if (@losPieces == 2) {
+					$source = '';
+					$city = $losPieces[0];
+					$state = $losPieces[1];
+				}
+				elsif (@losPieces == 3) {
+					$source = $losPieces[0];
+					$city = $losPieces[1];
+					$state = $losPieces[2];
+				}
+			}
+			if ($key eq "temperature_fahrenheit") { $farenheit = $value; $farenheit = $farenheit . "&ordm; F";}
+			if ($key eq "temperature_celsius") { $celcius = $value; $celcius = $celcius . "&ordm; C"; }
+			
+			$key =~ s/_/ /gi;
+			$key =~ s/kilometersperhour/kMPH/gi;
+			$key =~ s/kilometers/km/gi;
+			$key =~ s/milesperhour/mph/gi;
+						
+					
+			if ($key ne "clouds" && $key ne "pressure" && $key ne "updated" && $key ne "temperature" && $key ne "fahrenheit" && $key ne "place" && $key ne "wind kMPH") {
+				$moreInfo = $moreInfo . "<tr><td style=\"font-size:9px; $pb\" id=\"$c1\" align=\"right\"><i>$key</i></td><td style=\"font-size:9px; $pb\" id=\"$c1\">$value</td></tr>";
+				$c1++;
+			}
+		}
+
+		$moreInfo = $moreInfo . "<tr><td height=\"10\" colspan=\"2\"><img src=\"DisasterNotifyImages/spacer.gif\" width=\"1\" height\"10\"></td></tr>";
+
+		if ($source ne "") {
+			$moreInfo = $moreInfo . "<tr><td height=\"5\" colspan=\"2\"><img src=\"DisasterNotifyImages/spacer.gif\" width=\"1\" height\"5\"></td></tr>";
+			$moreInfo = $moreInfo . "<tr><td style=\"font-size:9px; line-height:14px; padding-top:10px;border-top:#DAD9C5 1px solid;\" id=\"$c1\" align=\"center\" valign=\"middle\" colspan=\"2\" style=\"color:#666666;\">data source location<br><b style=\"letter-spacing:1px;color:#00469B\">" . uc($source) . "</b></td></tr>";
+		}
+		$moreInfo = $moreInfo . "<tr><td height=\"5\" colspan=\"2\"><img src=\"DisasterNotifyImages/spacer.gif\" width=\"1\" height\"5\"></td></tr>";
+		$moreInfo = $moreInfo . "<tr><td style=\"font-size:9px; line-height:14px; padding-top:10px;border-top:#DAD9C5 1px solid;\" id=\"$c1\" align=\"center\" valign=\"middle\" colspan=\"2\" style=\"color:#666666;\" title=\"powered by Weather Underground\"><font style=\"letter-spacing:2px;\">powered by</font><br><img border=\"0\" width=\"48\" height=\"25\" src=\"DisasterNotifyImages/weatherUnderGroundLogo_small.gif\" alt=\"powered by Weather Underground\"></td></tr>";
+		$moreInfo = $moreInfo . '</table>';
+
+	}
+	##-- if user requested city [no truth check] overwrite WU parsed city
+	if (length($inCity) > 2) { $city = $inCity; }
+	$cityLC = lc($city);
+	$conditionLC = lc($condition);
+}
+else {
+	$weatherUndergroundError = "Invalid Zip Code Entered"
+}
+
+
+
+
+
+use DBI;
+$myCC = lc($condition);
+		
+my $dbh = DBI->connect("DBI:mysql:dn_weathercom",$leLU,$leLP) or die "Unable to connect to database: <b>dn_master</b>\n"; 
+$dbh->{RaiseError} = 1; 
+my $sth = $dbh->prepare("SELECT * FROM ConditionIcons WHERE Conditions LIKE '%$myCC%' ORDER BY Priority ASC");
+$sth->execute or die "Unable to execute query\n"; 
+my @row;
+while(@row = $sth->fetchrow_array) {
+	$thisCond = lc($row[1]);
+	@splitCond = split(/ \| /,$thisCond);
+	foreach $SC (@splitCond) {
+		if (!$foundExact && $SC eq "$myCC") { $foundExact = int($row[0]); }
+		elsif (!$foundExact && !$foundMatch && $SC eq "$myCC") { $foundMatch = int($row[0]); }
+	}
+}
+if (!$foundExact && !$foundMatch) {
+	##-- no match, still give generic image
+	$IconID = "-";
+}
+else {
+	if ($foundExact) {
+		$IconID = "$foundExact";
+	}
+	else {
+		$IconID = "$foundMatch";
+	}
+}
+$sth->execute or die "Unable to execute query\n"; 
+$sth->finish;
+$dbh->disconnect;
+
+my $dbh = DBI->connect("DBI:mysql:dn_weathercom",$leLU,$leLP) or die "Unable to connect to database: <b>dn_master</b>\n"; 
+$dbh->{RaiseError} = 1; 
+my $sth = $dbh->prepare("SELECT StateAbrv FROM States WHERE StateName LIKE '%$state%'");
+$sth->execute or die "Sorry, try again.\n"; 
+my $row = $sth->fetchrow_arrayref; 
+my $StateAbrv = $row->[0];
+$sth->finish;
+$dbh->disconnect;
+$stateAbrvLC = lc($StateAbrv);
+		
+if ($IconID) { 
+	$myImage = "<img src=\"/nvi/spacer.gif\" border=\"0\" width=\"60\" height=\"60\" class=\"thyImagen\" alt=\"Current Weather Conditions: $condition [$farenheit]\">"; 
+}
+
+
+
+
+
+
+
+		
+#		print qq~
+#		$myImage<br>
+#		$condition : $farenheit : $city : $state : $source<br>
+#		$moreInfo<br>
+#		~;
+
+	 
+	 
+
+ 
+ 
+ 
+
+1;

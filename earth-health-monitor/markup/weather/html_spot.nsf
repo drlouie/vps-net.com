@@ -1,0 +1,52 @@
+<style>
+	.wCity { color:#000000; }
+	.wTherm { color:#000000; }
+	.wCond { color:#000000; }
+	.dnwBG { background:#B8B8B8; }
+	.dnwFG { background:#000000; }
+	.dnwSN { color:#B8B8B8; }
+</style>
+<div id="DNWeatherFeeder">
+<table width="140" align="center" border="0" cellpadding="0" cellspacing="0" class="dnwBG">
+	<tr><td class="dnwBG" height="1"><div style="width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);"></div></td></tr>
+	<tr><td class="dnwFG" height="1"><div style="width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);"></div></td></tr>
+	<tr>
+		<td height="20" style="background-image:url(http://www.vps-net.com/earth-health-monitor/weather/im/gui/panelBar_weatherBar.gif); background-repeat:no-repeat;" valign="top">
+			<div style="position:relative;left:0px;top:0px;width:140px;height:50px;overflow:hidden;clip:rect(0px 140px 50px 0px);" title="Current weather conditions for %%CITY%%, %%STATE%%: %%CONDITION%% (%%FARENHEIT%% / %%CELCIUS%%)">
+				<div class="thyImagen" style="position:relative;left:90px;top:0px;z-index:1;width:140px;height:50px;overflow:hidden;clip:rect(0px 140px 50px 0px);"></div>
+				<div style="height:50px;width:140px;position:relative;left:0px;top:-50px;width:140px;height:50px;z-index:2;">
+					<table width="140" align="left" border="0" cellpadding="0" cellspacing="0">
+						<tr>
+							<td class="wCity" style="font-family:arial narrow,arial,verdana; font-size:10px; padding-bottom:2px;" align="center" valign="bottom" width="90">%%CITYLC%%, %%STATEAbrvLC%%</td>
+							<td class="spaceHold" width="50"><div style="width:50px;height:21px;overflow:hidden;clip:rect(0px 50px 21px 0px);"></div></td>
+						</tr>
+						<tr>
+							<td class="wTherm" style="font-family:arial,verdana,helvetica; font-weight:bold; font-size:11px;" align="center" valign="bottom" width="90">%%FARENHEIT%% / %%CELCIUS%%</td>
+							<td class="spaceHold" width="50"><div style="width:50px;height:16px;overflow:hidden;clip:rect(0px 50px 16px 0px);"></div></td>
+						</tr>
+						<tr>
+							<td class="wCond" style="font-family:arial,verdana,helvetica; font-size:9px;" align="center" valign="top" width="90">%%CONDITIONLC%%</td>
+							<td class="spaceHold" width="50"><div style="width:50px;height:13px;overflow:hidden;clip:rect(0px 50px 13px 0px);"></div></td>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</td>
+	</tr>
+	<tr><td class="dnwFG" height="1"><div style="width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);"></div></td></tr>
+	<tr><td class="dnwBG" height="1"><div style="width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);"></div></td></tr>
+	<tr>
+		<td class="dnwFG">
+			<table width="140" height="16" align="center" border="0" cellpadding="0" cellspacing="0">
+				<tr>
+					<td valign="top" align="right" width="100%" style="padding-top:3px; padding-right:4px;"><a href="http://www.vps-net.com/earth-health-monitor/" target="DNW" class="dnwSN" style="text-decoration:none; font-family:arial,verdana,helvetica; font-size:8px; cursor:help;" title="DN Weather: Local Up-To-The Minute Weather"><i>source:</i> dn weather</a></td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+</div>
+<style>
+	.thyImagen { filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, src='http://www.vps-net.com/earth-health-monitor/weather/ic/artsy_5050/%%ICONID%%.png'); BACKGROUND-REPEAT: no-repeat; BACKGROUND-ALIGN: top right;}
+	.thyImagen[class] { background-image:url(http://www.vps-net.com/earth-health-monitor/weather/ic/artsy_5050/%%ICONID%%.png); BACKGROUND-REPEAT: no-repeat; BACKGROUND-ALIGN: top right;  }
+</style>

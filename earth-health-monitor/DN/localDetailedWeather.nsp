@@ -1,0 +1,67 @@
+#!/usr/bin/perl -s
+
+##################################################################
+#   Program:        Earth Health Monitor                         #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2006 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      Data Display                                 #
+#        Module:    Detailed Weather Markup Parser (By Zip Code) #
+#        Source:    Weather::Underground Perl API                #
+#                                                                #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+###############################################
+###                                         ###
+### PARSE DETAILED LOCAL WEATHER (Homepage) ###
+###                                         ###
+###############################################
+require("adminAlert.nsp");
+
+		use Weather::Underground;
+
+		$weather = Weather::Underground->new(place => "92374", debug => 0,) || die print "Invalid Zip Code Entered";
+			
+       	if ($weather->get_weather()) {
+			$arrayref = $weather->get_weather() || die print "Error with Weather::Underground";
+
+	        foreach (@$arrayref) {
+				print "MATCH:\n";
+      		    while (($key, $value) = each %{$_}) {
+      	    		print "\t$key = $value\n";
+				}
+    	    }
+		
+			if ($arrayref->[0]->conditions) {
+				$condition = $arrayref->[0]->conditions;
+				print "\n\n" . $condition;
+			}
+			else {
+ 				print "Error with Weather::Underground";
+			}
+		}
+		else {
+ 			print "Invalid Zip Code Entered";
+		}
+
+1;

@@ -1,0 +1,232 @@
+#!/usr/bin/perl -s
+
+##################################################################
+#   Program:        Earth Health Monitor                         #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2006 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      Data Display                                 #
+#        Module:    Amber Alert (Latest)                         #
+#                                                                #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+	##--> no date parse directive
+	$noDateParse = 1; require ("dateNew.nsp"); 
+	require ("/var/www/vps-net.com/htdocs/earth-health-monitor/DN/parse_query.nsp");
+	
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:dn_weathercom",$leLU,$leLP) or die "Unable to connect to database: <b>dn_master</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	
+	##my $sth = $dbh->prepare("SELECT AlertID, DateTimeStamp, ProcessedData FROM AmberAlertsRecorded WHERE (ProcessedData LIKE '%%%%%%%') AND (ProcessedData NOT LIKE '%canceled%') AND (ProcessedData NOT LIKE '%Canceled%') order by AlertID DESC limit 0, 1");
+	my $sth = $dbh->prepare("SELECT AlertID, DateTimeStamp, ProcessedData FROM AmberAlertsRecorded WHERE (ProcessedData LIKE '%%%%%%%') order by AlertID DESC limit 0, 1");
+	$sth->execute or die "Unable to execute query\n"; 
+	my @row;
+		while(@row = $sth->fetchrow_array) { 
+			### must have image for hp
+			$AID = $row[0];
+			$DTS= $row[1];
+			$ProcessedData = $row[2];
+		}
+	$sth->execute or die "Unable to execute query\n"; 
+	$sth->finish;
+
+
+if ($ProcessedData =~ "-----") {
+	
+
+
+
+
+	if ($ProcessedData =~ "%%%%%") {
+
+
+		@splitterMain = split(/%%%%%/,$ProcessedData);
+		@splitAMBER = split(/-----/,$splitterMain[0]);
+		if ($splitterMain[1] =~ "-----") { @splitIMAGES = split(/-----/,$splitterMain[1]); }
+		else { $splitIMAGES[0] = $splitterMain[1]; }
+
+	}
+	else { 
+		@splitAMBER = split(/-----/,$ProcessedData);
+	}
+
+	$Title = $splitAMBER[0];
+	$Date = $splitAMBER[1];
+	$Link = $splitAMBER[2];
+	$Description = $splitAMBER[3];
+	
+	$Description =~ s/ - ]]>//gi;
+	
+	$Timestamp = $Date;
+
+print qq~	
+<table cellpadding="3" width="350" cellspacing="0" border="0" style="border:#DAD9C5 1px solid; line-height:18px;font-size:13px;font-family:arial,verdana,helvetica;color:#00469B">
+				<tr> 
+            		<td width="1" bgcolor="#FFFFFF"><img src="DisasterNotifyImages/spacer.gif" width="1" height="22"></td>
+            		<td align="left" width="50%" nowrap><b>Amber Alert Monitoring</b></td>
+            		<td align="right" width="50%" style="font-size:10px;">&nbsp;</td>
+		            <td width="1" bgcolor="#FFFFFF"><img src="DisasterNotifyImages/spacer.gif" width="1" height"22"></td>
+        		</tr>
+		        <tr style="background-image:url('DisasterNotifyImages/fader1.jpg');background-repeat: repeat-x; background-position: left top;"> 
+        		    <td width="1" bgcolor="#FFFFFF"><img src="DisasterNotifyImages/spacer.gif" width="1" height"1"></td>
+            		
+    <td width="100%" colspan="2" align="left" valign="top">
+	
+~;
+
+
+	if (@splitIMAGES) {
+		print "<table align='center' cellpadding='0' cellspacing='0' border='0' style='color:#666666;line-height:11px;font-size:9px;font-family:verdana,arial,helvetica;'>";
+		print "<tr><td valign='top'>";
+	}
+	
+
+	##-->> FIND LINK ON EITHER projectsafekids.org/ OR projectsafekids.org/archives/ [so just find pagename]
+	##-->> CAN LATER BE USED TO TRACK CANCELED ALERTS
+	if ($Link ne "") {
+		$forwardS = '/';
+		
+		## splitting url
+		@splitLink = split(/$forwardS/,$Link);
+		## grabbing .html section of url
+		@RsplitLink = reverse(@splitLink);
+
+		##--> find relative Alerts, previous alerts
+		my $sth = $dbh->prepare("SELECT AlertID, DateTimeStamp, ProcessedData FROM AmberAlertsRecorded WHERE ProcessedData LIKE '%$RsplitLink[0]%' AND AlertID != '$AID' order by AlertID");
+		$sth->execute or die "Unable to execute query\n"; 
+		my @row;
+			while(@row = $sth->fetchrow_array) { 
+				$rAID = $row[0];
+				$rDTS = $row[1];
+				$ProcessedData = $row[2];
+				push(@RAIDS,"$rAID");
+				push(@RAIDSdata,"$ProcessedData");
+			}
+		$sth->execute or die "Unable to execute query\n"; 
+		$sth->finish;
+	}	
+	
+	## if other amber alerts are relative (previous alert) to this alert
+	if (@RAIDS) {
+		$raidC = 0;
+		foreach $RAID (@RAIDS) {
+			@splitRDATA = split(/-----/,$RAIDSdata[$raidC]);
+			$rTitle = $splitRDATA[0];
+			if ($raidC eq "0") { $myRAIDS = "<a href='Amber_Alert_Viewer.htm?aid=$RAID'>$rTitle</a>"; }
+			else { $myRAIDS = "<a href='Amber_Alert_Viewer.htm?aid=$RAID'>$rTitle</a> - " . $myRAIDS; }
+			$raidC++;
+		}
+	}
+
+
+
+
+	
+
+	
+
+
+
+
+
+
+	print "<table align='center' cellpadding='0' cellspacing='0' border='0' style='color:#666666;line-height:11px;font-size:9px;font-family:verdana,arial,helvetica;'>";
+	print "<tr valign='top'><td style='padding-top:15px;padding-right:10px;'><b>$Title</b></td></tr>";
+	print "<tr valign='top'><td style='padding-top:2px;padding-left:5px;padding-top:7px;padding-right:10px;'>$Timestamp</td></tr>";
+	print "<tr valign='top'><td style='padding-top:2px;padding-left:5px;padding-top:7px;padding-right:10px;'>$Description</td></tr>";
+	print "<tr valign='top'><td style='padding-top:2px;padding-left:5px;padding-top:7px;padding-right:10px;'><A href='$Link' target='ProjectSafeKids' title='Amber Alert details available at ProjectSafeKids.com' style='color:#00469B'>Extended Amber Alert Info</A></td></tr>";
+
+	## if other amber alerts are relative (previous alert) to this alert
+	if (@RAIDS) {
+		$raidC = 0;
+		foreach $RAID (@RAIDS) {
+			@splitRDATA = split(/-----/,$RAIDSdata[$raidC]);
+			$rTitle = $splitRDATA[0];
+			$rDesc = $splitRDATA[3];
+			
+			print "<tr valign='top'><td height='20'><img src='DisasterNotifyImages/spacer.gif' width='1' height='20' border='0'></td></tr>";
+			print "<tr><td style='padding-left:10px;font-size:9px;line-height:15px;' align='left'><b>Previous/Related Alert(s)</b></td></tr>";
+			print "<tr valign='top'><td style='font-size:9px;padding-left:15px;padding-top:7px;padding-right:10px;'>$rTitle</td></tr>";
+			print "<tr valign='top'><td style='font-size:9px;padding-left:15px;padding-top:7px;padding-right:10px;'><a href='Amber_Alert_Viewer.htm?aid=$RAID' target='AmberViewer' title='View more information about this previous/relative alert' style='color:#00469B'>Review This Related Alert</a></td></tr>";
+
+
+			$raidC++;
+		}
+
+	}
+
+	
+	
+	print "</table>";
+
+	if (@splitIMAGES) {
+		print "</td>";
+		print "<td valign='top'>";
+
+		if ($splitIMAGES[3] =~ ".jpg") { $iw = "65"; }
+		elsif ($splitIMAGES[2] =~ ".jpg") { $iw = "85"; }
+		elsif ($splitIMAGES[1] =~ ".jpg") { $iw = "105"; }
+		else { $iw = "125"; }
+		
+		print "<a href='Amber/$splitIMAGES[0]' target='PictureView' title='View large photo - close new window when completed'><img src='Amber/$splitIMAGES[0]' width='$iw' vspace='10' style='border:#666666 1px solid;' border='0'></a>";
+		if ($splitIMAGES[1] =~ ".jpg") { print "<br><a href='Amber/$splitIMAGES[1]'  target='PictureView' title='View large photo - close new window when completed'><img src='Amber/$splitIMAGES[1]' width='$iw' vspace='10' style='border:#666666 1px solid;' border='0'></a>"; }
+		if ($splitIMAGES[2] =~ ".jpg") { print "<br><a href='Amber/$splitIMAGES[2]'  target='PictureView' title='View large photo - close new window when completed'><img src='Amber/$splitIMAGES[2]' width='$iw' vspace='10' style='border:#666666 1px solid;' border='0'></a>"; }
+		if ($splitIMAGES[3] =~ ".jpg") { print "<br><a href='Amber/$splitIMAGES[3]'  target='PictureView' title='View large photo - close new window when completed'><img src='Amber/$splitIMAGES[3]' width='$iw' vspace='10' style='border:#666666 1px solid;' border='0'></a>"; }
+		print "</td></tr>";
+		print "</table>";
+	}
+
+
+print qq~	
+</td>
+		        	<td width="1" bgcolor="#FFFFFF"><img src="DisasterNotifyImages/spacer.gif" width="1" height"1"></td>
+        		</tr>
+				<tr> 
+            		<td width="1" colspan="4" bgcolor="#FFFFFF"><img src="DisasterNotifyImages/spacer.gif" width="1" height="10"></td>
+        		</tr>
+
+			</table>
+~;	
+	
+	
+	
+	
+	
+	
+	
+}
+
+## MISSING/CORRUPT TSUNAMI DATA FOR HOMEPAGE!!! ??? !!!
+else {
+	require("adminAlert.nsp");
+	$alertSubject = "(NoAmberHome w/Image)";
+	$alertData = "";
+	&alertADMIN;
+
+	print "There are currently no active amber alerts.";
+}
+
+$dbh->disconnect;
+
+1;

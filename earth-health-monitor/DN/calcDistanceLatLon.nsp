@@ -1,0 +1,60 @@
+##################################################################
+#   Program:        Earth Health Monitor                         #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2006 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      Geographic Data Processing                   #
+#        Module:    Distance Between Two Geographic Coordinates  #
+#        Source:    Online (Unknown)                             #
+#                                                                #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$pi = atan2(1,1) * 4;
+sub distance { 
+	my ($lat1, $lon1, $lat2, $lon2, $unit) = @_;
+	my $theta = $lon1 - $lon2;
+	my $dist = sin(part2($lat1)) * sin(part2($lat2)) + cos(part2($lat1)) * cos(part2($lat2)) * cos(part2($theta));
+	$dist  = part3($dist);
+	$dist = part4($dist);
+	$dist = $dist * 60 * 1.1515;
+	if ($unit eq "K") { 
+		$dist = $dist * 1.609344;
+	} elsif ($unit eq "N") { 
+		$dist = $dist * 0.8684;
+	} 
+	return ($dist);
+} 
+sub part3 { 
+	my ($rad) = @_;
+	my $ret = atan2(sqrt(1 - $rad**2), $rad);
+	return $ret;
+} 
+sub part2 { 
+	my ($deg) = @_;
+	return ($deg * $pi / 180);
+} 
+sub part4 { 
+	my ($rad) = @_;
+	return ($rad * 180 / $pi);
+} 
+1;
