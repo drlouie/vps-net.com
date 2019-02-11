@@ -6,7 +6,7 @@ This repository contains the hard-coded and soft-coded content for vps-net.com a
 
  Now, I've decided to let people 'take apart' my scripting and programming code as well as my development and design methods. This site was created back in 2009 through hard-code, long hours, many design iterations, and various engineering changes, it may be a bit wild code, but it worked back then and still does a decade later. The purpose was to create a pixel perfect interface when compared to the UI designs, as well as functionally viable from a UX modeling standpoint. There are also other components and applications living within vps-net.com, those will also be published here.
 
-One last thing to note: I've been using .nsp and .htm files as Perl on my servers for a very long time, over a decade and a half. NSP is a Netmedia Solutions Program and NSF is Netmedia Solutions File, a flat data or template file. Side note: Netmedia Solutions was my old company name. To run .htm and .nsp progrmas simply set up you server configuration to handle those extensions as Perl programs.
+One last thing to note: I've been using .nsp and .htm files as Perl on my servers for a very long time, over a decade and a half. NSP is a Netmedia Solutions Program and NSF is Netmedia Solutions File, the latter of which is a flat data file. Side note: Netmedia Solutions was my old company name. To run .htm and .nsp progrmas simply set up you server configuration to handle those extensions as Perl programs.
 
 Enjoy.
 
