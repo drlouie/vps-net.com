@@ -1,0 +1,79 @@
+#!/usr/bin/perl -s
+
+################################################################
+#   Program:    Domain Name Search and Registration            #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2009 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+#   About                                                      #
+#        Type:  Domain Name Whois Search                       #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+}
+else { $HTTPRoot = '/var/www/vps-net.com/htdocs/'; }
+
+###############
+##<-- 2k10 -->##
+###############
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+require($HTTPRoot."q.nsp");
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+##--power functions
+require($HTTPRoot."vfunc.nsp");
+
+## --> Make sure all request coming from this server's domain or IP
+require $HTTPRoot."referee.nsp";
+
+$d = $FORM{'d'};
+$headerPrinted = 0;
+
+##-- domain search request, only for opencanvas cart [inUID] holders
+if (($d =~ '.') && length($d) > 4) {
+
+	use Net::Whois::Raw;
+  	$domainfo = whois(lc($d));
+	$domainfo=~s/\r\n/<br><br>/gi;
+	$domainfo=~s/\n/<br>/gi;
+	$domainfo=~s/<a href/<a target="$d" style="color:#266899;" href/gi;
+	if ($domainfo ne "") {
+		if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		print "JUSTOUTSTANDING!" . $domainfo . "";
+		exit;
+	}
+	if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+	print "error";
+	exit;
+}
+
+if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+print "error";
+exit;

@@ -1,0 +1,533 @@
+#!/usr/bin/perl -s
+
+################################################################
+#   Program:    DOMapp                                         #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+#   About                                                      #
+#        Type:  Domain Name search, save and registration app  #
+#        For:   Godaddy, 1and1, domain.com                     #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+}
+else { $HTTPRoot = '/var/www/vps-net.com/htdocs/'; }
+
+###############
+##<-- 2k10 -->##
+###############
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+require($HTTPRoot."q.nsp");
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+##--power functions
+require($HTTPRoot."vfunc.nsp");
+
+## --> Make sure all request coming from this server's domain or IP
+require $HTTPRoot."referee.nsp";
+
+$d = $FORM{'d'};
+$s = $FORM{'s'};
+$r = $FORM{'r'};
+#-- v1 (website)
+$g = $FORM{'g'};
+#-- v2 (domapp)
+$g2 = $FORM{'g2'};
+$v = $FORM{'v'};
+$cb = $FORM{'callback'};
+$gad = $FORM{'GetAppData'};
+$gr = $FORM{'GetRegistrars'};
+$gcl = $FORM{'GetChangeLog'};
+
+$printout =  $FORM{'printout'};
+
+$headerPrinted = 0;
+
+if (!!$gad && (length($gad) == 1) && !!$cb) {
+	$sldne = `cat /var/www/vps-net.com/htdocs/domapp/second-level-domain-name-extensions.dat`;
+	$tldne = `cat /var/www/vps-net.com/htdocs/domapp/top-level-domain-name-extensions.dat`;
+	$sldne =~ s/\r\n/,/gi;
+	$sldne =~ s/ //gi;
+	$tldne =~ s/\r\n/,/gi;
+	$tldne =~ s/ //gi;
+	@tldneS = split(/,/,$tldne);
+	@sldneS = split(/,/,$sldne);
+	print "Cache-Control: must-revalidate\n\n";
+	print $cb . "({\"success\":\"1\",\"toplevel\":".encode_json(\@tldneS).",\"secondlevel\":".encode_json(\@sldneR)."});";
+	exit;
+}
+if (!!$gr && (length($gr) == 1) && !!$cb) {
+	
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	my $sth = $dbh->prepare("SELECT Advertiser, AdText, AdImpressionURL, DisplayImage, BorderStyle, Other FROM AFFRegistrars WHERE AdSpot='DNSF' AND VirtualStatus='Active'");
+	$sth->execute or die "unable to execute query\n";
+	my @row;
+
+	my $table;
+	my $tableRow;
+	my $ref;
+
+    while ($ref = $sth->fetchrow_hashref()) {
+ 
+		while ((my $key, my $value) = each(%$ref)){
+			$value =~ s/"/\\"/g;
+		  	$value =~ s/\n//g;
+		  	$value =~ s/\r//g;
+			$tableRow .= "\"${key}\":\"${value}\",";
+		}
+		$tableRow =~ s/,$//;
+		$tableRow = "{${tableRow}},";
+		$table .= $tableRow;
+		$tableRow = "";
+    }
+	$table =~ s/,$//;
+	$result = '{"success":1,"registrars":['.$table.']}';
+	$sth->finish;
+
+	print "Cache-Control: must-revalidate\n\n";
+	use JSON;
+	if (!!@allRegistrars) {
+		#print $cb . "({\"success\":\"1\",\"registrars\":".encode_json(\@allRegistrars)."});";
+	}
+	else {
+		#print $cb . "({\"error\":\"1\",\"registrars\":\"none\"});";
+	}
+	
+	print $cb . '(' . $result . ');';
+	exit;
+}
+
+##-- associative UID = OpenCanvasDesign ID (Cart) [IF EXISTS]
+if ($OpenCanvasDesign  && ($OpenCanvasDesign ne "" && $OpenCanvasDesign ne " ")) { 
+	##-- if exists, we can checked history against it
+	$inUID = $OpenCanvasDesign; 
+}
+##-- no OpenCanvas cookie [UID] present, lets hook one up
+##-- $inUID is generated
+##-- if successful, cookie placed, header printed and returned as such
+else { $headerPrinted = &bakeMyCanvasCartCookie; }
+
+
+
+##-- domain delete request
+if (($r =~ '.') && length($r) > 4 && $inUID  && ($inUID ne "" && $inUID ne " ")) {
+	if ($r =~ m/[^a-zA-Z0-9-_\.]/) {
+		if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		print "<font color='#AF041C' style='cursor:help;' title='Domain names may contain a series of characters, including upper or lower-case letters (A-Z a-z), numbers (0-9) or dashes (-). Beyond this set of mainly alpha-numeric characters, nothing else is allowed.'>Invalid characters</font>:";
+		exit;
+	}
+	
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	my $sth = $dbh->prepare("SELECT CartID, CartContents FROM customerScarts WHERE UID = ?");
+	$sth->execute( $inUID ) or die "Error 5231\n";
+	my $row = $sth->fetchrow_arrayref;
+	my $CID = $row->[0];
+	my $cartContents = $row->[1];
+	$sth->finish;
+
+	$newCartContents = $cartContents;
+	$removeDomain = '\[domain:\{' . $r . '\}\]';
+	$removeDomainr = ''.$removeDomain.',';
+	$removeDomainl = ','.$removeDomain.'';
+	$newCartContents =~ s/$removeDomainr//gi;
+	$newCartContents =~ s/$removeDomainl//gi;
+	$newCartContents =~ s/$removeDomain//gi;
+
+	my $sea = "domain:";
+	my $countDomains = () = $newCartContents =~ /$sea/g;
+	my $sth = $dbh->prepare("UPDATE LOW_PRIORITY customerScarts SET CartContents = '$newCartContents' WHERE (CartID = ? AND UID = ?)");
+	$sth->execute( $CID, $inUID ) or die "Unable to execute query\n";
+	$sth->finish;
+	$dbh->disconnect;
+						
+	print "Cache-Control: must-revalidate\n";
+	my $ahora = today();
+	my $CCD = $ahora + 365;
+	$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+	&SetCookies('VirtualPrivateDomain',$countDomains);
+	print "\n";
+	$headerPrinted = 1;
+							
+	if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+	print "Removed";
+
+	$exit;
+}
+
+##-- domain save request, only for opencanvas cart [inUID] holders
+if (($s =~ '.') && length($s) > 4 && $inUID  && ($inUID ne "" && $inUID ne " ")) {
+	if ($s =~ m/[^a-zA-Z0-9-_\.]/) {
+		if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		print "<font color='#AF041C' style='cursor:help;' title='Domain names may contain a series of characters, including upper or lower-case letters (A-Z a-z), numbers (0-9) or dashes (-). Beyond this set of mainly alpha-numeric characters, nothing else is allowed.'>Invalid characters</font>:";
+		exit;
+	}
+	else {
+		#if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		#print "$s";
+		#exit;
+		$d = $s;
+	}
+}
+
+
+##-- domain save request, only for opencanvas cart [inUID] holders
+if ((!!$gcl) && (length($gcl) == 1)) {
+	$changeLog = `cat ../domapp/change.log`;
+	if ($changeLog =~ "Fixes" || $changeLog =~ "Updates" || $changeLog =~ "Pending") {
+		if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		print $changeLog;
+		exit;
+	}
+}
+
+
+##-- domain save request, only for opencanvas cart [inUID] holders
+if (($s2 =~ '.') && length($s2) > 4 && $inUID  && ($inUID ne "" && $inUID ne " ")) {
+	if ($s2 =~ m/[^a-zA-Z0-9-_\.]/) {
+		if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		print "<font color='#AF041C' style='cursor:help;' title='Domain names may contain a series of characters, including upper or lower-case letters (A-Z a-z), numbers (0-9) or dashes (-). Beyond this set of mainly alpha-numeric characters, nothing else is allowed.'>Invalid characters</font>:";
+		exit;
+	}
+	else {
+		#if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		#print "$s2";
+		#exit;
+		$d = $s2;
+	}
+}
+
+##-- domain list data request, only for opencanvas cart [inUID] holders
+if ((!!$g) && length($g) == 1 && $inUID && ($inUID =~ /\d/ && $inUID == int($inUID) && length(int($inUID)) > 0)) {
+	if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+	if ($VirtualPrivateDomain) {
+		#- print $VirtualPrivateDomain;
+				
+		##-- associative UID = OpenCanvasDesign ID (Cart) [IF EXISTS]
+		if ($OpenCanvasDesign  && ($OpenCanvasDesign ne "" && $OpenCanvasDesign ne " ")) {
+			$userHistoryDigFailed = 1;
+			($userHistoryDigFailed, $itemsFound) = &runThisUser;
+			
+			if ($userHistoryDigFailed == 0) {
+				use DBI;
+				my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+				$dbh->{RaiseError} = 1; 
+
+				##--doesn't matter about the first or last, only email
+				$sth = $dbh->prepare("SELECT CartContents, LastUpdated, Canvas FROM customerScarts WHERE UID = ?");
+				$sth->execute( $inUID ) or die "Error 5235\n";
+				my $row = $sth->fetchrow_arrayref;
+				$CartContents = $row->[0];
+				$LastUpdated = $row->[1];
+				$HasCanvas = $row->[2];
+				$sth->finish;
+
+				$dbh->disconnect;
+
+				print $CartContents;
+
+			}
+		}
+	}
+	else {
+		print "0";
+	}
+	exit;
+}
+
+
+##-- domain list data request, only for opencanvas cart [inUID] holders [JSON: requires callback]
+if ((!!$g2) && length($g2) == 1 && !!$cb && $inUID && ($inUID =~ /\d/ && $inUID == int($inUID) && length(int($inUID)) > 0)) {
+	$returnedData = 0;
+	if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+	if ($VirtualPrivateDomain) {
+		##-- associative UID = OpenCanvasDesign ID (Cart) [IF EXISTS]
+		if ($OpenCanvasDesign  && ($OpenCanvasDesign ne "" && $OpenCanvasDesign ne " ")) {
+			$userHistoryDigFailed = 1;
+			($userHistoryDigFailed, $itemsFound) = &runThisUser;
+			
+			if ($userHistoryDigFailed == 0) {
+				use DBI;
+				my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+				$dbh->{RaiseError} = 1; 
+
+				##--doesn't matter about the first or last, only email
+				$sth = $dbh->prepare("SELECT CartContents, LastUpdated, Canvas FROM customerScarts WHERE UID = ?");
+				$sth->execute( $inUID ) or die "Error 5235\n";
+				my $row = $sth->fetchrow_arrayref;
+				$CartContents = $row->[0];
+				$LastUpdated = $row->[1];
+				$HasCanvas = $row->[2];
+				$sth->finish;
+				$dbh->disconnect;
+
+				##-> JSON only prints if data available, JS handles otherwise
+				if ($CartContents =~ '\[domain:{' && $CartContents =~ '}\]') {
+					$CartContents =~ s/\[domain:\{//gi;
+					$CartContents =~ s/\}\]//gi;
+					@allDomains = split(/,/,$CartContents);
+					if (length(@allDomains) >= 1) {
+						use JSON;
+						print $cb . "({\"success\":\"1\",\"domains\":".encode_json(\@allDomains)."});";
+						$returnedData = 1;
+					}
+				}
+			}
+		}
+	}
+	if ($returnedData == 0) {
+		print $cb . "({\"success\":\"1\"});";
+	}
+	exit;
+}
+
+##-- domain search request, only for opencanvas cart [inUID] holders
+if (($d =~ '.') && length($d) > 4 && $inUID  && ($inUID ne "" && $inUID ne " ")) {
+
+
+	if ($d =~ m/[^a-zA-Z0-9-_\.]/) {
+		if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		if (!!$v && (length($v) == 1) && !!$cb) {
+			print $cb . "({\"error\":\"Invalid characters\",\"data\":\"Domain names may contain a series of characters, including upper or lower-case letters (A-Z a-z), numbers (0-9) or dashes (-). Beyond this set of mainly alpha-numeric characters, nothing else is allowed.\"});";
+		}
+		else {
+			print "<font color='#AF041C' style='cursor:help;' title='Domain names may contain a series of characters, including upper or lower-case letters (A-Z a-z), numbers (0-9) or dashes (-). Beyond this set of mainly alpha-numeric characters, nothing else is allowed.'>Invalid characters</font>:";
+		}
+		exit;
+	}
+
+	my $countDelimiters = ($d =~ tr/\.//); 
+
+	## WE REMOVED .xxx FOR OBVIOUS REASONS
+	## WE REMOVE .BZ and .NU, they are not working, always turns up available online
+	## THESE NO LONGER LISTED EITHER
+	if ($countDelimiters == 0) {
+		if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		if (!!$v && (length($v) == 1) && !!$cb) {
+			print $cb . "({\"error\":\"Undefined extension\",\"data\":\"Your domain must have a domain extension associated with it, some examples of domain extensions are .com, .net and .info.\"});";
+		}
+		else {
+			print "<font color='#AF041C' style='cursor:help;' title='Your domain must have a country code top-level domain (ccTLD) extension associated with it. Country code top-level domain extensions our search supports are listed below the search bar for your convenience. For instance: .com .co .info .net .org etc. Therefore, if the extension is unlisted, it is unsupported by our domain search.'>Undefined extension</font>:";
+		}
+		exit;
+	}
+	elsif (1 == 1) {
+	#elsif 	(	($countDelimiters == 1 && ($d =~ '.com' || $d =~ '.co' || $d =~ '.info' || $d =~ '.net' || $d =~ '.org' || $d =~ '.me' || $d =~ '.mobi' || $d =~ '.us' || $d =~ '.biz' || $d =~ '.tv' || $d =~ '.ca' || $d =~ '.mx' || $d =~ '.ws' || $d =~ '.ag' || $d =~ '.am' || $d =~ '.asia' || $d =~ '.at' || $d =~ '.be' || $d =~ '.cc' || $d =~ '.de' || $d =~ '.es' || $d =~ '.eu' || $d =~ '.fm' || $d =~ '.fr' || $d =~ '.gs' || $d =~ '.in' || $d =~ '.it' || $d =~ '.jobs' || $d =~ '.jp' || $d =~ '.ms' || $d =~ '.nl' || $d =~ '.se' || $d =~ '.tk' || $d =~ '.tw' || $d =~ '.vg')) ||
+	#			($countDelimiters == 2 && ($d =~ '.com.au' || $d =~ '.net.au' || $d =~ '.org.au' || $d =~ '.com.ag' || $d =~ '.net.ag' || $d =~ '.org.ag' || $d =~ '.com.br' || $d =~ '.net.br' || $d =~ '.com.bz' || $d =~ '.net.bz' || $d =~ '.com.co' || $d =~ '.net.co' || $d =~ '.nom.co' || $d =~ '.com.es' || $d =~ '.nom.es' || $d =~ '.org.es' || $d =~ '.co.in' || $d =~ '.firm.in' || $d =~ '.gen.in' || $d =~ '.ind.in' || $d =~ '.net.in' || $d =~ '.org.in' || $d =~ '.com.mx' || $d =~ '.co.nz' || $d =~ '.net.nz' || $d =~ '.org.nz' || $d =~ '.com.tw' || $d =~ '.idv.tw' || $d =~ '.org.tw' || $d =~ '.co.uk' || $d =~ '.me.uk' || $d =~ '.org.uk'))
+	#	  	) 
+	#{
+		$domainfo = "";
+		use Net::Whois::Raw;
+		#- added eval to catch errors, in turn mitigating 500 server error responses
+  		eval { $domainfo = whois(lc($d)); }; &runBadTry if $@;
+		$domainfo=~s/\t/ /gi;
+		$domainfo=~s/  / /gi;
+		$domainfo=~s/  / /gi;
+		$domainfo=~s/  / /gi;
+		if ($domainfo ne "") {
+			$domainfo = lc($domainfo);
+			$noCOM = 'no match for domain "'.$d.'"';
+			$noNET = 'no match for "'.$d.'"';
+			$noCO = 'not found: '.$d.'';
+			$noCA = 'domain status: available';
+			$noNL = ''.$d.' is free';
+			$noSE = ''.$d.' not found';
+			$noTW = 'no found';
+			$noJP = 'no match';
+			$noINFO = 'not found';
+			$noTK = 'domain name not known';
+			$noBZ = 'domain not found';
+			$noDATA = 'no data found';
+			$noENTRIES = 'no entries found';
+			$nothingFOUND = 'nothing found';
+			$noOBJECT = 'object_not_found';
+			$statusFREE = 'status: free';
+			$statusNOT = 'status: not registered';
+			$noOBJECTO = 'no_se_encontro_el_objeto';
+			$isAVAILABLE = 'status: available';
+			
+			if ((!!$printout) && length($printout) == 1) {
+				&cacheControlHeader;
+				print $domainfo;
+			}
+			
+			if (
+			$domainfo =~ $noCOM || 
+			$domainfo =~ $noNET || 
+			$domainfo =~ $noCO || 
+			$domainfo =~ $noCA || 
+			$domainfo =~ $noTW || 
+			$domainfo =~ $noJP || 
+			$domainfo =~ $noNL || 
+			$domainfo =~ $noSE || 
+			$domainfo =~ $noBZ || 
+			$domainfo =~ $noTK || 
+			$domainfo =~ $noINFO || 
+			$domainfo =~ $noDATA || 
+			$domainfo =~ $noENTRIES || 
+			$domainfo =~ $noOBJECT || 
+			$domainfo =~ $noOBJECTO || 
+			$domainfo =~ $nothingFOUND || 
+			$domainfo =~ $statusFREE || 
+			$domainfo =~ $statusNOT || 
+			$domainfo =~ $isAVAILABLE || 
+			($domainfo =~ 'status: ' && $domainfo =~ 'available' && !$domainfo =~ 'registrant')
+			) { 
+				##-- save
+				if ($s =~ '.' && length($s) > 4) {
+
+					use DBI;
+					my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+					$dbh->{RaiseError} = 1; 
+					my $sth = $dbh->prepare("SELECT CartID, CartContents FROM customerScarts WHERE UID = ?");
+					$sth->execute( $inUID ) or die "Error 5231\n";
+					my $row = $sth->fetchrow_arrayref;
+					my $CID = $row->[0];
+					my $cartContents = $row->[1];
+					$sth->finish;
+					$dbh->disconnect;
+					
+					if ($cartContents =~ $d) {
+						if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+						#-- good [didn't save since already saved, user doesn't need to know, make them think its new save :P]
+						print "You previously saved:";
+						exit;
+					}
+					elsif ($cartContents =~ m/\[/ && $cartContents =~ m/\{/ && $cartContents =~ m/:/) {
+						@newCartData = split(/,/,$cartContents);
+						push(@newCartData,'[domain:{' . $d . '}]');
+					}
+					else {
+						push(@newCartData,'[domain:{' . $d . '}]');
+					}
+
+					if (@newCartData) {
+						$myCartData = join(',',@newCartData);
+						
+						my $sea = "domain:";
+						my $countDomains = () = $myCartData =~ /$sea/g;
+
+						use DBI;
+						my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+						$dbh->{RaiseError} = 1; 
+						my $sth = $dbh->prepare("UPDATE LOW_PRIORITY customerScarts SET CartContents = '$myCartData' WHERE (CartID = ? AND UID = ?)");
+						$sth->execute( $CID, $inUID ) or die "Unable to execute query\n";
+						$sth->finish;
+						$dbh->disconnect;
+						
+							print "Cache-Control: must-revalidate\n";
+							my $ahora = today();
+							my $CCD = $ahora + 365;
+							$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+							&SetCookies('VirtualPrivateDomain',$countDomains);
+							print "\n";
+							$headerPrinted = 1;
+					}
+
+					if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+					print "$s";
+					exit;
+				}
+				##-- search
+				else {
+					if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+					if (!!$v && (length($v) == 1) && !!$cb) {
+						print $cb . "({\"success\":\"Available\",\"data\":\"Available: ".$d."\"});";
+					}
+					else {
+						print "Available";
+					}
+					exit;
+				}
+			}
+			else {
+				if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+				if (!!$v && (length($v) == 1) && !!$cb) {
+					print $cb . "({\"error\":\"Taken\",\"data\":\"Taken: ".$d."\"});";
+				}
+				else {
+					print "Taken";
+				}
+				exit;
+			}
+		}
+		else {
+			if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+			if (!!$v && (length($v) == 1) && !!$cb) {
+				print $cb . "({\"error\":\"Error\",\"data\":\"General error\"});";
+			}
+			else {
+				print "Error";
+			}
+			exit;
+		}
+	}
+	elsif ($countDelimiters != 0) {
+		if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+		if (!!$v && (length($v) == 1) && !!$cb) {
+			print $cb . "({\"error\":\"Invalid extension\",\"data\":\"We only support the country code top-level domain extensions listed below the search bar. For instance: .com .co .info .net .org etc. Anything unlisted is unsupported by our search system.\"});";
+		}
+		else {
+			print "<font color='#AF041C' style='cursor:help;' title='We only support the country code top-level domain extensions listed below the search bar. For instance: .com .co .info .net .org etc. Anything unlisted is unsupported by our search system.'>Invalid extension</font>:";
+		}
+		exit;
+	}
+
+	if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+	if (!!$v && (length($v) == 1) && !!$cb) {
+		print $cb . "({\"error\":\"error\",\"data\":\"error\"});";
+	}
+	else {
+		print "error";
+	}
+	exit;
+}
+
+if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+print "error";
+
+sub runBadTry {
+	if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+	if (!!$v && (length($v) == 1) && !!$cb) {
+		print $cb . "({\"error\":\"error\",\"data\":\"error\"});";
+	}
+	else {
+		print "error";
+	}
+	exit;
+}
+sub cacheControlHeader {
+	if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; }
+}
+exit;

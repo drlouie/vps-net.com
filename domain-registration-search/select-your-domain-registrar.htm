@@ -1,0 +1,833 @@
+#!/usr/bin/perl -s
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+}
+else { $HTTPRoot = '/var/www/vps-net.com/htdocs/'; }
+
+###############
+##<-- 2k10 -->##
+###############
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+require($HTTPRoot."q.nsp");
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+##--power functions
+require($HTTPRoot."vfunc.nsp");
+
+
+
+
+##--
+##-- COMMMUNICATION: FORM  (AJAX ASSISTED)
+##--
+
+
+$template = $FORM{'t'};
+$version = $FORM{'v'};
+$xit = $FORM{'x'};
+if (($template && ($template =~ m/[^a-zA-Z0-9]/))
+|| ($version && ($version =~ m/[^0-9]/))
+|| ($xit && ($xit =~ m/[^0-9]/))
+){
+	##--> Hack attempt / or bad input
+	print "Cache-Control: must-revalidate\n\n";
+	print "<script language=\"Javascript\" type=\"text/javascript\">alert('Error 2150: It is advisable you take note of this error and report it to the site administrator. Thanks.');if (!(!parent.activeTemplates)) { parent.\$.fancybox.close(); } else { document.location.href = '/'; }</script>";
+	exit;
+}
+
+
+	
+	###-- setup OpenCanvas package params
+	#- Price
+	#-$OCPrices = "529.75|942.60|1,475.00";
+	#- No Price
+	$OCPrices = "||";
+	@allCanvasPrices = split(/\|/, $OCPrices);
+	$OCv1Price = '$'.$allCanvasPrices[0];
+	$OCv2Price = '$'.$allCanvasPrices[1];
+	$OCv3Price = '$'.$allCanvasPrices[2];
+	push(@losCanvasPacks,"");
+	#- Price
+	#- push(@losCanvasPacks,"OpenCanvas eXpress [$OCv1Price]");
+	#- push(@losCanvasPacks,"OpenCanvas Business [$OCv2Price]");
+	#- push(@losCanvasPacks,"OpenCanvas Advanced [$OCv3Price]");	
+	#- No Price
+	push(@losCanvasPacks,"OpenCanvas eXpress");
+	push(@losCanvasPacks,"OpenCanvas Business");
+	push(@losCanvasPacks,"OpenCanvas Advanced");	
+
+	$elTitulo = 'Domain Registration';
+
+	##-- 
+	##-- defeat warnings [Use of uninitialized value]
+	##-- 
+	if (!$template) { $template = ""; }
+	if (!$version) { $version = ""; }
+	$TN = "";
+	$trueTN = "";
+	$feedbackCSS = "";
+	$myact = "";
+	$myactstate = "";
+	$cualScript = "";
+	$losCategories = "";
+	$processingScript = "";
+	$closingScript = "";
+
+
+	##-- zopim active notes
+	#if ($myact eq "question" || $myact eq "service") {
+	#	$zopimActive = '$zopim.livechat.setNotes(\'Currently selected: \' + document.VirtualPrivateComment.VirtualPrivateSelectorOutput.value +  \' ::::::::::::::: All selected: \'+ whosChanged + \'\');';
+	#}
+
+	#-- 370 262 [same as login.htm]
+	$backgroundHeight = '262';
+	$backgroundHeight = 'h'.$backgroundHeight;
+
+##-- user status bar template (top-right corner)
+$userStatusBar = "<div id=\"UserStatus\" class=\"activeUserData\" style=\"position:absolute;right:8px;top:3px;z-index:100;\"><nobr>%%USERSTATUS%%</nobr></div>";
+
+
+$domainsSaved = 0;
+$domainDomains = '';
+##-- if domains saved
+if ($VirtualPrivateDomain && ($VirtualPrivateDomain ne "" && $VirtualPrivateDomain ne " ")) {
+	$domainsSaved = $VirtualPrivateDomain;
+	if (int($domainsSaved) >= 2) {
+		$domainDomains = 's';
+	}
+	##-- more than three give icons more room to right for scrollbar
+	if (int($domainsSaved) >= 4) {
+		$moreThanThree = 'left:-15px;';
+	}
+	use Lingua::EN::Nums2Words;
+	$domainsSavedWorded = lc(num2word($domainsSaved));
+}
+
+##-- associative UID = OpenCanvasDesign ID (Cart) [IF EXISTS]
+if ($OpenCanvasDesign  && ($OpenCanvasDesign ne "" && $OpenCanvasDesign ne " ")) {
+	##-- if exists, we can checked history against it
+	$inUID = $OpenCanvasDesign;
+	$userHistoryDigFailed = 1;
+	($userHistoryDigFailed, $itemsFound) = &runThisUser;
+	
+	if ($userHistoryDigFailed == 0) {
+		use DBI;
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","c4!nCh|aT0n3555") or die "No data access: <b>VPS-NET</b>\n"; 
+		$dbh->{RaiseError} = 1; 
+
+		##--doesn't matter about the first or last, only email
+		$sth = $dbh->prepare("SELECT CartContents, LastUpdated, Canvas FROM customerScarts WHERE UID = '$inUID'");
+		$sth->execute or die "Error 5234\n";
+		my $row = $sth->fetchrow_arrayref;
+		$CartContents = $row->[0];
+		$LastUpdated = $row->[1];
+		$HasCanvas = $row->[2];
+		$sth->finish;
+
+		$dbh->disconnect;
+	}
+}
+
+
+##-- find all saved domain names
+$oddEven = 'odd';
+@todosContents = split(/\],\[/,$CartContents);
+foreach $unContent (@todosContents) {
+	if ($unContent =~ 'domain:{' && $unContent =~ '}') {
+		$unContent=~s/domain:\{//gi;
+		$unContent=~s/\}//gi;
+		$unContent=~s/\[//gi;
+		$unContent=~s/\]//gi;
+		$contentID = $unContent;
+		$contentID=~s/\.//gi;
+		push(@losDomains,$unContent);
+		$losDomains = $losDomains . "<tr class='$oddEven' id='$contentID'><td width='100%'><div onClick='javascript:checkDomainName(this);'>$unContent</div></td><td><a class='minidomain active' title='Click to remove: $unContent' onClick='javascript:deleteDomainName(this);'></a></td></tr>";
+		if ($oddEven eq 'odd') { $oddEven = 'even'; }
+		else { $oddEven = 'odd'; }
+	}
+}
+
+
+$domainNameStack = join(",", @losDomains);
+
+$domainTableFoot = "<br><div style='padding:0px;color:#555555;'><div style='font-weight:bold;padding-bottom:3px;padding-left:5%;width:90%;'><a title='Curious About Domain Names? Want to know more about domain names, where the concept of naming domains for the Internet and the World-Wide-Web came from, or other information relevant to domains and related technologies? Click now to learn more from Wikipedia.' style='cursor:help;text-decoration:underline;' onclick='if(!(!parent.runWikiBoard)) { parent.runWikiBoard(this); }else { document.location.href = this.rel; }' rel='/wikipedia.htm?st=Domain_name' >Domain Name</a> Actions:</div><ol type='1'><li style='margin-top:3px;margin-bottom:3px;'>Click domain to check availability</li><li style='margin-top:3px;margin-bottom:3px;'>Click shield(<span style='position:relative;top:2px'><img src='/web_design_imagery/website_design_communications/domain.png' width='10' height='10' border='0'></span>) to remove domain</li></ol></div>";
+$domainNameTable = "<span id=\"DomainSettings\" class=\"UserStatus Activity\" title=\"<div style='padding:0px;font-weight:bold;color:#555555;'>Domain Name$domainDomains You Have Saved:</div><br><div class='Domain-Registration-Pending'><table width='100%' class='DomainTable' cellpadding='3' cellspacing='0' border='0'>$losDomains</table></div>".$domainTableFoot."\"><a class=\"userdomain\"></a></span>";
+$pendingRegistration = "<span id=\"PendingRegistration\" class=\"UserStatus\" title=\"<div id='PenReg'>It is advisable you quickly register domain name".$domainDomains." to make sure no one else does. Regardless of how strongly we advise you to register your domain name".$domainDomains." immediately, we will save the domain".$domainDomains." you found so long as still available for registration.<br><br>To register your domain name".$domainDomains.", simply 'choose' one of the registrars, <b class=godaddy>GoDaddy</b> or <b class=one-and-one>1and1</b>, at which time we will automatically forward your domain name".$domainDomains." to the registrar of your choice. Or, if you'd like, you can click on the 'canvas' icon to purchase your <b>OpenCanvas</b> website design package, we will then register your domain name".$domainDomains." for you.</div>\" onclick=\"\">($domainsSaved) Domain".$domainDomains." Pending Registration<a class=\"userarrow\"></a></span>";
+$pendingCanvas = "<span id=\"UserSettings\" class=\"UserStatus ActiveUser\" title=\"Considering you currently have an <b>Open<font style='color:#266899;'>Canvas</font></b> project running, we can take payment for it and in-turn register your domain name".$domainDomains." for you, as part of the services associated with your Open<font style='color:#266899;'>Canvas</font> Website Design Package.<br><br>As a gesture of gratitude for your Open<font style='color:#266899;'>Canvas</font> Website Design Package purchase, you receive <b>one free domain name for one year</b>.<br><br>Alternately, you can by-pass this step: Just 'choose' one of the registrars, <b class=godaddy>GoDaddy</b> or <b class=one-and-one>1and1</b>, at which time we will automatically forward your domain name".$domainDomains." to the registrar of your choice.\"><a class=\"usercanvas\"></a></span>";
+
+##-- if canvas cookie
+if ($inUID && $HasCanvas ne "") {
+	$myUserStatus = "
+	".$pendingRegistration."
+	".$pendingCanvas."
+	".$domainNameTable."";
+}
+##-- no canvas
+else {
+	$myUserStatus = "
+	".$pendingRegistration."
+	".$domainNameTable."";
+}
+
+$userStatus = $userStatusBar;
+$userStatus =~ s/%%USERSTATUS%%/$myUserStatus/gi;
+
+
+
+### HEADER WAS, MIGHT HAVE BEEN AN IE ISSUE, DOUBLE-CHECK LATER:
+##<?xml version="1.0"?>
+##<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+##<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+### FOR NOW, since <?xml version="1.0"?> is not good, change to:
+print qq~
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" dir="ltr">
+<head>
+<title></title>
+<meta http-equiv="X-UA-Compatible" content="IE = 8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Style-Type" content="text/css" />
+		<link rel="stylesheet" type="text/css" href="/yui.css">
+		<link rel="stylesheet" type="text/css" href="/javascript-jquery-extension_fancybox-1.3.1.css">
+		<link rel="stylesheet" type="text/css" href="/jquery.bubblepopup.v2.3.1.css">
+		<link rel="stylesheet" type="text/css" href="/interface_design_templater.php?q=1&p=CHCSS">
+		<style type="text/css">
+			body { 
+				background:url(/web_design_imagery/accountModel-background-$backgroundHeight.png); background-position:bottom right; background-attachment: fixed; background-repeat: no-repeat; 
+				overflow:hidden;
+			}
+			.welcomeText { font-size:12px;font-family:verdana,arial,helvetica;color:#000000; line-height:16px; }
+			
+			#panel { display:none; position:absolute;right:0px;top:0px;height:100%;width:100%;z-index:25; overflow-x:hidden;overflow-y:hidden; background:#FFFFFF url(/web_design_imagery/accountModel-background-newAccount.png); background-position:bottom right; background-attachment: fixed; background-repeat: no-repeat; }
+			#panelContent { display:none; position:absolute;right:0px;top:0px;height:100%;width:100%;z-index:25; overflow-x:hidden;overflow-y:hidden; background:#FFFFFF url(/web_design_imagery/accountModel-background-newAccount.png); background-position:bottom right; background-attachment: fixed; background-repeat: no-repeat; }
+			#content { visibility:visible;display:visible; }
+
+			.activeUserData span { font-size:11px; background:transparent; border: none; padding: 1px 3px 1px 3px; color: #555555; cursor: default; display: block; float: left; height: 19px; margin: 3px 0 3px 0; position: relative; white-space: nowrap; position;relative; }
+			.activeUserData span:hover { cursor:pointer; border: none; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; padding: 1px 3px 1px 3px; }
+
+			span .userarrow, span .userconfig, span .userdomain, span .usercanvas { margin: 0; outline: none; }
+			.activeUserData span .userarrow { cursor: pointer; display: inline-block; padding:2px; margin-top: 1px; margin-left: 1px; background: url(/web_design_imagery/website_design_communications/arrow-dark.png) -1px 0px no-repeat; height: 9px; width: 9px; border:none; }
+			.activeUserData span:hover .userarrow { padding:2px; background: url(/web_design_imagery/website_design_communications/arrow-dark-over.png) -1px 0px no-repeat; border:none; }
+
+			.activeUserData span .userconfig { cursor: pointer; display: inline-block; padding:0; background: url(/web_design_imagery/website_design_communications/gear_dark.png) 0 1px no-repeat; height:17px; width:16px; border:none; }
+			.activeUserData span:hover .userconfig { background: url(/web_design_imagery/website_design_communications/gear_dark_dropdown.png) 0 1px no-repeat; border:none; height:17px; width:16px; }
+
+			.activeUserData span .userdomain { cursor: pointer; display: inline-block; padding:0; background: url(/web_design_imagery/website_design_communications/shield_dark.png) 0 1px no-repeat; height:17px; width:16px; border:none; }
+			.activeUserData span:hover .userdomain { background: url(/web_design_imagery/website_design_communications/shield_dark_dropdown.png) 0 1px no-repeat; border:none; height:17px; width:16px; }
+
+			.activeUserData span .usercanvas { cursor: pointer; display: inline-block; padding:0; background: url(/web_design_imagery/website_design_communications/canvas_dark.png) 0 1px no-repeat; height:17px; width:16px; border:none; }
+			.activeUserData span:hover .usercanvas { background: url(/web_design_imagery/website_design_communications/canvas_dark_dropdown.png) 0 1px no-repeat; border:none; height:17px; width:16px; }
+
+			.activeUserData span.config { padding: 1px 3px 1px 3px; }
+			.activeUserData span.config:hover { border:0; padding: 1px 3px 1px 3px; }
+
+
+			.active { margin: 0px; outline: none; }
+			.minidomain { cursor: pointer; display: inline-block; padding:2px; background: url(/web_design_imagery/website_design_communications/domain.png) 1px 1px no-repeat; background-repeat: no-repeat; height: 16px; width: 16px; border:0; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; }
+			.minidomain:hover { padding:2px; background: url(/web_design_imagery/website_design_communications/domain-delete.png) 1px 1px no-repeat; border:0; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; }
+
+			.minisearch { cursor: pointer; display: inline-block; padding:2px; background: url(/web_design_imagery/website_design_communications/search.png) 1px 1px no-repeat; background-repeat: no-repeat; height: 16px; width: 16px; border:0; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; }
+			.minisearch:hover { padding:2px; background: url(/web_design_imagery/website_design_communications/search_domains.png) 1px 1px no-repeat; border:0; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; }
+
+
+			.Domain-Registration-Pending, .Domain-Name-Registration-Registrars {
+				border: #D4EDF7 2px solid;
+				-moz-border-radius:3px; 
+				-webkit-border-radius:3px; 
+				border-radius:3px; 
+				font-size:11px;
+			}
+			.Domain-Name-Registration-Registrars {
+				border: #D4EDF7 2px solid;
+			}
+			.Domain-Registration-Pending table, .Domain-Name-Registration-Registrars table {
+				min-width:220px;
+				width:100%;
+			}
+			
+			.Domain-Registration-Pending td.nodomains { padding:2px 5px 2px 5px; }
+			.Domain-Registration-Pending td.nodomains, .Domain-Registration-Pending td a.nodomains { color:#C0771D; cursor:pointer; }
+			 .Domain-Registration-Pending tr:hover td.nodomains { background:#D4EDF7; }
+			.Domain-Registration-Pending tr:hover td.nodomains, .Domain-Registration-Pending tr:hover td a.nodomains { color:#232323; text-decoration:none; }
+
+			.Domain-Registration-Pending td { color:#C0771D; padding:2px 5px 2px 5px; cursor:pointer; }
+			.Domain-Registration-Pending tr:hover td { color:#232323; }
+			.Domain-Registration-Pending tr.odd { background:#FAFDFE; }
+			.Domain-Registration-Pending tr.even { background:#EDF8FC; }
+			.Domain-Registration-Pending tr.odd:hover, .Domain-Registration-Pending tr.even:hover { background:#D4EDF7; }
+
+			.Domain-Name-Registration-Registrars td { padding:2px 5px 2px 5px; cursor:pointer; }
+
+			.godaddy { color:#F68428; }
+			.network-solutions { color:#648C1C; }
+			.one-and-one {color:#00327f;}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Register-Domain-Names-With-One-And-One *:focus, #Register-Domain-Names-With-Registrar-GoDaddy-LLC *:focus {
+	outline: none;
+}
+
+#Register-Domain-Names-With-One-And-One, #Register-Domain-Names-With-Registrar-GoDaddy-LLC {
+	padding:18px 0 0 36px;
+	position: relative;
+	font: normal 12px/16px Arial, sans-serif;
+	color: #111;
+	list-style:none;
+	margin:0;
+}
+
+#Register-Domain-Names-With-One-And-One li, #Register-Domain-Names-With-Registrar-GoDaddy-LLC li {
+    height: auto;
+    position: relative;
+}
+
+#Register-Domain-Names-With-One-And-One li#submit input, #Register-Domain-Names-With-Registrar-GoDaddy-LLC li#submit input {
+	position:relative;
+	left:-10px;
+	top:5px;
+	float:left;
+	background: #222 url(/web_design_imagery/btn-overlay.png) repeat-x top left;
+	display: inline-block; 
+	padding: 10px 20px 10px 20px; 
+	color: #fff; 
+	text-decoration: none;
+
+	border-radius: 5px; 
+	-moz-border-radius: 5px; 
+	-webkit-border-radius: 5px;
+
+	-moz-box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+	-webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+	box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+
+	text-shadow: 0 -1px 1px rgba(0,0,0,0.25);
+
+	border: 1px solid #FFF;
+	cursor: pointer;
+	background-color:#00327f;
+	font-weight:bold;
+	margin-bottom:18px;
+}
+#Register-Domain-Names-With-Registrar-GoDaddy-LLC li#submit input {
+	background-color:#F68428;
+	float:right;
+	left:auto;
+	right:25px;
+}
+#Register-Domain-Names-With-One-And-One .bbl_buttons a:hover, 
+#Register-Domain-Names-With-One-And-One li#submit input:hover, 
+#Register-Domain-Names-With-Registrar-GoDaddy-LLC .bbl_buttons a:hover, 
+#Register-Domain-Names-With-Registrar-GoDaddy-LLC li#submit input:hover {
+	 background-color: #111; 
+	 color: #fff;
+}
+#Register-Domain-Names-With-One-And-One .bbl_buttons a:active,
+#Register-Domain-Names-With-Registrar-GoDaddy-LLC .bbl_buttons a:active {
+	top:1px;
+}
+#Find-Your-Domain {
+
+}
+
+
+/*overcome scrollbar issue*/
+.minidomain {
+	position:relative;
+	$moreThanThree
+}
+/*.DomainTable*/
+.Domain-Registration-Pending {
+	max-height:72px;
+	overflow-x:hidden;
+}
+
+
+
+			/* old clearfix *//* .clearfix::after { visibility: hidden; clear: both; display: block; line-height: 0; height: 0; font-size: 0; content: "."; } */
+			/* new clearfix */
+			.clearfix:after { visibility: hidden; display: block; font-size: 0; content: " "; clear: both; height: 0; }
+			* html .clearfix             { zoom: 1; } /* IE6 */
+			*:first-child+html .clearfix { zoom: 1; } /* IE7 */
+
+		</style>
+		<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-library-jquery-1.4.2.min.js"></script>
+		<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-jquery-extension_bubblepopup.v2.3.1.min.js"></script>
+		<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension-container_core-min.js"></script>
+		<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension_connection-min.js"></script>
+		<script language="javascript" type="text/javascript" src="/interface_design_templater.php?q=1&p=CHS"></script>
+		<script language="javascript" type="text/javascript">
+		var loadImage = '<span style="position:relative;top:2px;left:0px;" title="Loading, please wait..."><img src="/web_design_imagery/loadCircle.gif" width="18" height="15" border="0" alt="Loading, please wait..."></span>';
+		var hasClicked = 0;
+		var runClick = function(quien,action) {
+			hasClicked = 1;
+			// none is associated with final run, meaning buttons not available, hidden+disabled
+			if (quien!='none') { 
+				quien.value = action; 
+				//document.VirtualPrivateComment.CanvasSubmit.disabled = 1;
+				//document.VirtualPrivateComment.CanvasCancel.disabled = 1;
+			}
+
+			if (action == 'Canceling' || action == 'Virtual-Private-Wave') {
+				$closeAct
+			}
+			$processingScript
+			$closingScript
+		};
+
+		// all communications/forms get caughtEscape functionality
+		var caughtEscape = 0;
+		var imFocused = '';
+		function checkEscape(e,val) {
+			if(!e) var e = window.event;
+			if (e.which) { key = e.which; }
+			else if (e.keyCode) { key = e.keyCode; }
+			var eValue = val.value;
+			if (caughtEscape == 0 && key == 27) {
+				imFocused = \$("*:focus").attr("id");
+				caughtEscape = 1;
+				\$("#processKiller").show('fast');
+				\$("#YesClose").focus();
+				// \$(".zopim").animate({"left": "-=400px"}, "fast");
+			}
+			//-- if showing close: yes/no option, and escapes, hide the prompt
+			else if (caughtEscape == 1) { runEscape('No'); }
+		}
+		function runEscape(way) {
+			if (way == 'No') {
+				caughtEscape = 0;
+				\$("#processKiller").hide('fast');
+				// hide zopim by moving down out of view [no need for it anymore, changed z-index for processKiller to 100000000 [topping zopim]]
+				//\$(".zopim").animate({"bottom": "-=40px"}, "fast");
+				\$("#"+imFocused+"").focus();
+				imFocused = '';
+			}
+			else {
+				if (!(!parent.fancyLoad)) { parent.\$.fancybox.close(); } 
+				else { parent.location.href = '/'; }
+			}
+		}
+
+		//.domain-name-search-error {background: url(/web_design_imagery/website_design_communications/domain-name-error.png) no-repeat 6px 5px; }
+		//.domain-name-search-available {background: url(/web_design_imagery/website_design_communications/domain-name-available.png) no-repeat 6px 5px; }
+		//.domain-name-search-taken {background: url(/web_design_imagery/website_design_communications/domain-name-taken.png) no-repeat 6px 5px; }
+		//.domain-name-search-saved {background: url(/web_design_imagery/website_design_communications/domain-name-saved.png) no-repeat 6px 5px; }
+
+		var checkingDomain = '';
+		var checkDomainName = function(domain) {
+			var myDomain = \$(domain).html();
+			if (checkingDomain == '') {
+				// walk around DOM find our target
+				// var myIcon = \$(domain).parent().parent().find('.minidomain').parent().html();
+				myIcon = \$(domain).parent().parent().find('.minidomain');
+				myIcon.css('background','url(/web_design_imagery/loadCircle.gif) 1px 1px no-repeat').attr('title','Checking availability for domain: '+myDomain+'');
+				checkingDomain = myDomain;
+				var lUrl = '/domain-registration-search/find-my-domain.htm?d='+myDomain+'';
+				\$(domain).html('<div id="domain-name-search">'+myDomain+'</div>');
+				\$(domain).find('#domain-name-search').fadeOut('fast',function(){
+					\$(domain).html('<div id="domain-name-search">checking...</div>');
+				});
+				var callback = {
+					success: function(o) {
+						if(o.responseText !== undefined) {
+							if (o.responseText.indexOf('Taken') != -1) {
+								myIcon.css('background','url(/web_design_imagery/website_design_communications/domain-name-taken.png) 1px 1px no-repeat').attr('title','Domain no longer available: '+myDomain+', please remove it from your list.');
+								\$(domain).html('<div id="domain-name-search" class="domain-name-search-taken">taken</div>');
+								window.setTimeout(function(){ 
+									\$(domain).find('#domain-name-search').fadeOut('fast',function(){
+										\$(domain).html(myDomain);
+										myIcon.attr('title','Domain no longer available, click to remove: '+myDomain+'');
+										// dont reset icon on taken (leave as flagged)
+										// myIcon.parent().html('<a class="minidomain active" title="Click to remove: '+myDomain+'" onClick="javascript:deleteDomainName(this);"></a>');
+										checkingDomain = '';
+									});
+						  		}, 2000);
+							}
+							else if (o.responseText.indexOf('Available') != -1) {
+								myIcon.css('background','url(/web_design_imagery/website_design_communications/star_boxed_half.png) 1px 1px no-repeat').attr('title','Domain still available: '+myDomain+', you should register it before someone else does.');
+								\$(domain).html('<div id="domain-name-search" class="domain-name-search-available">available</div>');
+								window.setTimeout(function(){ 
+									\$(domain).find('#domain-name-search').fadeOut('fast',function(){
+										\$(domain).html(myDomain);
+										myIcon.parent().html('<a class="minidomain active" title="Click to remove: '+myDomain+'" onClick="javascript:deleteDomainName(this);"></a>');
+										checkingDomain = '';
+									});
+					  			}, 2000);
+							}
+							else {
+								myIcon.css('background','url(/web_design_imagery/website_design_communications/domain-name-error.png) 1px 1px no-repeat').attr('title','Error: ('+o.responseText+')');
+								if (o.responseText.indexOf('Invalid characters') != -1 || o.responseText.indexOf('Undefined extension') != -1 || o.responseText.indexOf('Invalid extension') != -1) {
+									\$(domain).html('<div id="domain-name-search" class="domain-name-search-error">'+o.responseText+'</div>');
+								}
+								else {
+									\$(domain).html('<div id="domain-name-search" class="domain-name-search-error">Try again!</div>');
+								}
+								window.setTimeout(function(){ 
+									\$(domain).find('#domain-name-search').fadeOut('fast',function(){
+										\$(domain).html(myDomain);
+										// dont reset icon on error (leave as flagged)
+										// myIcon.parent().html('<a class="minidomain active" title="Click to remove: '+myDomain+'" onClick="javascript:deleteDomainName(this);"></a>');
+										checkingDomain = '';
+									});
+					  			}, 2000);
+							}
+						}
+					},
+					failure: function(o) {
+						myIcon.css('background','url(/web_design_imagery/website_design_communications/domain-name-error.png) 1px 1px no-repeat').attr('title','Verification did not initialize, please try again later.');
+						\$(domain).html('<div id="domain-name-search" class="domain-name-search-error">Try again!</div>');
+						window.setTimeout(function(){ 
+							\$(domain).find('#domain-name-search').fadeOut('fast',function(){
+								\$(domain).html(myDomain);
+								myIcon.parent().html('<a class="minidomain active" title="Click to remove: '+myDomain+'" onClick="javascript:deleteDomainName(this);"></a>');
+								checkingDomain = '';
+							});
+			  			}, 2000);
+
+					}
+				};
+				var transaction = YAHOO.util.Connect.asyncRequest("GET", lUrl, callback, null);
+				return false;
+			}
+		};
+		var DomainsSaved = $domainsSaved;
+		var deleteDomainName = function(mein){
+			if (checkingDomain == '') {
+			// var theTR = \$(mein).parent().parent().html();
+			// var domainTABLE = \$(mein).parent().parent().parent().parent().parent().html();
+			// alert(\$('.Activity').GetBubblePopupMarkup());
+			var meinDomain = \$(mein).parent().parent().children().children().html();
+			contentID = meinDomain.replace(/\\./g,'');
+			var theTR =\$('#'+contentID+'').clone().wrap('<p>').parent().html();
+			if (theTR.indexOf('Click to remove: ')) {
+
+				var lUrl = '/domain-registration-search/find-my-domain.htm?r='+meinDomain+'';
+
+				var callback = {
+					success: function(o) {
+						if(o.responseText !== undefined) {
+							if (o.responseText.indexOf('Removed') != -1) {
+
+								// make new domain name stack from netsol form for netsol and godaddy stack
+								var oldDomainStack = ''+\$('input#domainNames').val()+'';
+								newDomainStack = oldDomainStack.replace(''+meinDomain+',','').replace(','+meinDomain+'','').replace(''+meinDomain+'','');
+								//netsol
+								\$('input#domainNames').val(''+newDomainStack+'');
+								//godaddy
+								\$('input#domainToCheck').val(''+newDomainStack+'');
+
+								var DomainActivityBubbleHTML = \$('.Activity').GetBubblePopupMarkup();
+								//clean up the any messy markup spacing
+								DomainActivityBubbleHTML = ''+DomainActivityBubbleHTML.replace(/\\t/g,'').replace(/> </g,'><')+'';
+								DomainsSaved--;
+
+								//var PendingRegistrationBubbleHTML = \$('#PendingRegistration').GetBubblePopupMarkup();
+								// update pending registration menu
+								penReg = ''+\$('#PendingRegistration').html()+'';
+								\$('#PendingRegistration').html(penReg.replace('('+(DomainsSaved+1)+')','('+(DomainsSaved)+')'));
+
+
+								if (DomainsSaved == 0) {
+									DomainTable = \$('.DomainTable').html().replace(theTR,'<tr><td class="nodomains" width="100%"><a href="/domain-registration-search/internet-domain-name-registration.php" target="_top" class="nodomains" title="You no longer have any domains names to register, would you like to search for a domain to register?">None: Search Domains</a></td><td class="nodomains"><a class="minisearch active" href="/domain-registration-search/internet-domain-name-registration.php" target="_top" title="You no longer have any domains names to register, would you like to search for a domain to register?"></a></td></tr>');
+									// -- replace TR with new content
+									\$('.DomainTable').html(DomainTable);
+									newDomainTable = "<table width='100%' class='DomainTable' cellpadding='3' cellspacing='0' border='0'>"+DomainTable+"</table>";
+									\$('.Activity').SetBubblePopupInnerHtml("<div style='padding:5px 4px 3px 4px; font-size:9px;max-width:250px;font-family:verdana,arial,helvetica;'><div style='padding:0px;font-weight:bold;color:#555555;'>Domain Names You Have Saved:</div><br><div class='Domain-Registration-Pending'>"+newDomainTable+"</div>$domainTableFoot</div>");
+									\$('#PendingRegistration').RemoveBubblePopup();
+									\$('#PendingRegistration').hide('slow',function(){
+										// canvas
+										\$('#UserSettings').RemoveBubblePopup();
+										\$('#UserSettings').hide('slow');
+									});
+								}
+								else {
+									// if coming down to three remove extra spacing that compensates for scrollbar area
+									if (DomainsSaved == 3) {
+										\$('.minidomain').css('left','0px');
+									}
+									// -- remove the TR
+									\$('#'+contentID+'').remove();
+									DomainTable = \$('.DomainTable').html().replace(theTR,'');
+									newDomainTable = "<table width='100%' class='DomainTable' cellpadding='3' cellspacing='0' border='0'>"+DomainTable+"</table>";
+									\$('.Activity').SetBubblePopupInnerHtml("<div style='padding:5px 4px 3px 4px; font-size:9px;max-width:250px;font-family:verdana,arial,helvetica;'><div style='padding:0px;font-weight:bold;color:#555555;'>Domain Names You Have Saved:</div><br><div class='Domain-Registration-Pending'>"+newDomainTable+"</div>$domainTableFoot</div>");
+								}
+				
+				
+								// update parent domain registration main menu
+								if (!(!parent.SavedDomains)) {
+									//alert(parent.SavedDomains);
+									parent.SavedDomains = DomainsSaved;
+									parent.swapDomainState();
+								}
+
+							}
+						}
+					}
+				};
+				var transaction = YAHOO.util.Connect.asyncRequest("GET", lUrl, callback, null);
+				return false;
+
+			}
+			}
+		};
+
+		var registerWithNetworkSolutions = function(netsol){
+			if (checkingDomain == '') {
+				\$(netsol).find('input#submit').attr("disabled", "disabled");
+				\$(netsol).find('input#submit').css('background-color','#111');
+				\$(netsol).find('input#submit').val('SSL Coupon Code: PCMKT00683');
+				return true;
+			}
+		};
+		var registerWithOneAndOne = function(oneandone){
+			if (checkingDomain == '') {
+				\$(oneandone).find('input#submit').attr("disabled", "disabled");
+				\$(oneandone).find('input#submit').css('background-color','#111');
+				\$(oneandone).find('input#submit').val('SSL Coupon Code: Not Needed');
+				if (DomainsSaved == 1) {
+					return true;
+				}
+				else {
+					//--wont work with multiple until workaround created, for now only push one domain using dynamic form
+					theDomainStack = ''+\$('input.domainToCheck').val()+'';
+					allDomains = theDomainStack.split(',');
+					\$('#OneAndOneDyno').html('<form action="https://www.dpbolvw.net/interactive" method="get" target="One-And-One"><input type="hidden" name="domain" id="domainNames" value="'+allDomains[0]+'"><input type="hidden" name="aid" value="10933941"/><input type="hidden" name="pid" value="3747342"/><input type="hidden" name="url" value="https://order.1and1.com/dcjump?ac=OM.US.US469K02463T2103a"/></form>');
+					\$('#OneAndOneDyno').find('form').submit();
+					return false;
+				}
+
+			}
+		};
+		
+		var registerWithGodaddy = function(godaddy){
+			if (checkingDomain == '') {
+				\$(godaddy).find('input#submit').attr("disabled", "disabled");
+				\$(godaddy).find('input#submit').css('background-color','#111');
+				\$(godaddy).find('input#submit').val('SSL Coupon Code: cjcrmn25s');
+				
+				if (DomainsSaved == 1) {
+					return true;
+				}
+				else {
+					//--wont work with multiple until workaround created, for now only push one domain using dynamic form
+					godaddyDomainStack = ''+\$('input.domainToCheck').val()+'';
+					allDomains = godaddyDomainStack.split(',');
+					\$('#GoDaddyDyno').html('<form action="https://www.tkqlhce.com/interactive"  method="GET" target="GoDaddy"><input type="hidden" name="domainToCheck" value="'+allDomains[0]+'" /><input type="hidden" name="aid" value="10390987"/><input type="hidden" name="pid" value="3747342"/><input type="hidden" name="url" value="https://www.godaddy.com/gdshop/registrar/search.asp?isc=0000000000"/><input type="hidden" name="cvosrc" value="affiliate.cj.3747342"/></form>');
+					\$('#GoDaddyDyno').find('form').submit();
+					return false;
+				}
+			}
+		};
+
+		</script>
+		</head>
+		<body bgcolor="#FFFFFF" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" onbeforeunload="doUnload();" onKeyUp="return checkEscape(event, this);">
+		<div id="processKiller"  style="display:none;cursor:wait;z-index:100000000;width:100%;position:absolute;right:0px;top:0px;visibility:$processLoadVisibility;background-color:#FFFFFF;width:100%;height:100%;overflow:hidden;">
+			<table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0">
+				<tr valign="middle"><td width="100%">
+					<table width="100%" border="0" cellpadding="0" cellspacing="0">
+						<tr style="cursor:wait;"><td width="100%" bgcolor="#C9CDDF"><div style="width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);" title="Virtual Private Servers - VPS"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0" alt="Virtual Private Servers - VPS"></div></td></tr>
+						<tr style="cursor:wait;"><td width="100%" bgcolor="#FFFFFF"><div style="width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);" title="Virtual Private Networks - VPN"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0" alt="Virtual Private Networks - VPN"></div></td></tr>
+						<tr style="cursor:wait;"><td width="100%" align="center" id="net" style="color:#333333;font-family:verdana,arial;font-size:12px;line-height:20px;" title=". . . OpenCanvas by VPS-NET, coming soon . . ." valign="top"><div style="padding:20px;">Close $elTitulo?</div></td></tr>
+						<tr>
+							<td width="100%" align="center" style="padding: 0 0px 20px 0px;"><form onSubmit="return false;"><button id="YesClose" onClick="return runEscape('Yes');">Yes</button><button onClick="return runEscape('No');">No</button></form></td>
+						</tr>
+						<tr style="cursor:wait;"><td width="100%" bgcolor="#FFFFFF"><div style="width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);" title="Application Programming Interface - API"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0" alt="Application Programming Interface - API"></div></td></tr>
+						<tr style="cursor:wait;"><td width="100%" bgcolor="#C9CDDF"><div style="width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);" title="Search Engine Optimization - SEO"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0" alt="Search Engine Optimization - SEO"></div></td></tr>
+					</table>
+				</td></tr>
+			</table>
+		</div>
+		<a name="topmost" id="topmost"></a>
+		$userStatus
+		<div>
+		<div style="text-align:left;">
+		<div id="content">
+		<TABLE width="100%" cellspacing ="0" cellpadding="10" border="0" valign="middle">
+		     <TR> 
+		         <TD width="100%" align="center" valign="middle" style="padding-top:35px;padding-bottom:35px;"><font face="verdana,arial,helvetica" size="2" color="#000000" class="welcomeText"><b><!--Body Title--></b><br>
+				 
+				 	<div style="margin:10px 0 0 20px;font-family:tahoma,verdana,arial;">
+				 		<div style="max-width:280px;min-width:280px;float:left;">
+							<div style="width:100%;padding-bottom:20px;"><img src="/web_design_imagery/godaddy-domain-name-registration.png" width="155" height="51" border="0" alt="Domain Registration, Email, SSL and DNS Hosting Services by GoDaddy" style="position:relative;left:40px;"></div><div style="width:100%;text-align:right;padding-bottom:3px;">GoDaddy LLC.</div><div class="godaddy" style="font-weight:bold;width:100%;text-align:right;padding-bottom:20px;">Register Domains with GoDaddy LLC.</div><div style="width:100%;font-size:9px;color:#999999;text-align:right;font-family:arial,tahoma,verdana;padding-bottom:6px;">GoDaddy Coupon Offer for <a title="<div style='font-family:tahoma,verdana,arial;font-size:11px;'><strong style='font-size:12px;'>What's an SSL Certificate?</strong><br><br>Click to read more on what an SSL Certificate (Public Key Certificate) can do for your domain website by promoting a private and secure environment from which all your website users can benefit.</div>" style="cursor:help;text-decoration:underline;" onclick="if(!(!parent.runWikiBoard)) { parent.runWikiBoard(this); }else { document.location.href = this.rel; }" rel="/wikipedia.htm?st=Public_key_certificate" class="UserStatus" >SSL Certificate</a>:</div><div style="width:100%;max-width:280px;min-width:280px;text-align:right;"><b class="godaddy">50% Off Standard SSL Certificates</b><br>Take 50% Off Standard SSL Certificates. Simply pick 'Register Domain$domainDomains with GoDaddy' to reveal coupon code for this offer...</div>
+							<div>
+
+								<form name="LookupForm" action="https://www.tkqlhce.com/interactive"  method="GET" target="GoDaddy" onSubmit="return registerWithGodaddy(this);">
+									<input type="hidden" maxlength="67" size="22" name="domainToCheck" class="domainToCheck" tabindex="1" value="$domainNameStack" />
+									<ul id="Register-Domain-Names-With-Registrar-GoDaddy-LLC">
+										<li id="submit"><input type="submit" name="submit" id="submit" value="Register Domain$domainDomains with GoDaddy" /></li>
+									</ul>
+									<input type="hidden" name="aid" value="10390987"/>
+									<input type="hidden" name="pid" value="3747342"/>
+									<input type="hidden" name="url" value="https://www.godaddy.com/gdshop/registrar/search.asp?isc=0000000000"/>
+									<input type="hidden" name="cvosrc" value="affiliate.cj.3747342"/>
+								</form>
+								
+								<div id="GoDaddyDyno"></div>
+
+							</div>
+						</div>
+				 		<div style="max-width:40px;min-width:40px;float:left;"><img src="/web_design_imagery/domain-registration-line.png" width="1" height="35" border="0" style="margin-top:60px;"></div>
+					 	<!--
+						<div style="max-width:280px;min-width:280px;float:left;">
+							<div style="width:100%;padding-bottom:20px;">
+								<img src="/web_design_imagery/network-solutions-domain-name-registration.png" width="155" height="51" border="0" alt="Network Solutions Domain Registration, Email, SSL and DNS Hosting Services" style="position:relative;left:-40px;">
+							</div>
+							<div style="width:100%;text-align:left;padding-bottom:3px;">Network Solutions</div>
+							<div class="network-solutions" style="font-weight:bold;width:100%;text-align:left;padding-bottom:20px;">Register Domains With Network Solutions</div>
+							<div style="width:100%;font-size:9px;color:#999999;text-align:left;font-family:arial,tahoma,verdana;padding-bottom:6px;"><a title="<div style='font-family:tahoma,verdana,arial;font-size:11px;'><strong style='font-size:12px;'>What is Secure Sockets Layer?</strong><br><br>Click to find out what a Secure Sockets Layer(SSL) encrypted web server connection can do for your domain website by promoting a private and secure environment from which all your website users can benefit. <em>Note:</em> 'Transport Layer Security' and 'Secure Sockets Layer' both lead to the same article on Wikipedia.</div>" style="cursor:help;text-decoration:underline;" onclick="if(!(!parent.runWikiBoard)) { parent.runWikiBoard(this); }else { document.location.href = this.rel; }" rel="/wikipedia.htm?st=Transport_Layer_Security" class="UserStatus" >Secure Sockets Layer</a> Coupon Offer from NetSol:</div>
+							<div style="width:100%;max-width:280px;min-width:280px;text-align:left;"><b class="network-solutions">Limited Time Offer: 40% off SSL certificates</b> Take 40% off all SSL certificates. Limited time offer. Choose to 'Register Domain$domainDomains with Network Solutions' to reveal coupon code for this offer...</div>
+							<div>
+								<form action="https://www.anrdoezrs.net/interactive" method="get" target="Network-Solutions" onSubmit="return registerWithNetworkSolutions(this);">
+									<input type="hidden" name="domainNames" id="domainNames" value="$domainNameStack">
+									<ul id="Register-Domain-Names-With-One-And-One">
+										<li id="submit">
+											<input type="submit" name="submit" id="submit" value="Register Domain$domainDomains with NetSol">
+										</li>
+									</ul>
+									<input type="hidden" name="regOption" value="/en_US/purchase-it/view-your-order.jhtml">
+									<input type="hidden" name="code" value="P13C662S532N0B9A1D0E0000V109">
+									<input type="hidden" name="aid" value="10438287"/>
+									<input type="hidden" name="pid" value="3747342"/>
+									<input type="hidden" name="url" value="https://www.networksolutions.com/cgi-bin/promo/domain-search"/>
+								</form>
+								<img src="https://www.tqlkg.com/image-3747342-10438287" width="1" height="1" border="0"/>
+							</div>
+						</div>
+						-->
+						<div style="max-width:280px;min-width:280px;float:left;">
+							<div style="width:100%;padding-bottom:20px;">
+								<img src="/web_design_imagery/one-and-one-domain-name-registration.png" width="155" height="51" border="0" alt="Network Solutions Domain Registration, Email, SSL and DNS Hosting Services" style="position:relative;left:-40px;">
+							</div>
+							<div style="width:100%;text-align:left;padding-bottom:3px;">1 and 1 Group</div>
+							<div class="one-and-one" style="font-weight:bold;width:100%;text-align:left;padding-bottom:20px;">Register Domains With 1&1</div>
+							<div style="width:100%;font-size:9px;color:#999999;text-align:left;font-family:arial,tahoma,verdana;padding-bottom:6px;"><a title="<div style='font-family:tahoma,verdana,arial;font-size:11px;'><strong style='font-size:12px;'>What is Secure Sockets Layer?</strong><br><br>Click to find out what a Secure Sockets Layer(SSL) encrypted web server connection can do for your domain website by promoting a private and secure environment from which all your website users can benefit. <em>Note:</em> 'Transport Layer Security' and 'Secure Sockets Layer' both lead to the same article on Wikipedia.</div>" style="cursor:help;text-decoration:underline;" onclick="if(!(!parent.runWikiBoard)) { parent.runWikiBoard(this); }else { document.location.href = this.rel; }" rel="/wikipedia.htm?st=Transport_Layer_Security" class="UserStatus" >Secure Sockets Layer</a> Coupon Offer from 1and1:</div>
+							<div style="width:100%;max-width:280px;min-width:280px;text-align:left;"><b class="one-and-one">Limited Time Offer: 40% off SSL certificates</b> Take 40% off all SSL certificates. Limited time offer. Choose to 'Register Domain$domainDomains with 1and1' to reveal coupon code for this offer...</div>
+							<div>
+								<form action="https://www.dpbolvw.net/interactive" method="get" target="One-And-One" onSubmit="return registerWithOneAndOne(this);">
+									<input type="hidden" name="domain" class="domainToCheck" value="$domainNameStack">
+									<ul id="Register-Domain-Names-With-One-And-One">
+										<li id="submit">
+											<input type="submit" name="submit" id="submit" value="Register Domain$domainDomains with 1and1">
+										</li>
+									</ul>
+									<input type="hidden" name="aid" value="10933941"/>
+									<input type="hidden" name="pid" value="3747342"/>
+									<input type="hidden" name="url" value="https://order.1and1.com/dcjump?ac=OM.US.US469K02463T2103a"/>
+								</form>
+								<div id="OneAndOneDyno"></div>
+								<img src="https://www.lduhtrp.net/image-3747342-10933941-1470833934000" width="1" height="1" border="0"/>
+							</div>
+						</div>
+					</div>
+				 </font></td>
+			</tr>
+		</table>
+		<div id="panel"></div>
+		</div></div></div>
+		</body>
+<script language="javascript" type="text/javascript">
+/* wikiboard title object */
+if (!(!parent.document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = parent.document.getElementById("WikiBoardBarTitle");
+	mwbh = parent.document.getElementById("WikiBoardBarHistory");
+	fbsl = parent.document.getElementById("WikiPeeksSlider");
+	wbct = parent.document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = parent.document.getElementById("Wiki-Peeks-Content-Search");
+}
+else if (!(!document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = document.getElementById("WikiBoardBarTitle");
+	mwbh = document.getElementById("WikiBoardBarHistory");
+	fbsl = document.getElementById("WikiPeeksSlider");
+	wbct = document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = document.getElementById("Wiki-Peeks-Content-Search");
+}
+else { mwbt = 0; wbct = 0; }
+var doUnload = function() {
+	if (wbct!=0) {
+		wbct.innerHTML = '<span style="position:relative;top:2px;left:0px;" title="Loading, please wait..."><img src="/web_design_imagery/loadCircle.gif" width="18" height="15" border="0" alt="Loading, please wait..."></span>';
+	}
+};
+// only if we exist in a framed document from our controlling parent
+if (mwbt!=0) {
+	// wikiboard content title [source]
+	wbct.innerHTML = '<span style="font-weight:normal;position:relative;left:-4px;top:0px;">- Domain Name Registration</span>';
+	// wikiboard content search
+	wbcs.innerHTML = '';
+}
+</script>
+~;
+
+#-kill zopim
+#-$zopimOnline = "Leave a question or comment, a customer service representative will attend to you shortly.";
+#-$zopimOffline = "We are offline, but if you leave us a message along with your contact details, we will get back to you as soon as possible.";
+#-$zopimAway = "If you leave a question or comment, customer service will be notified and attend to you shortly.";
+#if ($ISIN ne "" || $inUID) {
+#	$zopimOnline = "Hello again $previouslyUsedFirst, please leave a question or comment, we will be sure to attend to you shortly. Thank you.";
+#	$zopimOffline = "Welcome back $previouslyUsedFirst, we apologize but you caught us while we are offline. So, if you leave us a message, we will get back to you as soon as possible.";
+#	$zopimAway = "Greetings $previouslyUsedFirst, please leave us a question or comment and we will get back to you as soon as possible, thanks.";
+#	$zopimExtras = "
+#		\$zopim.livechat.setName('$previouslyUsedFirst $previouslyUsedLast');
+#		\$zopim.livechat.setEmail('$previouslyUsedEmail');
+#	";
+#}
+#print qq~
+#<script language="javascript" type="text/javascript">
+#window.\$zopim||(function(d,s){var z=\$zopim=function(c){z._.push(c)},\$=z.s=d.createElement(s),e=d.getElementsByTagName(s)[0];z.set=function(o){z.set._.push(o)};\$.setAttribute('charset','utf-8');\$.async=!0;z.set._=[];\$.src=('https:'==d.location.protocol?'https://ssl':'http://cdn')+'.zopim.com/?KrB88Hrei4Irm0gATnuNEpZpUbsYuqtT';\$.type='text/java'+s;z.t=+new Date;z._=[];e.parentNode.insertBefore(\$,e)})(document,'script')
+#</script>
+#<script language="javascript" type="text/javascript"> 
+#\$zopim( function() {
+#	//-hide bubble orange chat bubble
+#	\$zopim.livechat.bubble.hide();
+#	\$zopim.livechat.setLanguage('--');
+#	$zopimExtras
+#	\$zopim.livechat.button.setPosition('br');
+#	\$zopim.livechat.window.setTheme('alphacube');
+#	\$zopim.livechat.window.setColor('#C5E7F4');
+#	\$zopim.livechat.bubble.setTitle('Questions?');
+#	\$zopim.livechat.bubble.setText('Click here to chat with us!');
+#			\$zopim.livechat.setGreetings({
+#		  'online' : ['Click here to chat', '$zopimOnline'],
+#		  'offline': ['Leave a message', '$zopimOffline'],
+#		  'away'   : ['Click here to chat', '$zopimAway']  
+#	  });
+#	})
+#	/*added2k13>>*/;
+#</script>
+#<style>
+#.meshim_components_button { background:#000000; border:#D1D1D1 1px solid; }
+#.meshim_components_button:hover { background:#D1D1D1; border:#000000 1px solid; }
+#.button_message .agentStatus, .button_message .message { color:#000000; }
+#</style>
+#
+#~;
+
+
+print qq~</html>~; 
+
+
+
+
+
+exit;
