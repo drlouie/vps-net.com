@@ -6,7 +6,9 @@ This repository contains the hard-coded and soft-coded content for vps-net.com a
 
 Furthermore, I've decided to let people 'take apart' my scripting and programming code as well as my development and design methods. This site was created back in 2009 through hard-code, long hours, many design iterations, and various engineering changes, it may be a bit wild code, but it worked back then and still does a decade, or longer, later. The purpose was to create a pixel perfect interface, when compared to the UI designs, alongside a functionally viable UX from a modeling standpoint. There are also other components and applications living within vps-net.com, those will also be published here.
 
-What is an .nsp or .nsf file? Well, I've been using .nsp and .htm files as Perl scripts on my servers for a very long time, over a decade and a half. NSP is a Netmedia Solutions Program and NSF is Netmedia Solutions File, the latter of which is a flat data file. To run .htm and .nsp programs simply set up you server configuration to handle those extensions as Perl programs. Netmedia Solutions was my old company name, hence the .nsp and .nsf file extension convention which has stuck around since.
+Note: To run .htm and .nsp programs simply set up you server configuration to handle those extensions as Perl programs. Netmedia Solutions was my old company name, hence the .nsp and .nsf file extension convention which has stuck around since.
+
+What is an .nsp or .nsf file? Why do .htm files have Perl code in them? Well, I've been using .nsp and. htm files as Perl scripts on my servers for a very long time, over a decade and a half. NSP is a Netmedia Solutions Program and NSF is Netmedia Solutions File, the latter of which is a simple data file. As just mentioned, on my servers .htm files are executable Perl scripts, whereas .html files are data files. 
 
 Enjoy.
 
