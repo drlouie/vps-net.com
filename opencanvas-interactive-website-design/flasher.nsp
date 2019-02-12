@@ -1,0 +1,206 @@
+##################################################################
+#   Program:        OpenCanvas Interactive Website Design        #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      User Interface Design and User Experience    #
+#        Module:    Flasher                                      #
+#        Info:      Helps form our dynamic document by:          #
+#                       - Defines type of presentation, either   #
+#                         scripted (XML) or embeded(object)      #
+#                       - Defines how presentation will be made, #
+#                         popin(modal window), popout or new     #
+#                         window altogether. Entirely based on   #
+#                         reported clientArea (height/width) as  #
+#                         well as the flash movie's actual width #
+#                         and height. The latter is based on the #
+#                         actual movie size, considering the     #
+#                         dimension data was extracted directly  #
+#                         from the flash .swf file itself.       #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+use HTML::TableExtract;
+use HTML::SimpleLinkExtor;
+$resizeWindow="window.moveTo(0,0);
+remakeWindow(''+screen.width+'',''+screen.height+'');";
+$checkWin="";	
+$myFlasher=get($ppage);
+$objecto='<embed';
+$tabla='<table';
+$exemel='<html xmlns';
+$abierto="<";
+$cerrado=">";
+if($myFlasher=~$objecto&&$myFlasher=~".swf"){
+	@lasLineas=split(/\n/,$myFlasher);
+	foreach $ul (@lasLineas){
+		$ul=~s/"//gi;
+		if($ul=~$objecto&&$ul=~"width"&&$ul=~"height"){
+			$ul=~s/$cerrado/ /gi;
+			$ul=~s/$abierto//gi;
+			@laMadre=split(/ /,$ul);
+			foreach $unhijo (@laMadre){
+				if($unhijo=~"width"||$unhijo=~"height"||$unhijo=~"src"){
+					$elsolo[1]="";
+					if(!$elW&&$unhijo=~"width"){
+						@elsolo=split(/=/,$unhijo);
+						$elW=int($elsolo[1]);
+					}
+					if(!$elH&&$unhijo=~"height"){
+						@elsolo=split(/=/,$unhijo);
+						$elH=int($elsolo[1]);
+					}
+					if(!$elF&&$unhijo=~"src"){
+						@elsolo=split(/=/,$unhijo);
+						$elF=$elsolo[1];
+					}
+					if($elF){
+						if($elF=~"http"||$elF=~"/"){
+							$myF=$elF;
+						}
+						else{
+							$myF=$defaultPath."$elF";
+						}
+					}
+				}
+			}
+		}
+		if(!$tableW&&!$tableH&&$myFlasher=~$objecto&&$ul=~$tabla&&$ul=~"width"){
+			$ul=~s/$cerrado/ /gi;
+			$ul=~s/$abierto//gi;
+			@laMadre=split(/ /,$ul);
+			$laTablaWidth=$ul;
+			foreach $unhijo (@laMadre){
+				if($unhijo=~"width"||$unhijo=~"height"){
+					$elsolo[1]="";
+					if(!$tableW&&$unhijo=~"width"){
+						@elsolo=split(/=/,$unhijo);
+						$tableW=int($elsolo[1]);
+					}
+					if(!$tableH&&$unhijo=~"height"){
+						@elsolo=split(/=/,$unhijo);
+						$tableH=int($elsolo[1]);
+					}
+				}
+			}
+		}
+	}
+}
+elsif($myFlasher=~$exemel&&$myFlasher=~".swf"&&$myFlasher=~"minWidth"&&$myFlasher=~"minHeight"){
+	@lasLineas=split(/\n/,$myFlasher);
+	foreach $ul (@lasLineas){
+		if((!$elW&&$ul=~"minWidth")||(!$elH&&$ul=~"minHeight")){
+			$elsolo[1]="";
+			$ul=~s/var//gi;
+			$ul=~s/;//gi;
+			$ul=trim($ul);
+			if(!$elW&&$ul=~"minWidth"){
+				@elsolo=split(/=/,$ul);
+				$elW=int($elsolo[1]);
+				$elW=int($elW+20);
+			}
+			if(!$elH&&$ul=~"minHeight"){
+				@elsolo=split(/=/,$ul);
+				$elH=int($elsolo[1]);
+				$elH=int($elH+20);
+			}
+		}
+	}
+}
+if(!$elF&&int($elW)<100&&int($elH)<100&&$myFlasher=~".swf"){
+	@lasLineas=split(/\n/,$myFlasher);
+	foreach $ul (@lasLineas){
+		if(!$elF&&$ul=~".swf"){
+			$miUL=$ul;
+			@elsolo=split(/"/,$ul);
+			if($elsolo[1]=~".swf"){
+				$elF=$elsolo[1];
+				$ajaxFeedBack="1";
+			}
+		}
+		if(!$elF&&$myFlasher=~'.swf'&&$myFlasher=~"param"&&$myFlasher=~"movie"&&$myFlasher=~"value"){
+			$myTM=$myFlasher;
+			$myTM=~s/img /poopoos /gi;
+			$myTM=~s/param /img /gi;
+			my $extor=HTML::SimpleLinkExtor->new();
+			$extor->parse($myTM);
+			@param_srcs=$extor->img;
+			$paramVALUE=@param_srcs[1];
+			$extor->clear_links;
+			$elF=$paramVALUE;
+		}
+		if(!$elF&&$myFlasher=~'.swf'){
+			$myTM=$myFlasher;
+			$myTM=~s/img /poopoos /gi;
+			$myTM=~s/embed /img /gi;
+			my $extor=HTML::SimpleLinkExtor->new();
+			$extor->parse($myTM);
+			@embed_srcs=$extor->img;
+			$embedSRC=@embed_srcs[0];
+			$extor->clear_links;
+			$elF=$embedSRC;
+		}
+		if($elF){
+			if($elF=~"http"){
+				$myF=$elF;
+			}
+			else{
+				$myF=$defaultPath."$elF";
+			}
+		}
+	}
+}
+if($myF=~'swf'&&(!$elW||!$elH)){
+	$binaryFile=get("$myF");
+	use SWF::Header;
+	my $header_data=SWF::Header->read_data("$binaryFile");
+	$elW=int($header_data->{"width"});
+	$elH=int($header_data->{"height"});
+}
+if(int($elW)>100&&int($elH)>100){
+	if($tableW>$elW){
+		$elW=$tableW;
+	}
+	if($tableH>$elH){
+		$elH=$tableH;
+	}
+	$myW=$elW;
+	$myH=$elH;
+	$elW=int($elW+5);
+	$elH=int($elH+10);
+	$rezW=int($elW+10);
+	$rezH=int($elH+60);
+	if(int($dimrequest)>=1||$FORM{'TB_iframe'}eq"true"){
+		$sizer="$myW,$myH";
+	}
+	else{
+		$resizeWindow="remakeWindow('$rezW','$rezH');";
+		$checkWin="checkWindow('$rezW','$rezH','$elW','$elH');";
+	}
+	$previewScreenDefaults="width:".$elW."px;height:".$elH."px;overflow-x:hidden;overflow-y:hidden;border:1px;clip:rect(0px,".$elW."px,".$elH."px,0px);";
+	$elflasho++;
+}
+$nodefault=1;
+if(!$elflasho){
+	$nodefault=0;
+}
+1;

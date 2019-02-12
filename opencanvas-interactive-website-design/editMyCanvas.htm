@@ -1,0 +1,525 @@
+#!/usr/bin/perl -s
+
+##################################################################
+#   Program:        OpenCanvas Interactive Website Design        #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      User Interface Design and User Experience    #
+#        Module:    Drag-n-Drop Template Management Functions    #
+#        Info:      Asynchronous user template management by way #
+#                   JSON based data interface.                   #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+}
+else { $HTTPRoot = '/var/www/vps-net.com/htdocs/'; }
+
+###############
+##<-- 2k10 -->##
+###############
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+require($HTTPRoot."q.nsp");
+
+## --> Make sure all request coming from this server's domain or IP
+require $HTTPRoot."referee.nsp";
+
+$OpenCanvasVersion = $Cookies{'OpenCanvasVersion'};
+$OpenCanvasDesign = $Cookies{'OpenCanvasDesign'};
+$template = $FORM{'t'};
+$version = $FORM{'v'};
+$xit = $FORM{'x'};
+if ($OpenCanvasVersion =~ m/[^0-9]/ 
+|| $OpenCanvasDesign =~ m/[^a-zA-Z0-9]/ 
+|| $template =~ m/[^a-zA-Z0-9]/ 
+|| $version =~ m/[^0-9]/ 
+|| $xit =~ m/[^0-9]/ 
+){
+	##--> Hack attempt / or bad input
+	print "Cache-Control: must-revalidate\n\n";
+	print "<script language=\"Javascript\" type=\"text/javascript\">alert('Error 2251: It is advisable you take note of this error and report it to the site administrator. Thanks.');if (!(!parent.activeTemplates)) { parent.\$.fancybox.close(); }</script>";
+	exit;
+}
+
+$elTitulo = 'Request Error!';
+
+##-- template request
+if (($FORM{'t'} =~ m/ocv/i) && length($FORM{'t'}) > 5) {
+
+	## --> already has OCv cookie
+	$hasOCV = 0;
+	$inOCV = 1;
+	$inOCV = $OpenCanvasVersion;
+	if (int($inOCV) > 0 && int($inOCV) <= 3) { $hasOCV = $inOCV; }
+
+	##-- acquire OCv from form input: target = OCX|OC2|OC3 and TEMPLATE-ID
+	$CualOC = substr $FORM{'t'}, 3, 1;
+
+	##-- look for change cookie vs form OCv
+	$newOCv = 0;
+	if (int($CualOC) != int($inOCV)) {
+		$newOCv = int($CualOC);
+	}
+	else {
+		$CualOC = int($inOCV);
+	}
+
+	##-- set canvas version cookie if diff from old cookie
+	print "Cache-Control: must-revalidate\n";
+	if (int($newOCv) > 0 && $inUID ne "" && $inUID ne " ") {
+		my $ahora = today();
+		my $CCD = $ahora + 365;
+		$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+		&SetCookies('OpenCanvasVersion',$newOCv);
+
+		use DBI;
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "Unable to initiate connection to: <b>DB-VPS-NET</b>\n"; 
+		$dbh->{RaiseError} = 1; 
+		$CanvasUpdateQuery = "UPDATE LOW_PRIORITY customerScarts SET LastUpdated='$datetime', OCv='$newOCv' WHERE UID='$inUID'";
+		$dbh->disconnect;
+	}
+	print "\n";
+
+
+	if ($OpenCanvasDesign ne "" && $OpenCanvasDesign ne " ") {
+
+		$inUID = $OpenCanvasDesign;
+		## ----------------->>> 	
+		## ----------------->>> FIRST read saved cart
+		## ----------------->>> 
+
+		use DBI;
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "Unable to initiate connection to: <b>DB-VPS-NET</b>\n"; 
+		$dbh->{RaiseError} = 1; 
+
+		my $sth = $dbh->prepare("SELECT * FROM customerScarts WHERE UID = '$inUID'");
+		$sth->execute or die "Error 5231\n";
+		my $row = $sth->fetchrow_arrayref;
+		my $cartID = $row->[0];
+		my $cartContents = $row->[2];
+		my $cartEA = $row->[3];
+		my $cartCID = $row->[4];
+		my $cartDate = $row->[5];
+		my $cartHistory = $row->[8];
+
+		$dbh->disconnect;
+
+		if ($Todo_Form[0] =~ "editc" || $Todo_Form[0] =~ "addc" || $Todo_Form[0] =~ "question" || $Todo_Form[0] =~ "share") {
+
+			##-- acquire template params
+			require($HTTPRoot."opencanvas-interactive-website-design/templateSucka.nsp");
+
+			##-- reset our action state
+			@myactstate = split(/-----/,$Todo_Form[0]);
+			$myactstate = $myactstate[1];
+			$myact = $myactstate[0];
+
+			$elTitulo = 'Design Notes';
+			$feedback = 'Jot down notes, ideas or comments about this design:';
+			$cancelAction = 'Cancel';
+			$cancelAct = 'Canceling';
+			$closeAct = "parent.\$.fancybox.close();";
+			$saveAct = 'Save Comments';
+
+			if ($myact =~ "editc") {
+				$feedback = 'Edit your template specific notes:';
+				$cancelAction = 'Delete Comments';
+				$cancelAct = 'Deleting';
+				$saveAct = 'Save Changes';
+			}
+			elsif ($myact =~ "question") {
+				$elTitulo = 'Questions &#38; Feedback';
+				$feedback = 'Your questions and feedback are always welcome:';
+				$saveAct = 'Send Your Message';
+			}
+			elsif ($myact =~ "share") {
+				$elTitulo = 'Sharing is Caring';
+				$feedback = 'Share this with your friends, family and collegues:';
+				$saveAct = 'Share It!';
+			}
+
+			use DBI;
+			my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "Unable to initiate connection to: <b>DB-VPS-NET</b>\n"; 
+			$dbh->{RaiseError} = 1; 
+
+			##--saving
+			if ($Todo_Form[3] =~ "TemplateCommentOutput") {
+				$feedback = 'Saving your changes to template notes.';
+
+				$newCom = $FORM{'TemplateCommentOutput'};
+				&cleanMyInput;
+				$Com = $newCom;
+				if ($Todo_Form[4] =~ "x---") {
+					$feedback = 'Attempting to delete your template notes.';
+					my $sth = $dbh->prepare("DELETE FROM CommentsLog WHERE (CartID = '$cartID' AND TemplateID = '$TN' AND UID = '$inUID')");
+					$sth->execute or die "Unable to execute query\n";
+					$sth->finish;
+					$cancelAction = 'Deleted';
+					##-- clear visible comments for user
+					$Com = '';
+					$feedback = 'Your notes for this template have been deleted.';
+					$feedbackScript = "javascript:if (!(!parent.activeTemplates)) { parent.activeTemplates[$TN].comments = 0; parent.swapCanvasCommentState($TN); parent.\$.fancybox.close(); }";
+				}
+				else {
+					if ($myact eq "addc") { 
+						my $sth = $dbh->prepare("INSERT INTO CommentsLog (LineID, CartID, TemplateID, Comment, CreationDate, UID) VALUES (Null, '$cartID', '$TN', '$Com', '$datetime', '$inUID')");
+						$sth->execute or die "Unable to execute query\n";
+						$sth->finish;
+					}
+					else {
+						##- when we are saving, js disables 'Save Comments' button and renames it to Saving, so we wanna show this same text on button once the save action has been completed.
+						my $sth = $dbh->prepare("UPDATE CommentsLog SET Comment='$Com' WHERE (CartID = '$cartID' AND TemplateID = '$TN' AND UID = '$inUID')");
+						$sth->execute or die "Unable to execute query\n";
+						$sth->finish;
+					}
+					$saveAct = 'Saved';
+					$feedback = 'Your notes were saved successfully!';
+				}
+				$feedbackCSS = "color:#EB0000;";
+				##only if not previously set
+				if (!$feedbackScript) { 
+					$feedbackScript = "javascript:if (!(!parent.activeTemplates)) { parent.activeTemplates[$TN].comments = 1; parent.swapCanvasCommentState($TN); parent.\$.fancybox.close(); }"; 
+				}
+			}
+			##--editing
+			else {
+				
+				##--$TN coming from templateSucka
+				my $sth = $dbh->prepare("SELECT Comment, CreationDate FROM CommentsLog WHERE (CartID = '$cartID' AND TemplateID = '$TN' AND UID = '$inUID')");
+				$sth->execute or die "Error 5231\n";
+				my $row = $sth->fetchrow_arrayref;
+				$Com = $row->[0];
+				$ComAdded = $row->[1];
+				$sth->finish;
+			}
+
+			$dbh->disconnect;
+
+			$cualScript = 'parent.previewTemplate';
+			if ($ppage =~ 'images.templatemonster.com') {
+				$cualScript = 'parent.runFlash';
+			}
+		}
+	}
+}
+
+$losComments = $Com;
+if (!$feedbackScript) {
+	$feedbackScript = "javascript:document.OpenCanvasComment.TemplateCommentOutput.select();"; 
+}
+
+
+
+print qq~<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- $bp -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+~; if ($myHead) { print $myHead; } print qq~
+
+<link rel="stylesheet" type="text/css" href="/yui.css">
+<link rel="stylesheet" type="text/css" href="/javascript-jquery-extension_fancybox-1.3.1.css">
+<link rel="stylesheet" type="text/css" href="/jquery.bubblepopup.v2.3.1.css">
+<link rel="stylesheet" type="text/css" href="/interface_design_templater.php?q=1&p=CHCSS">
+<style type="text/css">
+body{overflow-x:hidden;overflow-y:hidden;}
+.OpenCanvasCommentWrapper { }
+.OpenCanvasCommentFormContainer { padding-left:15px; padding-right:15px; padding-top:10px; }
+.OpenCanvasCommentPrompt { font-family:tahoma,arial,verdana; font-size:12px; font-weight:bold; color:#000000; }
+.OpenCanvasCommentInstructions { margin-bottom:10px; font-family:verdana,tahoma,arial; font-size:12px; color:#000000; font-weight:normal; }
+legend.OpenCanvasCommentLegend { font:12px verdana,arial,helvetica; color:#000000; font-weight:bold; }
+label.OpenCanvasCommentLabel { font-size:14px; $feedbackCSS }
+textarea.OpenCanvasCommentTextarea { width:100%; height:136px; font-family:Courier New,monospace,serif;font-size:12px; }
+#TemplateCommentTextarea { margin-bottom:10px; }
+input.OpenCanvasCommentButtons { height:24px; font-family:Verdana,Arial,Helvetica; font-size:12px; }
+fieldset { font:9px verdana,arial,helvetica; color:#000000; font-weight:normal; border:#D5DFE5 1px solid; padding-left:5px; padding-right:5px; }
+legend.HTMLoLegend { padding-top:5px; padding-bottom:5px; padding-left:5px; font:9px arial,verdana,helvetica; color:#000000; font-weight:normal; }
+
+#infoWrap { padding-left:15px; padding-right:15px; padding-bottom:6px; position:relative; top:-8px; left:0px; }
+#templateModalImage { padding:0px; background: #D5DFE5; width:135px; height:147px; }
+#templateModalImage img { border: #D5DFE5 1px solid; }
+
+
+.templateModalData { position:relative; top:-10px; left:0px; padding-left:30px; text-align:left; font:10px verdana,arial,helvetica; background:#F8F9FA; }
+.templateModalData div { padding-left:7px; background: url(/web_design_imagery/graphical-user-interface-arrow_off.gif) no-repeat 0px 5px; text-align:left; font-weight:normal; }
+.templateModalData div div { line-height:18px; margin-top:8px; background: none; }
+.templateModalData div div div { padding-left:0px; }
+.templateModalDasher { padding-right:10px; background: none; }
+
+#chat-sales { padding-bottom:10px; }
+
+</style>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-library-jquery-1.4.2.min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-jquery-extension_bubblepopup.v2.3.1.min.js"></script>
+<script language="javascript" type="text/javascript" src="/interface_design_templater.php?q=1&p=CHS"></script>
+<script>
+/* document/source variables */
+	//var QueryString = '$ENV{'QUERY_STRING'}';
+	//var source = '$source';
+	//var appLoc = '$appLoc';
+	//var myTitle='$myTitle';
+	//var titleLink = '<span style="position:relative;top:2px;left:0px;"><a href="javascript:addBookmark(\\''+appLoc+'?'+QueryString+'\\', \\'WikiPeeks ('+source+') '+myTitle+'\\');" onMouseOver="iHover(this.firstChild,1);" onMouseOut="iHover(this.firstChild,0);" title="Add to Favorites: ('+source+') '+myTitle+'"><img src="/web_design_imagery/WikiBarLink-off.gif" width="14" height="14" border="0" alt="Add to Favorites: ('+source+') '+myTitle+'" name="WikiBarLink" id="WikiBarLink"></a><span> &nbsp;</span>';
+	//if (myTitle == '') { titleLink = ''; }
+	var loadImage = '<span style="position:relative;top:2px;left:0px;" title="Loading, please wait..."><img src="/web_design_imagery/loadCircle.gif" width="18" height="15" border="0" alt="Loading, please wait..."></span>';
+	var hasClicked = 0;
+	var runClick = function(quien,action) {
+		hasClicked = 1;
+		quien.value = action;
+		document.OpenCanvasComment.CanvasSubmit.disabled = 1;
+		document.OpenCanvasComment.CanvasCancel.disabled = 1;
+		if (action == 'Deleting') {
+			document.OpenCanvasComment.x.value = '1';
+			document.OpenCanvasComment.submit();
+		}
+		else if (action == 'Canceling') {
+			$closeAct
+		}
+	};
+</script>
+</head>
+<body style="margin:0;padding:0;" onbeforeunload="doUnload();" onload="$feedbackScript">
+<a name="topmost" id="topmost"></a>
+<!--<body style="margin:0;padding:30px;background:#F7F7F7;">-->
+<!--<div style="padding-bottom:20px;position:absolute;left:0px;top:0px;">$bp</div>-->
+<!--<div style="background:#FFFFFF;border-top:#ABADB3 1px solid; border-left:#E2E3EA 1px solid; border-right:#E2E3EA 1px solid; border-bottom:#E3E9EF 1px solid;">-->
+<div>
+<div style="text-align:left;padding:15px;$noBotTopPad">
+<div id="content">
+~;
+
+$myBody =~ s/[^[:ascii:]]+//g;
+
+
+print qq~
+<!--$miPagi-->
+<form name="OpenCanvasComment" method="post" action="?" onSubmit="if (hasClicked == 0) { runClick(document.OpenCanvasComment.CanvasSubmit,'Saving'); }">
+<input name="$myact" type="hidden" value="$myactstate">
+<input name="t" type="hidden" value="$FORM{'t'}">
+<input name="v" type="hidden" value="$FORM{'v'}">
+<div class="OpenCanvasCommentWrapper">
+	<div class="OpenCanvasCommentFormContainer">
+		<div class="OpenCanvasCommentInstructions"><label class="OpenCanvasCommentLabel" for="TemplateCommentOutput" id="label_TemplateCommentOutput">$feedback</label></div>
+		<div id="TemplateCommentTextarea"><textarea name="TemplateCommentOutput" id="TemplateCommentOutput" class="OpenCanvasCommentTextarea" tabindex="1" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);">$losComments</textarea><input name="x" type="hidden" value="0"></div>
+		<div id="OpenCanvasCommentButtons" align="right"><input type="submit" tabindex="2" class="canvasButtons" name="CanvasSubmit" style="padding:3px;padding-left:10px;padding-right:10px;font-size:12px;font-weight:bold;" value="$saveAct" /><input type="button" onClick="javascript:runClick(document.OpenCanvasComment.CanvasCancel,'$cancelAct');" tabindex="3" class="canvasButtons" name="CanvasCancel" style="padding:3px;padding-left:8px;padding-right:8px;font-size:12px;" value="$cancelAction"/></div>
+	</div>
+</div>
+<div id="infoWrap">
+<table cellpadding="0" cellspacing="0" border="0" class="nobord" width="100%">
+	<tr>
+		<td class="nobord" align="right" valign="top"><div id="templateModalImage"><a href="javascript:$cualScript($TN);"><img src="/opencanvas-interactive-website-design/website-design-template-images.htm?t=$trueTN&k=t&s=tm" width="133" height="145" border="0"></a></div><div style="position:relative;top:-3px;left:0px;"><img src="/web_design_imagery/carouselImageShadow.png" width="133" height="10" border="0"></div></td>
+		<td align="left" valign="bottom" width="100%">
+			<div class="templateModalData">
+				<div>
+					<div>Design ID: <a href="javascript:$cualScript($TN);">$trueTN</a></div>
+				</div>
+<!--
+				<div>
+					<div><b>Type: </b>Joomla 1.5 Template</div>
+				</div>
+-->
+<!--
+				<div>
+					<div><b>Sources Available: </b>.PSD | .PHP
+					</div>
+				</div>
+				<div>
+					<div><b>Software Required: </b>Adobe Photoshop CS+; Adobe Dreamweaver 8+ (or any php-editor); For uncompressing a template ZIP package: WinZip 9+ (Windows); Stuffit Expander 10+ (Mac); Joomla! 1.5.0
+					</div>
+				</div>
+				<div>
+					<div><b>Actions: </b><a href="javascript:$cualScript($TN);">preview template</a> &nbsp | &nbsp <a href="javascript:parent.$.fancybox.close();parent.appendToCanvas($TN	);">add to canvas</a>
+					</div>
+				</div>
+-->
+				<div>
+					<div>Related categories: $losCategories</div>
+				</div>
+~;
+
+if ($myact eq "question") {
+print qq~
+				<div id="chat-sales">
+					<div>Need quicker service? Chat with sales:</div>
+				</div>
+~;
+}
+else {
+print qq~
+				<div>
+					<div>Share it with your friends:</div>
+					<div style="width:246px;">
+						<span class="addthis_toolbox addthis_default_style">
+    						<!--<a class="addthis_button_google_plusone" style="float:left;width:31px;height:20px;overflow:hidden;clip:rect(0px,31px,20px,0px);" g:plusone:size="medium" g:plusone:expandto="top" addthis:url="http://vps-net.com/opencanvas-interactive-website-design/website_design_previewer.htm?t=$trueTN" addthis:title="OpenCanvas $trueTN by Virtual Private (http://www.vps-net.com/)"></a>-->
+							<a class="addthis_button_facebook_like" style="float:left;width:45px;height:20px;overflow:hidden;clip:rect(0px,45px,20px,0px);" fb:like:layout="button_count" addthis:url="http://vps-net.com/opencanvas-interactive-website-design/website_design_previewer.htm?t=$trueTN" addthis:title="OpenCanvas $trueTN by Virtual Private (http://www.vps-net.com/)"></a>
+						    <a class="addthis_button_twitter_follow_native" style="float:left;width:62px;height:20px;overflow:hidden;clip:rect(0px,62px,20px,0px);" addthis:url="http://vps-net.com/opencanvas-interactive-website-design/website_design_previewer.htm?t=$trueTN" addthis:title="OpenCanvas $trueTN by Virtual Private (http://www.vps-net.com/)"></a>
+							<a class="addthis_button" style="float:left;padding-top:2px;width:84px;height:20px;overflow:hidden;clip:rect(0px,84px,20px,0px);" href="http://www.addthis.com/bookmark.php?v=250&amp;pubid=xa-4e9546734ab8310a"><img src="http://s7.addthis.com/static/btn/sm-share-en.gif" width="83" height="16" alt="Bookmark and Share" style="border:0"/></a>
+						</span>
+						<script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js"></script>
+					</div>
+				</div>
+			</div>	
+		</td>
+	</tr>
+</table>
+</div>
+~;
+}
+print qq~
+</form>
+</div></div></div>
+</body>
+<script language="javascript" type="text/javascript">
+/* wikiboard title object */
+if (!(!parent.document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = parent.document.getElementById("WikiBoardBarTitle");
+	mwbh = parent.document.getElementById("WikiBoardBarHistory");
+	fbsl = parent.document.getElementById("WikiPeeksSlider");
+	wbct = parent.document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = parent.document.getElementById("Wiki-Peeks-Content-Search");
+}
+else if (!(!document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = document.getElementById("WikiBoardBarTitle");
+	mwbh = document.getElementById("WikiBoardBarHistory");
+	fbsl = document.getElementById("WikiPeeksSlider");
+	wbct = document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = document.getElementById("Wiki-Peeks-Content-Search");
+}
+else { mwbt = 0; wbct = 0; }
+var doUnload = function() {
+	if (wbct!=0) {
+		wbct.innerHTML = loadImage;
+	}
+};
+// only if we exist in a framed document from our controlling parent
+if (mwbt!=0) {
+	// wikiboard content title [source]
+	wbct.innerHTML = '<span style="font-weight:normal;position:relative;left:-4px;top:0px;">- $elTitulo</span>';
+	// wikiboard content search
+	wbcs.innerHTML = '';
+}
+</script>
+~;
+
+##-- chat support only for questions page
+if ($myact eq "question") {
+print qq~
+<script language="javascript" type="text/javascript">
+window.\$zopim||(function(d,s){var z=\$zopim=function(c){z._.push(c)},\$=z.s=d.createElement(s),e=d.getElementsByTagName(s)[0];z.set=function(o){z.set._.push(o)};\$.setAttribute('charset','utf-8');\$.async=!0;z.set._=[];\$.src=('https:'==d.location.protocol?'https://ssl':'http://cdn')+'.zopim.com/?KrB88Hrei4Irm0gATnuNEpZpUbsYuqtT';\$.type='text/java'+s;z.t=+new Date;z._=[];e.parentNode.insertBefore(\$,e)})(document,'script')
+</script>
+<script language="javascript" type="text/javascript"> 
+\$zopim( function() {
+	\$zopim.livechat.setLanguage('--');
+	\$zopim.livechat.button.setPosition('br');
+	\$zopim.livechat.window.setTheme('alphacube');
+	\$zopim.livechat.window.setColor('');
+	\$zopim.livechat.bubble.setTitle('Questions?');
+	\$zopim.livechat.bubble.setText('Click here to chat with us!');
+			\$zopim.livechat.setGreetings({
+		  'online' : ['Click here to chat', 'Leave a question or comment and our agents will try to attend to you shortly =)'],
+		  'offline': ['Leave a message', 'We are offline, but if you leave your message and contact details, we will try to get back to you =)'],
+		  'away'   : ['Click here to chat', 'If you leave a question or comment, our agents will be notified and will try to attend to you shortly =)']  
+	  });
+	})
+</script>
+~;
+}
+
+print qq~</html>~; 
+
+
+
+
+
+sub cleanMyInput {
+	$pound = "\&#35;";
+	$quot = "\&#34;";
+	$acute = "\&#39;";
+	$amper = "\&#38;";
+	$dolla = "\&#36;";
+	$perc = "\&#37;";
+	$lpren = "\&#40;";
+	$rpren = "\&#41;";
+	$aster = "\&#42;";
+	$plus = "\&#43;";
+	$fslash = "\&#47;";
+	$colon = "\&#58;";
+	$scolon = "\&#59;";
+	$lthan = "\&#60;";
+	$equal = "\&#61;";
+	$gthan = "\&#62;";
+	$ats = "\&#64;";
+	$lsbrack = "\&#91;";
+	$rsbrack = "\&#93;";
+	$bslash = "\&#92;";
+	$caret = "\&#94;";
+	$grave = "\&#96;";
+	$lcbrack = "\&#123;";
+	$vbar = "\&#124;";
+	$rcbrack = "\&#125;";
+	$tilde = "\&#126;";
+
+	$clean_n=$newCom;
+	$clean_n =~ tr/+//;
+	$clean_n =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+	$clean_n =~ s/\&/uNaMpEr/g;
+	$clean_n =~ s/\#/uNPoUnD/gi;
+	$clean_n =~ s/;/uNsEMi/g;
+	$clean_n =~ s/\@/$ats/gi;
+	$clean_n =~ s/'/$acute/gi;
+	$clean_n =~ s/\"/$quot/gi;
+	$clean_n =~ s/\$/$dolla/gi;
+	$clean_n =~ s/\%/$perc/gi;
+	$clean_n =~ s/\(/$lpren/g; 
+	$clean_n =~ s/\)/$rpren/g; 
+	$clean_n =~ s/\*/$aster/g; 
+	$clean_n =~ s/\//$fslash/g;
+	$clean_n =~ s/:/$colon/g;
+	$clean_n =~ s/>/$gthan/gi;
+	$clean_n =~ s/</$lthan/gi;
+	$clean_n =~ s/=/$equal/gi;
+	$clean_n =~ s/\[/$lsbrack/gi;
+	$clean_n =~ s/\]/$rsbrack/gi;
+	$clean_n =~ s/\\/$bslash/g;
+	$clean_n =~ s/\^/$caret/gi;
+	$clean_n =~ s/`/$grave/gi;
+	$clean_n =~ s/\{/$lcbrack/gi;
+	$clean_n =~ s/\}/$rcbrack/gi;
+	$clean_n =~ s/\|/$vbar/gi;
+	$clean_n =~ s/~/$tilde/gi;
+	$clean_n =~ s/\+/$plus/gi;
+	$clean_n =~ s/uNaMpEr/$amper/g; 
+	$clean_n =~ s/uNPoUnD/$pound/g;
+	$clean_n =~ s/uNsEMi/$scolon/g;
+	$newCom=$clean_n;
+}
+exit;

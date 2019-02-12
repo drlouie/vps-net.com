@@ -1,0 +1,121 @@
+#!/usr/bin/perl -w
+
+##################################################################
+#   Program:        OpenCanvas Interactive Website Design        #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      User Interface Design and User Experience    #
+#        Module:    Template Display Document                    #
+#        Info:      Builds our template preview document based   #
+#                   on type of template, either HTML or Flash.   #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+##--- BUG HERE [is issue at dimrequest only]: Define bux fix for flash which have object/embed set as: width="100%" height="100%"
+##-- maybe go full screen w height to fit in primary viewport?
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$invHTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/invisibleHTTP/';
+}
+else {
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$invHTTPRoot = '/var/www/vps-net.com/invisibleHTTP/';
+}
+
+#################################################################
+### TEMPLATE QUERY [AJAX/HTML RESPONSE INTERFACE] [w/flasher.nsp]
+#################################################################
+
+$|=1;
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+require($HTTPRoot."q.nsp");
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+##-- template request
+if ($FORM{'c'}) {
+	print "Content-type: text/html\n\n";
+	$saltine = $FORM{'c'};
+
+	@SALADOS =  split(/-/,$saltine);
+	$preFoundCartID = $SALADOS[1];
+	@saltREV = split(//,$SALADOS[1]);
+	$SALADOS[1] = join('',reverse(@saltREV));
+	$SALADOS[1] =~ s/W/0/gi; $SALADOS[1] =~ s/E/1/gi; $SALADOS[1] =~ s/B/2/gi; $SALADOS[1] =~ s/S/3/gi; $SALADOS[1] =~ s/I/4/gi; $SALADOS[1] =~ s/T/5/gi; $SALADOS[1] =~ s/D/6/gi; $SALADOS[1] =~ s/G/7/gi; $SALADOS[1] =~ s/N/8/gi; $SALADOS[1] =~ s/R/9/gi;
+
+	##-- [0] numeric str length is > 9999 but using length instead to guage value
+	##-- [1] numeric value is > 400 [canvas UD number]
+	if ($SALADOS[0] >= 9999 && $SALADOS[1] >= 400) {
+
+		$saltine =~ s/$preFoundCartID/$SALADOS[1]/gi;
+
+		$SALADOS[1] = int($SALADOS[1]);
+
+		use DBI;
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+		$dbh->{RaiseError} = 1; 
+
+		my $sth = $dbh->prepare("SELECT * FROM customerScarts WHERE CartID = '$SALADOS[1]'");
+		$sth->execute or die "Error 5231\n";
+		my $row = $sth->fetchrow_arrayref;
+		my $cartID = $row->[0];
+		my $cartUID = $row->[1];
+		my $cartContents = $row->[2];
+		my $cartEA = $row->[3];
+		my $cartCID = $row->[4];
+		my $cartDate = $row->[5];
+		my $cartHistory = $row->[8];
+		$sth->finish;
+		$dbh->disconnect;
+
+		##--START DECRYPT
+
+		$llave = int($cartID);
+		$ENUID = &decrypt ($cartUID, $llave);
+
+		###REFORM UID FROM COOKIE PER SE
+		##-- add dashes to reformat UUID 8,4,4,4,12
+		$remadeUID = substr($ENUID,0,8) . '-' . substr($ENUID,8,4) . '-' . substr($ENUID,12,4) . '-' . substr($ENUID,16,4) . '-' . substr($ENUID,20,32);
+
+		use Data::UUID;
+  		$ug2 = new Data::UUID;
+		$idHash = $ug2->from_string($remadeUID);
+		$idHash =~ s/[^a-zA-Z0-9-]//g;
+
+		##--deSalt
+		$idHash =~ s/N/0/gi; $idHash =~ s/E/1/gi; $idHash =~ s/T/2/gi; $idHash =~ s/W/3/gi; $idHash =~ s/O/4/gi; $idHash =~ s/R/5/gi; $idHash =~ s/K/6/gi; $idHash =~ s/S/7/gi; $idHash =~ s/P/8/gi; $idHash =~ s/V/9/gi;
+
+		##-- failed cookie test
+		if ($idHash eq $saltine && int($cartID) == int($SALADOS[1])) {
+			print int($cartID);
+		}
+	}
+
+}
+
+exit;

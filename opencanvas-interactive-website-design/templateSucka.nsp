@@ -1,0 +1,109 @@
+##################################################################
+#   Program:        OpenCanvas Interactive Website Design        #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      User Interface Design and User Experience    #
+#        Module:    Template Data Parser                         #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+##-- grab the TemplateNumber from the query
+if ($FORM{'t'}) {
+	$TN = int(substr $FORM{'t'}, 4);
+	$miPagi = "";
+	######################################################################################################################
+	################# ONLY TEMPORARY FOR A COUPLE WEEKS FOR BACKWARD COMPATIBILITY FOR CURRENT PROSPECTS #################
+	################# NEW WAY = PARSE OUT A SIMPLE ERROR WITH SELECTION MECHANISM:                       #################
+	################# WEB 2.0 FOR 0penCanvas USERS AND BASIC HTML FOR OTHERS                             #################
+	######################################################################################################################
+	##-- reverse compat w/old way (using TMs numbers), new way = 55555 or higher (our own internal id)
+	##-- first try old method by searching our db using TemplateNumber
+
+	#-- CONNECT TO DB (GET PAGE CONTENT)
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "Unable to initiate connection to: <b>DB-VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+
+	my $sth = $dbh->prepare("SELECT TID, Category, Type, PreviewPage, PresentationType, PresentationWidth, PresentationHeight, PresentationMarkup FROM TemplateCentral where TID = $TN");
+	$sth->execute; 
+	$row = $sth->fetchrow_arrayref;
+	$TID = $row->[0];
+	$tcats = $row->[1];
+	$ttype = $row->[2];
+	$ppage = $row->[3];
+	$ptype = $row->[4];
+	$pwi = $row->[5];
+	$phe = $row->[6];
+	$phm = $row->[7];
+	$sth->finish;
+
+
+	$sth = $dbh->prepare("SELECT * FROM Categories WHERE 1=1");
+	$sth->execute or die "Unable to execute query\n"; 
+	my @row2;
+	while(@row2 = $sth->fetchrow_array) {
+		$CatID = $row2[0];
+		$CatN = $row2[1];
+		$CatC = $row2[2];
+		$CatID = int($CatID);
+		$catNames{$CatID} = "$CatN";
+	}
+	$sth->finish;
+
+	if ($tcats =~ ", ") { @misCategories = split(", ", $tcats); }
+	else { push(@misCategories,"$tcats"); }
+
+	$cStart = '<a onClick=javascript:parent.$.fancybox.close();parent.loadCategory(';
+	$cMid = ',' . $TN . '); class="activityLink" style="cursor:pointer;">';
+	$cEnd = '</a>';
+	$countMC = 0;
+
+	foreach $unCat (@misCategories) {
+		$unCat = int($unCat);
+		if ($unCat > 0) {
+			$countMC++;
+			$inbetween = '';
+			if (int(@misCategories) > $countMC) { $inbetween = ', '; }
+			$losCategories = $losCategories . '' . $cStart .''. $unCat .''. $cMid . ''. $catNames{$unCat} .'' . $cEnd . '' . $inbetween;
+		}
+	}
+
+	$trueTN = 'OCv'.$CualOC.''.$TN;
+	if (int($CualOC) == 3) { $cualOCWord = "Advanced Web-Development Package [OC3]"; }
+	elsif (int($CualOC) == 2) { $cualOCWord = "Business Suite Website [OC2]"; }
+	##-- this package isCLASS is X instead of number
+	else { $cualOCWord = "Advanced Web-Dev Package [OCX]"; }
+	
+	#- With Price
+	if ($CualOC eq "1") { $CanvasPrice = '$1,290.75'; }
+	elsif ($CualOC eq "2") { $CanvasPrice = '$1,650.75'; }
+	else { $CanvasPrice = '$2,545.75'; }
+	#- No Price
+	#- if ($CualOC eq "1") { $CanvasPrice = '$0.00'; }
+	#- elsif ($CualOC eq "2") { $CanvasPrice = '$0.00'; }
+	#- else { $CanvasPrice = '$0.00'; }	
+
+	$dbh->disconnect;
+}
+
+1;

@@ -1,0 +1,118 @@
+#!/usr/bin/perl -w
+
+##################################################################
+#   Program:        OpenCanvas Interactive Website Design        #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      User Interface Design and User Experience    #
+#        Module:    Template Star Rating                         #
+#        Info:      Back-end interface to star rating UI/UX.     #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$invHTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/invisibleHTTP/';
+}
+else {
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$invHTTPRoot = '/var/www/vps-net.com/invisibleHTTP/';
+}
+
+#################################################################
+### TEMPLATE QUERY [AJAX/HTML RESPONSE INTERFACE] [w/flasher.nsp]
+#################################################################
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+require($HTTPRoot."q.nsp");
+
+$OpenCanvasVersion = $Cookies{'OpenCanvasVersion'};
+$OpenCanvasDesign = $Cookies{'OpenCanvasDesign'};
+if ($OpenCanvasVersion =~ m/[^0-9]/ 
+|| $OpenCanvasDesign =~ m/[^a-zA-Z0-9-_]/ 
+){
+	##--> Hack attempt / or bad input
+	print "Cache-Control: must-revalidate\n\n";
+	print "<script language=\"Javascript\" type=\"text/javascript\">alert('Error 2251: It is advisable you take note of this error and report it to the site administrator. Thanks.');</script>";
+	exit;
+}
+
+##-->> sanitize
+foreach $afi (@FORM) {
+	$afi =~ s/'//gi;
+	$afi =~ s/"//gi;
+	$afi =~ s/%//gi;
+}
+
+print "Cache-Control: must-revalidate\n\n";
+
+
+$elIP = $ENV{'REMOTE_ADDR'};
+use locale;
+use DBI;
+
+
+		my $dbh = DBI->connect('DBI:mysql:vpsnetcom','vpsnetcom','YOUR-MySQL-PASSWORD') or die "Unable to connect to database: <b>Templater</b>\n";
+		$dbh->{RaiseError} = 1;
+
+		if (int($FORM{'rateTemplate'}) > 1 && $FORM{'setRate'}) {
+
+			## starChart HASH
+			my %starChart = (); $starChart{'0.5'} = '10'; $starChart{'1.0'} = '20'; $starChart{'1.5'} = '30'; $starChart{'2.0'} = '40'; $starChart{'2.5'} = '50'; $starChart{'3.0'} = '60'; $starChart{'3.5'} = '70'; $starChart{'4.0'} = '80'; $starChart{'4.5'} = '90'; $starChart{'5.0'} = '100';
+			$SELTEMP = int($FORM{'rateTemplate'});
+			$NEWRATE = $FORM{'setRate'};
+			$myRate = $starChart{$NEWRATE};
+			if (int($myRate) > 0) {
+				my $sth = $dbh->prepare("UPDATE TemplateCentral SET Rank='$myRate' where TID = $SELTEMP");
+				$sth->execute;
+				$sth->finish;
+				##-- AJAX RESPONSE [text/html]
+				print "Template number $SELTEMP set to new rate: $myRate, incoming as $NEWRATE!";
+			}
+			else {
+				##-- AJAX RESPONSE [text/html]
+				print "Could not set template number $SELTEMP rate to $myRate, incoming as $NEWRATE!";
+			}
+		}
+		##-- empty page
+		else {
+			print "Try again!";
+		}
+
+
+		$dbh->disconnect;
+
+print qq~
+
+~;
+
+	
+exit;

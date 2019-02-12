@@ -1,0 +1,413 @@
+#!/usr/bin/perl -s
+
+##################################################################
+#   Program:        OpenCanvas Interactive Website Design        #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      User Interface Design and User Experience    #
+#        Module:    User OpenCanvas Workarea Saver               #
+#        Info:      Saves current canvas properties, including   #
+#                   any templates placed on the canvas, in       #
+#                   favorites or trash for future use.           #
+#        Interface: DDCarouselHeadScript.js                      #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+}
+else { $HTTPRoot = '/var/www/vps-net.com/htdocs/'; }
+
+###############
+##<-- 2k10 -->##
+###############
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+require($HTTPRoot."q.nsp");
+
+## --> Make sure all request coming from this server's domain or IP
+require $HTTPRoot."referee.nsp";
+
+$myCartContent = "";
+
+$saveCANVAS = "";
+$saveFAVORITES = "";
+$saveTRASH = "";
+$saveUNIQUE = "";
+##print "Cache-Control: must-revalidate\n\n";
+
+## --> 
+## --> if checking ZIPCODE
+## --> 
+
+
+#-- CONNECT TO DB (GET PAGE CONTENT)
+use DBI;
+my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "Unable to initiate connection to: <b>DB-VPS-NET</b>\n"; 
+$dbh->{RaiseError} = 1; 
+
+## --> already has OCv cookie
+$hasOCV = 0;
+$inOCV = 1;
+$inOCV = $OpenCanvasVersion;
+if (int($inOCV) > 0 && int($inOCV) <= 3) { $hasOCV = 1; }
+
+##-- change OCv via FORM
+$newOCv = 1;
+if (int($FORM{'v'}) > 0 && int($FORM{'v'}) <= 3) { $newOCv = int($FORM{'v'}); }
+
+
+
+$inUID = $OpenCanvasDesign;
+
+$headerPrinted = 0;
+
+## --> 
+## --> if Emptying cart contents
+## --> 
+if ($Todo_Form[0] =~ "empty") {
+	if ($inUID ne "" && $inUID ne " ") {
+		print "Cache-Control: must-revalidate\n";
+			&SetCookies('OpenCanvasDesign',);
+			&SetCookies('OpenCanvasVersion',);
+		print "\n";
+		print "Your OpenCanvas has been successfully reset, we will now reload your workarea.";
+	}
+	else {
+		print "Cache-Control: must-revalidate\n\n";
+		print "Your OpenCanvas is already reset, if your OpenCanvas doesn't reset try reloading this page.";
+	}
+	$headerPrinted = 1;
+}
+elsif ($INNERCALL eq "1" || $Todo_Form[0] =~ "uni" || $Todo_Form[0] =~ "canvas" || $Todo_Form[0] =~ "favorites" || $Todo_Form[0] =~ "trash" || $inUID ne "") {
+## ----------------->>> CART
+	## ----------------->>> IF COOKIE FOUND READ IT
+	## ----------------->>> ReadSavedCart cookie>>DB
+	if ($OpenCanvasDesign ne "" && $OpenCanvasDesign ne " ") {
+		## ----------------->>> 	
+		## ----------------->>> FIRST read saved cart
+		## ----------------->>> 
+
+		my $sth = $dbh->prepare("SELECT * FROM customerScarts WHERE UID = '$inUID'");
+		$sth->execute or die "Error 5231\n";
+		my $row = $sth->fetchrow_arrayref;
+		my $cartID = $row->[0];
+		my $cartContents = $row->[2];
+		my $cartEA = $row->[3];
+		my $cartCID = $row->[4];
+		my $cartDate = $row->[5];
+		my $cartHistory = $row->[8];
+		
+		##-- use history to record activity 
+		##-- track UNIQUE template switch [|TemplateIDofUnique1||TemplateIDofUnique2|]
+		if ($Todo_Form[0] =~ "uni") {
+
+
+
+
+			##-- template process
+			if (int($FORM{'t'}) >= 1) {
+				$saveUNIQUE = 1;
+				$mytea = int($FORM{'t'});
+				$itemS = '|'.$mytea.'|';
+				##-- adding: u=1, deleting: u=0
+				if (int($FORM{'u'}) == 1) { $cartHistory .= $itemS; }
+			}
+			##-- package addon process
+			elsif (length($FORM{'a'}) >= 3) {
+				$myadd = $FORM{'a'};
+				##-- kill bad data calls, possible hacks attempts
+				if ($myadd =~ m/[^A-Z]/) {
+					print "Cache-Control: must-revalidate\n\n";
+					exit;
+				}
+				else {
+					$saveADDONS = 1;
+					$addonS = '|'.$myadd.'|';
+					##-- adding: u=1+, deleting: u=0
+					##-- For this instance we pass value of myWebsiteExtras selection, 
+					##-- 0 not selected [not passed therefore removing: 'myadd' ], remove the last chosen package addon if exists
+					##-- 1+ means selected and 'myadd' is our product code
+					if (int($FORM{'u'}) >= 1) { $cartHistory .= $addonS; }
+				}
+			}
+
+
+			##-- multiple items in history
+			if ($cartHistory =~ '||') {
+				$cartHistory =~ s/\|\|/%%%%%/gi;
+				$cartHistory =~ s/\|//gi;
+				@theinu = split(/%%%%%/,$cartHistory);
+				##-- weed out dupes
+		        my %seen = ();
+   			    @uniqueU = grep { ! $seen{ $_ }++ } @theinu;
+			}
+			##-- single item
+			else { $cartHistory =~ s/\|//gi; push(@uniqueU,"$cartHistory"); }
+
+
+
+			##-- template process
+			if (int($FORM{'t'}) >= 1) {
+				##-- filter us
+				foreach $tinu (@uniqueU) {
+					##-- if adding, just add it
+					if (int($FORM{'u'}) == 1) { push(@trueinu,"$tinu"); }
+					##-- if removing, and matches our removed
+					elsif (int($tinu) != $mytea) { push(@trueinu,"$tinu"); }
+				}
+		     	$cartHistory = '|' . join("||", @trueinu) . '|';
+			}
+			##-- package addon process [addon, maintenance etc.]
+			elsif (length($myadd) >= 3) {
+				##-- filter us
+				foreach $tinu (@uniqueU) {
+					##-- if adding, just add it
+					if (int($FORM{'u'}) >= 1) { 
+						##-- by-pass to overwrite any old settings for this addon type, if exists
+
+						##-- run by addon type
+						if (
+						($myadd eq "SEM" && $tinu ne "SSL" && $tinu ne "SSLSEM") ||
+						($myadd eq "SSL" && $tinu ne "SEM" && $tinu ne "SSLSEM") ||
+						($myadd eq "SSLSEM" && $tinu ne "SEM" && $tinu ne "SSL")
+						) {
+							push(@trueinu,"$tinu");
+						}
+						elsif (
+						($myadd eq "BUSCON" && $tinu ne "PERCON") ||
+						($myadd eq "PERCON" && $tinu ne "BUSCON")
+						) {
+							push(@trueinu,"$tinu");
+						}
+						##-- run by maintenance type
+						elsif (
+						($myadd eq "SIXMONTHMAINTENANCE" && $tinu ne "TWELVEMONTHMAINTENANCE") ||
+						($myadd eq "TWELVEMONTHMAINTENANCE" && $tinu ne "SIXMONTHMAINTENANCE")
+						) {
+							push(@trueinu,"$tinu");
+						}
+					}
+					##-- if removing, and matches our removable, by-pass it
+					##-- otherwise push it
+					elsif ($tinu ne $myadd) {
+						push(@trueinu,"$tinu");
+					}
+				}
+		     	$cartHistory = '|' . join("||", @trueinu) . '|';
+			}
+
+
+			##- any distortions in data, kill the data
+			if ($cartHistory eq '||' || $cartHistory eq '|') { $cartHistory = ''; }
+
+		}
+		else {
+
+		# more than one item
+		if ($cartContents =~ "!!!!!!--!!!!!!") { @myCContents = split(/!!!!!!--!!!!!!/,$cartContents); }
+		# one only
+		else { $myCContents[0] = $cartContents; }
+		
+		$cMcc = 0;
+		foreach $MCC (@myCContents) {
+			$FORM{$myINDEL} = "";
+			## ----------------->>> IF COMING FROM CART, CHECK FOR DEL_ && QTY_
+			if ($MCC =~ " %%%%%%%%%%% ") { @allMCC = split(/ %%%%%%%%%%% /,$MCC); }
+			else { $allMCC[0] = $MCC; }
+			
+			$dontPush = 0;
+
+			## find QTY fields by looking at QTY_Layout = (QTY_PID_ORDERPARSED)
+			foreach $AMCC (@allMCC) {
+				@sAMCC = split(/ xxxxx /,$AMCC);
+				$myINQTY = "QTY_" . $sAMCC[0] . "_" . $cMcc;
+				$myINDEL = "DEL_" . $sAMCC[0] . "_" . $cMcc;
+				if ($FORM{$myINQTY}) {
+					if ($MCC =~ " %%%%%%%%%%% ") { $MCC = "$sAMCC[0] xxxxx $FORM{$myINQTY} %%%%%%%%%%% $allMCC[1]"; }
+					else { $MCC = "$sAMCC[0] xxxxx $FORM{$myINQTY}"; }
+					
+					## dont parse if chosen to delete
+					if ("@Todo_Form" =~ "$myINDEL-----on") {
+						# $PageContent = $PageContent . "<script>alert('deleted');</script>";
+						 $dontPush = 1;
+					}
+
+				}
+
+			 }
+
+
+			if ($dontPush eq "0") { push(@OldCartedItems,"$MCC"); }
+			$cMcc++;
+		}
+
+		}
+
+
+		## ----------------->>> 
+		## ----------------->>> TEST for items just added to cart (if any)
+		## ----------------->>> 
+		if ($saveUNIQUE eq "" || $saveADDONS eq "") { 
+			&AddToCanvasHTTP;
+		}
+
+		if ($saveCANVAS ne "") { $CanvasUpdateQuery = "UPDATE LOW_PRIORITY customerScarts SET Canvas='$saveCANVAS', LastUpdated='$datetime', OCv='$newOCv' WHERE UID='$OpenCanvasDesign'"; }
+		elsif ($saveFAVORITES ne "") { $CanvasUpdateQuery = "UPDATE LOW_PRIORITY customerScarts SET Favorites='$saveFAVORITES', LastUpdated='$datetime', OCv='$newOCv' WHERE UID='$OpenCanvasDesign'"; }
+		elsif ($saveTRASH ne "") { $CanvasUpdateQuery = "UPDATE LOW_PRIORITY customerScarts SET Trash='$saveTRASH', LastUpdated='$datetime', OCv='$newOCv' WHERE UID='$OpenCanvasDesign'"; }
+		elsif ($saveUNIQUE ne "" || $saveADDONS ne "") { $CanvasUpdateQuery = "UPDATE LOW_PRIORITY customerScarts SET Historic='$cartHistory', LastUpdated='$datetime', OCv='$newOCv' WHERE UID='$OpenCanvasDesign'"; }
+
+		if ($CanvasUpdateQuery) {
+			## save updated cart to db for future reference by myUID
+			my $sth = $dbh->prepare("$CanvasUpdateQuery");
+			$sth->execute or die "Unable to execute query\n"; 
+			$sth->finish;
+		}
+		## save to db for future reference by myUID
+	
+		print "Cache-Control: must-revalidate\n";
+			## make it expire one year from today at midnight :)
+			my $ahora = today();
+			my $CCD = $ahora + 365;
+			## set proper expiration datetime stamp (Sat, 31-Dec-2011 23:59:59 GMT)
+			$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+			&SetCookies('OpenCanvasVersion',$newOCv);
+		print "\n";
+		$headerPrinted = 1;
+	}
+	## ----------------->>> ELSE CREATE COOKIE & DB TIE
+	## ----------------->>> Create New Cart cookie>>DB
+	else {
+
+		## ----------------->>>
+		## ----------------->>> TEST for items just added to cart (if any)
+		## ----------------->>>
+		&AddToCanvasHTTP;
+	
+		##################################################
+		##>> UNIQUE ID USING IP ADDRESS + cartid
+		##>> WITH THIS NEW LOGIC WE CAN SUCCESSFULLY REVERSE OUR HASHES TO FIND OUR NUMERIC IP REPRESENTATION [and actual reconst ip address] ALONG WITH CartID
+		##>> see: testingUUID.nsp
+  		$IP = "$ENV{'REMOTE_ADDR'}";
+		$dateCap = $datetime;
+		##>> UNIQUE END
+		##################################################
+
+		if ($saveCANVAS ne "") { $CanvasSaveQuery = "INSERT INTO customerScarts (CartID, UID, EA, CID, Created, Canvas, OCv) VALUES (Null, '$IP', '', '', '$dateCap', '$saveCANVAS', '$newOCv')"; }
+		elsif ($saveFAVORITES ne "") { $CanvasSaveQuery = "INSERT INTO customerScarts (CartID, UID, EA, CID, Created, Favorites, OCv) VALUES (Null, '$IP', '', '', '$dateCap', '$saveFAVORITES', '$newOCv')"; }
+		elsif ($saveTRASH ne "") { $CanvasSaveQuery = "INSERT INTO customerScarts (CartID, UID, EA, CID, Created, Trash, OCv) VALUES (Null, '$IP', '', '', '$dateCap', '$saveTRASH', '$newOCv')"; }
+		
+		if ($CanvasSaveQuery) {
+
+			##-- save to db for future reference by myUID
+			my $sth = $dbh->prepare("$CanvasSaveQuery");
+			$sth->execute or die "Unable to execute query\n";
+			$sth->finish;
+
+			##-- get cartid for item we just inserted
+			my $sth = $dbh->prepare("SELECT CartID from customerScarts WHERE (UID='$IP' AND Created='$dateCap' AND OCv='$newOCv')");
+			$sth->execute or die "Error 5231\n";
+			my $row = $sth->fetchrow_arrayref;
+			my $cartID = $row->[0];
+			$sth->finish;
+			
+
+			
+			##--START CRYPT
+
+			###---->> turn IP into numeric value
+			use Net::IPAddress::Minimal ('invert_ip');
+			my $input_string = $IP;
+			my $numericIP = invert_ip( $input_string );
+			if ($numericIP =~ m/[^0-9]/) { print "Cache-Control: must-revalidate\n\n"; print "<script>alert('Error 3251: IP Address disparity. Fix your IP address issues before attempting to revisit this website. Thank you.'); parent.location.href='/';</script>"; exit; }
+
+			###----hashes from same ip address look similar up to the end of string, which is the cart id portion of it [always unique, unless two people from same IP address visit site at exactly the same second, virtually impossible] 
+			###---->> $dateCap = $datetime
+			use Data::UUID;
+			$myHASH = $numericIP . '-' . int($cartID);
+
+			##-- some salty substitutions
+			$myHASH =~ s/0/N/gi; $myHASH =~ s/1/E/gi; $myHASH =~ s/2/T/gi; $myHASH =~ s/3/W/gi; $myHASH =~ s/4/O/gi; $myHASH =~ s/5/R/gi; $myHASH =~ s/6/K/gi; $myHASH =~ s/7/S/gi; $myHASH =~ s/8/P/gi; $myHASH =~ s/9/V/gi;
+
+  			$ug = new Data::UUID;
+			$uuid = $ug->to_string("$myHASH");
+			$myUID = $uuid;
+			$myUID =~ s/[^a-zA-Z0-9]//g;
+
+			#-WAS
+			#-use Crypt::Tea;
+			#-IS
+			use Crypt::Tea_JS;
+			$llave = int($cartID);
+			$ENUID = &encrypt ($myUID, $llave);
+
+			##--END CRYPT
+			##-- IP always gets checked at cookiesnif level, will never get to this point if failed
+			##-- update UID with hashed string
+			my $sth = $dbh->prepare("UPDATE LOW_PRIORITY customerScarts SET UID='$ENUID' WHERE (UID='$IP' AND Created='$dateCap' AND OCv='$newOCv')");
+			$sth->execute or die "Unable to execute query\n";
+			$sth->finish;
+
+			print "Cache-Control: must-revalidate\n";
+				## make it expire one year from today at midnight :)
+				my $ahora = today();
+				my $CCD = $ahora + 365;
+				## set proper expiration datetime stamp (Sat, 31-Dec-2011 23:59:59 GMT)
+				$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+				&SetCookies('OpenCanvasDesign',$ENUID);
+				&SetCookies('OpenCanvasVersion',$newOCv);
+			print "\n";
+			$headerPrinted = 1;
+		}
+	}
+
+	$allRows = "";
+	$cTAMC = 0;
+}
+$dbh->disconnect;
+
+if (!$headerPrinted) { print "Cache-Control: must-revalidate\n\n"; }
+
+print qq~$ENUID~;
+
+sub AddToCanvasHTTP {
+	## -- > 
+	## -- > find to see if coming from cart by scanning form vars
+	## -- > 
+	foreach $TF (@Todo_Form) {
+		if ($TF =~ "canvas") { @splitIC = split(/-----/,$TF); $saveCANVAS = $splitIC[1]; }
+		if ($TF =~ "favorites") { @splitIF = split(/-----/,$TF); $saveFAVORITES = $splitIF[1]; }
+		if ($TF =~ "trash") { @splitIT = split(/-----/,$TF); $saveTRASH = $splitIT[1]; }
+	}
+}
+
+
+exit;

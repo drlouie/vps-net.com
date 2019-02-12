@@ -1,0 +1,970 @@
+#!/usr/bin/perl -w
+
+##################################################################
+#   Program:        OpenCanvas Interactive Website Design        #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      User Interface Design and User Experience    #
+#        Module:    Template Preview Document                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+##--- BUG HERE [is issue at dimrequest only]: Define bux fix for flash which have object/embed set as: width="100%" height="100%"
+##-- maybe go full screen w height to fit in primary viewport?
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$invHTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/invisibleHTTP/';
+}
+else {
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$invHTTPRoot = '/var/www/vps-net.com/invisibleHTTP/';
+}
+
+#################################################################
+### TEMPLATE QUERY [AJAX/HTML RESPONSE INTERFACE] [w/flasher.nsp]
+#################################################################
+
+$|=1;
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+require($HTTPRoot."q.nsp");
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+
+$admip = '76.175.80.225 127.0.0.1';
+$uip = $ENV{'REMOTE_ADDR'};
+$parseobf = 1;
+
+use FileHandle;
+use locale;
+use DBI;
+
+use LWP::Simple;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+
+my $dbh = DBI->connect('DBI:mysql:vpsnetcom','vpsnetcom','YOUR-MySQL-PASSWORD') or die "Unable to connect to database: <b>Templater</b>\n"; 
+$dbh->{RaiseError} = 1;
+
+
+##-- QUERY STRING VARIABLES
+##--- dim request param [flash dimensions w+h]
+$dimrequest = "$FORM{'dimension'}";
+
+##-- LOAD TIME VARIABLES
+##-- loader screen default is visible
+$processLoadVisibility = 'visible';
+$previewScreenVisibility = 'hidden';
+$previewScreenDefaults = "";
+
+##--document contstants
+$docBGcolor = "#F7F9F9";
+
+$inUID = $OpenCanvasDesign;
+
+##-- template request
+if (($FORM{'t'} =~ "OCv" || $FORM{'t'} =~ "ocv") && length($FORM{'t'}) > 5) {
+
+	## --> already has OCv cookie
+	$hasOCV = 0;
+	$inOCV = 1;
+	$inOCV = $OpenCanvasVersion;
+	if (int($inOCV) > 0 && int($inOCV) <= 3) { $hasOCV = $inOCV; }
+
+	##-- acquire OCv from form input: target = OCX|OC2|OC3 and TEMPLATE-ID
+	$CualOC = substr $FORM{'t'}, 3, 1;
+
+	##-- look for change cookie vs form OCv
+	$newOCv = 0;
+	if (int($CualOC) != int($inOCV)) {
+		$newOCv = int($CualOC);
+	}
+	else {
+		$CualOC = int($inOCV);
+	}
+
+	##-- set canvas version cookie if diff from old cookie
+	print "Content-type: text/html\n";
+	if (int($newOCv) > 0 && $inUID ne "" && $inUID ne " ") {
+		my $ahora = today();
+		my $CCD = $ahora + 365;
+		$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+		&SetCookies('OpenCanvasVersion',$newOCv);
+		$CanvasUpdateQuery = "UPDATE LOW_PRIORITY customerScarts SET LastUpdated='$datetime', OCv='$newOCv' WHERE UID='$inUID'";
+	}
+	print "\n";
+	##-- if no canvas cookie, set it using current template as master
+	#elsif ($inUID eq "") {
+	#	$INNERCALL = 1;
+	#	require($HTTPRoot."saveMyCanvas.htm");
+	#}
+
+
+	if ($CanvasUpdateQuery) {
+		## save updated cart to db for future reference by myUID
+		my $sth = $dbh->prepare("$CanvasUpdateQuery");
+		$sth->execute or die "Unable to execute query\n"; 
+		$sth->finish;
+	}
+	
+	$dbh->disconnect;
+
+	##-- acquire template params
+	require($HTTPRoot."opencanvas-interactive-website-design/templateSucka.nsp");
+	$defaultURL = "$ppage";
+
+	##--- get default path from saved URL [remove document name to achieve]
+	@mispartes = split(/\//,$defaultURL);
+	@removed = pop(@mispartes);
+	##-- protocol line [http://]
+	$defaultPath = join('/',@mispartes) . '/';
+
+	$nodefault = 0;
+	$isflasho = 0;
+	##-- is a flash movie request [parse it]
+	if ($ppage =~ "images.templatemonster.com" && int($FORM{'isIFRAME'}) >= 1) {
+		$popWidth = "250";
+		$popHeight = "250";
+		if (int($FORM{'width'}) >= 50) { $popWidth = int(int($FORM{'width'}) + 4 + 5); }
+		if (int($FORM{'height'}) >= 50) { $popHeight = int(int($FORM{'height'}) + 4 + 10); }
+	
+		$previewScreenVisibility = "visible";
+		$processLoadVisibility = "hidden";
+		$previewScreenDefaults = "overflow-x:hidden; overflow-y:hidden; border:0; width:".$popWidth."px; height:".$popHeight."px; clip:rect(0px,".$popWidth."px,".$popHeight."px,0px);";
+		print qq~
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE = 8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>OpenCanvas Design $trueTN by Virtual Private [VPS-NET]</title>
+		<script language="JavaScript" src="/cross_browser_javascripts/javascript-library-Before_DOM.js"></script>
+		<script language="JavaScript" src="/cross_browser_javascripts/javascript-function-popwindow.js"></script>
+		<script type="text/javascript" language="JavaScript">
+		function clickIE4(){if (event.button==2){return false;}}
+		function clickNS4(e){if (document.layers||document.getElementById&&!document.all){if (e.which==2||e.which==3){return false;}}}
+		if (document.layers){document.captureEvents(Event.MOUSEDOWN);document.onmousedown=clickNS4;}
+		else if (document.all&&!document.getElementById){document.onmousedown=clickIE4;}
+		document.oncontextmenu=new Function("return false")
+		</script>
+		$isDEFAULT
+		<style type="text/css">
+			body { background:#E8E8E8; margin:0; padding:0px; overflow-y:hidden; overflow-x:hidden; border:0; }
+			iframe { background:#E8E8E8; margin:0; padding:0px; overflow-y:hidden; overflow-x:hidden; border:0; }
+		</style>
+		</head>
+		<body>
+		<table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
+			<tr valign="middle">
+				<td align="center">
+					<iframe src="$defaultURL" id="PreviewScreen" name="PreviewScreen" style="position:relative;left:0px;top:0px;visibility:$previewScreenVisibility;z-index:1; $previewScreenDefaults" frameBorder="0"></iframe>
+					<div id="OverScreen" name="OverScreen" style="position:relative;left:0px;top:-100px;visibility:visible;z-index:2; $previewScreenDefaults"><!--some<br>some<br>some<br>some<br>--></div>
+				</td>
+			</tr>
+		</table>
+		</body>
+		</html>
+		~;
+		exit;
+	}
+	##- basic html 1.0 with no bangs or whistles for pre 2.0 browsers
+	elsif (int($FORM{'html'}) >= 1 || int($FORM{'h'}) >= 1) { 
+	print qq~
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE = 8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>OpenCanvas Design $trueTN by Virtual Private [VPS-NET]</title>
+		<style type="text/css">
+			body { background:$docBGcolor; margin:0; padding:0; overflow-y:hidden; overflow-x:hidden; border:0; }
+			iframe { background:#FFFFFF; margin:0; padding:0px; overflow-y:auto; overflow-x:hidden; border:0; position:absolute;left:0px;top:0px;z-index:2;width:100%;height:100%; }
+			#preloader { background:$docBGcolor; margin:0; padding:0px; overflow-y:hidden; overflow-x:hidden; border:0; position:absolute;left:0px;top:0px;visibility:visible;z-index:1;width:100%;height:100%; }
+			#screenLoader { background:url(/web_design_imagery/preloadBacker.gif) repeat-x 0 0; }
+			#anilogo { width:48px;height:54px; overflow:hidden; background:url(/web_design_imagery/anilogo.gif) no-repeat; }
+		</style>
+		</head>
+		<body>
+		<div id="preloader">
+	<table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0">
+		<tr valign="middle"><td width="100%">
+			<table width="100%" border="0" cellpadding="0" cellspacing="0">
+				<tr><td width="100%" align="center" style="height:64px;padding: 1px 1px 0px 0px;"><div id="virtual-private-servers-and-networks" title="VPS-NET: Virtual Private Servers and Networks" style="cursor:help;"><img src="/web_design_imagery/spacer.gif" width="48" height="54" alt="VPS-NET: Virtual Private Servers and Networks" border="0"></div></td></tr>
+				<tr style="cursor:wait;"><td width="100%" bgcolor="#C9CDDF"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0" alt="Virtual Private Servers - VPS"></td></tr>
+				<tr style="cursor:wait;"><td width="100%" bgcolor="#FFFFFF"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0" alt="Virtual Private Networks - VPN"></td></tr>
+				<tr style="cursor:wait;"><td width="100%" align="center" id="net" style="height:100px;color:#333333;letter-spacing:2px;font-family:verdana,arial;font-size:9px;" title="$WhichAltMessage" valign="middle"><div style="font-size:13px;"><b>$WhichMessageTitle1<font style="color:#266899">$WhichMessageTitle2</font></b><div style="font-size:9px;letter-spacing:1px;padding-top:8px;">$WhichMessage</div></div></td></tr>
+				<tr style="cursor:wait;"><td width="100%" bgcolor="#FFFFFF"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0" alt="Application Programming Interface - API"></td></tr>
+				<tr style="cursor:wait;"><td width="100%" bgcolor="#C9CDDF"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0" alt="Search Engine Optimization - SEO"></td></tr>
+			</table>
+		</td></tr>
+	</table>
+		</div>
+		<iframe src="$defaultURL" id="PreviewScreen" style="visibility:hidden;" name="PreviewScreen" frameBorder="0" onLoad="javascript:this.style.visibility = 'visible';"></iframe>
+		</body>
+		</html>
+	~;
+	exit;
+	}
+	##- exterior flash movie
+	elsif ($ppage =~ "images.templatemonster.com") {
+		##-- this makes sure we don't read [hasmedia] types, meaning we don't have width nor height specified for other types aside from flash type
+		if ($ptype ne "" && int($pwi) >= 1 && int($phe) >= 1) {
+			##-- using DB saved data
+			##--SHOULD NOT BE PARSED FOR non isIFRAME dox... but it is????
+			$resizeW = int($pwi + 10);
+			$resizeH = int($phe + 60);
+
+			$top = 0; $left = 0;
+			###### -1px left ###### [HAS: noEndBody body table style="display:block"]
+			if ($phm =~ "body" && $phm =~ "table" && $phm =~ "display:block") { $top = '0'; $left = '-1'; }
+			###### -2left -1top ######  [HAS: noEndBody body table style="display:block" AND td style="background:url]
+			elsif ($phm =~ "body" && $phm =~ "table" && $phm =~ "display:block"  && $phm =~ 'td style="background:url') { $top = '-1'; $left = '-2'; }
+			###### -2left -1top ######  [HAS: noEndBody body table BUT NO style="display:block"]
+			elsif ($phm =~ "body" && $phm =~ "table") { $top = '-1'; $left = '-2'; }
+			$top = $top."px";
+			$left = $left."px";
+
+			$resizeWindow = "remakeWindow('$resizeW','$resizeH');";
+			$checkWin = "checkWindow('$resizeW','$resizeH','$pwi','$phe');";
+			$previewScreenDefaults = "overflow-x:hidden; border:1px; width:".$pwi."px; height:".$phe."px; clip:rect(0px,".$pwi."px,".$phe."px,0px);";
+		}
+
+		##-- no DB yet, process data [if found save]
+		##-- we only need to process templatemonster DOC once [templatemoster DOC = flash presentation]
+		##-- if found, save as needed to DB [if anything changes we find diff in the old and CRent doc structure]
+		else {
+			require($HTTPRoot."trim.nsp");
+			require($HTTPRoot."opencanvas-interactive-website-design/flasher.nsp");
+
+			##-- ORIGINAL: 			1000w x 670h
+			##-- WINDOW REMAKE: 	remakeWindow('1015','740'); letsDrawDocument();checkWindow('1015','740','1005','680');
+			##-- IFRAME STYLE: 		overflow-x:hidden; overflow-y:hidden; border:1px; width:1005px; height:680px; clip:rect(0px,1005px,680px,0px);
+
+			##-- save raw width and height to DB
+			if (int($myW) >= 100 && int($myH) >= 100) {
+				$myFlasher =~ s/'//gi;
+				$myW = int($myW);
+				$myH = int($myH);
+				my $sth = $dbh->prepare("UPDATE TemplateCentral set PresentationType='flash', PresentationWidth='$myW', PresentationHeight='$myH', PresentationMarkup='$myFlasher', PresentationLastChecked='$datetime' where TID = $TN");
+				$sth->execute;
+				$sth->finish;
+			}
+		}
+	}
+
+	##-- all others, mainly template-help which is HTML templates
+	if ($nodefault == 0) {
+		if ($ptype eq "") {
+			##-- BUG HERE: if $markup already here, why recall it? [FIX]
+			$estaPagina = get($ppage);
+			if ($estaPagina =~ m/<embed/i || $estaPagina =~ m/<object/i) { ##>##clean the look
+				$estaPagina =~ s/'//gi;
+				my $sth = $dbh->prepare("UPDATE TemplateCentral set PresentationType='hasmedia', PresentationMarkup='$estaPagina', PresentationLastChecked='$datetime' where TID = $TN");
+				$sth->execute;
+				$sth->finish;
+				$ptype = "hasmedia";
+			}
+		}
+
+		$isDEFAULT .= "<!--ISDEFAULT-->";
+
+		$resizeWindow = "window.moveTo(0,0);remakeWindow(''+screen.width+'',''+screen.height+'');";
+		$myW = ''; $myH = '';
+		$processLoadVisibility = 'visible';
+		$previewScreenVisibility = 'hidden';
+		if (!$checkWin) { 
+			$checkWin = "defaultWindowCheck();"; 
+		}
+	}
+	
+	##-- is full flash presentation OR has embeded (object/embed) content which can included flash snippets, but isn't a full flash presentation
+	if ($ptype eq "flash" || $ptype eq "hasmedia") {
+		$isDEFAULT .= "<!--HASMEDIA-->";
+		##-- if our flash was embeded with swfobject then we can show layers over flash no problem
+		if ($phm =~ m/swfobject/i || $estaPagina =~ m/swfobject/i) {
+			$goodMedia = "true";
+		}
+	}
+
+}
+else {
+	print "Content-type: text/html\n\n";
+	exit;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+	###- PUBLIC GETS PRE-PACKAGED OBFUSCATED CODE
+	###- ADMIN GETS WORK IN PROGRESS
+	$letsDrawDocument = 'letsDrawDocument();';
+	$hideMenus = 'hideMenus();';
+	$docuReady = 'docuReady';
+	$RHeightTM = 51; $RHeightTMi = $RHeightTM - 23; $RHeightBM = 24;
+	
+	##-- non-obf (admin testing) will only work on local server/workstation (this unobf js file only exists locally)
+	##-- a cat will not PROCESS its contents therefore no \$ escaped characters need to be cleaned up within the js
+	$mf = $invHTTPRoot."tbq_twoPane_topBottom.js.nsf";
+	if ($admip =~ "$uip" && (-e $mf)) {
+		##-- we will not be PROCESSING its contents therefore no \$ escaped characters need to be cleaned up within the js
+		##-- [win/unix] fix
+		##-- CONCATENATE FILE
+		$fh = new FileHandle;
+		if ($fh->open("< $mf")) { push(@splitFH,<$fh>); $fh->close; }
+		$tbqScript = join("",@splitFH);
+
+		##-> dynamically define:
+		##->  	Collapsed Height for Top and Bottom menus (affects processed js and following markup)
+		$mRHTMr = 'RHeightTopMenu = '.$RHeightTM;
+		$mRHBMr = 'RHeightBottomMenu = '.$RHeightBM;
+		$tbqScript =~ s/RHeightTopMenu = 15/$mRHTMr/gi;
+		$tbqScript =~ s/RHeightBottomMenu = 15/$mRHBMr/gi;
+
+		##-> finalize parseTBQ, default
+		$parseTBQ = $tbqScript;
+		##-> for testing [*isadmin notobf*]
+		$parseTBQ = "/*isadmin notobf*/".$parseTBQ;
+		
+		if ($parseobf != 0) {
+			&obfuscateVars;
+
+			@losTBQ = split(/\n/,$tbqScript);
+			$ctbq = 0;
+			foreach $unTBQ (@losTBQ) {
+				##- locate obfucatables
+				if ($unTBQ =~ "<OBF>") { $startTBQ = $ctbq; }
+				if ($unTBQ =~ "</OBF>") { $endTBQ = $ctbq; }
+				$ctbq++;
+			}
+			$ctbq2 = 0;
+			foreach $elTBQ (@losTBQ) {
+				##- process all obfucatables
+				##- each obfuscatable line contains: ( = ) and (// ) and nothing else
+				##- anything else (/**/) is throw-away
+				if ($ctbq2 > $startTBQ && $ctbq2 < $endTBQ) {
+					if ($elTBQ =~ '// ' && $elTBQ =~ ' = ') {
+						$elTBQ =~ s/\/\/ //gi;
+						my ($nomb,$valu) = split(/ = /,$elTBQ);
+						push(@tbqObf,"$nomb-----$valu");
+					}
+				}
+				elsif ($ctbq2 > $endTBQ) {
+					##- line comments (//) are removed, multi-line comments (/**/) are shown to user
+					if ($elTBQ !~ '//') { $newTBQ = $newTBQ .''. $elTBQ; }
+				}
+				$ctbq2++;
+			}
+
+			##-> clean up the trash
+			$newTBQ =~ s/\t//gi;
+			$newTBQ =~ s/ =/=/gi;
+			$newTBQ =~ s/= /=/gi;
+			$newTBQ =~ s/ !=/!=/gi;
+			$newTBQ =~ s/\+ /\+/gi;
+			$newTBQ =~ s/ \+/\+/gi;
+			$newTBQ =~ s/, /,/gi;
+			$newTBQ =~ s/- /-/gi;
+			$newTBQ =~ s/ -/-/gi;
+			$newTBQ =~ s/ {/{/gi;
+			$newTBQ =~ s/{ /{/gi;
+			$newTBQ =~ s/ }/}/gi;
+			$newTBQ =~ s/} /}/gi;
+			#- double pipe
+			$newTBQ =~ s/ \|\| /\|\|/gi;
+			$newTBQ =~ s/ == /==/gi;
+			$newTBQ =~ s/if \(/if\(/gi;
+			$newTBQ =~ s/ < /</gi;
+			$newTBQ =~ s/ > />/gi;
+			$newTBQ =~ s/ <=/<=/gi;
+			$newTBQ =~ s/ >=/>=/gi;
+			$newTBQ =~ s/ != /!=/gi;
+			$newTBQ =~ s/ \&\& /\&\&/gi;
+			$newTBQ =~ s/ \&\& /\&\&/gi;
+			$newTBQ =~ s/: /:/gi;
+			$newTBQ =~ s/ :/:/gi;
+			$newTBQ =~ s/; /;/gi;
+			#- for testing [*isadmin isobf*]
+			$newTBQ = "/*isadmin isobf*/".$newTBQ;
+			##- run variable obfuscation
+			foreach $obfTBQ (@tbqObf) {
+				($obfus,$nonobf) = split(/-----/,$obfTBQ);
+				$newTBQ =~ s/$obfus/$nonobf/g;
+			}
+			$parseTBQ = $newTBQ;
+			$parseTBQ =~ s/\r//gi;
+			$parseTBQ =~ s/\n//gi;
+		}
+		$tbqScript = '<script type="text/javascript" language="JavaScript">'.$parseTBQ.'</script>';
+	}
+
+	###-- obfuscated (default)
+	else {
+		&obfuscateVars;
+		$fh1 = new FileHandle;
+		$mf1 = $HTTPRoot."cross_browser_javascripts/tbq_twoPane_topBottom_obf.js";
+		if ($fh1->open("< $mf1")) { push(@splitFH1,<$fh1>); $fh1->close; }
+		$tbqScript = join("",@splitFH1);
+		$tbqScript  = '<script type="text/javascript" language="JavaScript">'.$tbqScript.'</script>';
+	}
+
+	#- for markup portion
+	$RHeightTM .= 'px'; $RHeightTMi .= 'px'; $RHeightBM .= 'px';
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+##-- ajax response for dimension request [width,size,feedback]
+##-- DIMENSION
+if (int($dimrequest) >= 1) {
+	if ($ptype ne "" && int($pwi) >= 1 && int($phe) >= 1) {
+		$sizer = "$pwi,$phe";
+	}
+	print "$sizer";
+	#- print "$sizer,$ajaxFeedBack";   ###<< w feedback
+}
+##-- DOCUMENT
+else { 
+
+print qq~
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE = 8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>OpenCanvas Design $trueTN by Virtual Private [VPS-NET]</title>
+<link rel="stylesheet" type="text/css" href="/interface_design_templater.php?q=1&p=CHCSS"/>
+<link rel="stylesheet" type="text/css" href="/yui.css">
+<link rel="stylesheet" type="text/css" href="/javascript-jquery-extension_fancybox-1.3.1.css">
+<link rel="stylesheet" type="text/css" href="/jquery.bubblepopup.v2.3.1.css">
+<link rel="stylesheet" type="text/css" href="/interface_design_templater.php?q=1&p=AHCSS">
+<link rel="stylesheet" type="text/css" href="/interface_design_templater.php?q=1&p=FBHCSS">
+<script language="javascript" type="text/javascript">
+
+
+/*
+/* 
+/* Hi, and thank for your interest in viewing the structure of my work. You are free 
+/* to utilize any of the scripting you see so long as you follow the licensing rules 
+/* governing my permission for such use. And, of course, I thank you for utilizing 
+/* my work on your project, it makes all the time I spent coding and debugging this 
+/* website's interface and programming, totally worth it :)
+/* 
+/* Also, if you find any bugs just fire me a message, if you can figure out how to 
+/* reach me that is :P [OS, include browser version, and bug], Ill work the bug out, 
+/* eventually.
+/* 
+/* 	The following license statement applies to all scripts and programs found 
+/* 	throughout vps-net.com, those of which I myself have hardcoded; Anything not 
+/* 	found on the sources list located at www.vps-net.com/resources/javascript/,
+/* 	is considered custom scripting hardcoded for this site's original interface; 
+/* 	Yes you are free to use and distribute it in its native format; Considering 
+/* 	you add the following license tag to any and all documents displaying the 
+/* 	script(s):
+*/
+
+/**
+/** This program is free software; you can redistribute it and/or modify it under 
+/** the terms of the GNU General Public License as published by the Free Software 
+/** Foundation; either version 2 of the License, or (at your option) any later 
+/** version. This program is distributed in the hope that it will be useful, but 
+/** WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
+/** or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+/** for more details.
+/** 
+/** You should have received a copy of the GNU General Public License along with 
+/** this program; if not, write to: the Free Software Foundation, Inc., 
+/** 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+/** 
+/** Script: VPS-NET Scripting [by louierd]
+/** Author: Louie Rd (Luis Rodriguez) [ http://louierd.com/about/ ]
+/** Release: November 2010
+/** Version: 4.1
+/** Description:
+/**		This is a generic license for all the scripting within 
+/**		vps-net.com, this website, which includes the following 
+/**		named scripts:
+/**
+/**		OpenCanvas UI, docuMaster, swFlasher, eyeCaptcha;
+/**		More to be modulized and named in the future.
+/**/
+
+</script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/data-formatting-tools.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-function-dom_sizer.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-library-Before_DOM.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-library-jquery-1.4.2.min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension-container_core-min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension_connection-min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension_dom-event.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension_drag-drop-min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension_animation-min.js"></script>
+
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-function-popwindow.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-library-overlib_4.22.js"></script>
+
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-jquery-extension_fancybox-1.3.1.pack.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-jquery-extension_mousewheel-3.0.2.pack.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-jquery-extension_bubblepopup.v2.3.1.min.js"></script>
+
+<script language="javascript" type="text/javascript" src="/interface_design_templater.php?q=1&p=CHS"></script>
+<script language="javascript" type="text/javascript" src="/interface_design_templater.php?q=1&p=FBHS"></script>
+<script language="javascript" type="text/javascript" src="/interface_design_templater.php?q=1&p=AHS"></script>
+
+<script type="text/javascript" language="JavaScript">
+/*function clickIE4(){if (event.button==2){return false;}}
+function clickNS4(e){if (document.layers||document.getElementById&&!document.all){if (e.which==2||e.which==3){return false;}}}
+if (document.layers){document.captureEvents(Event.MOUSEDOWN);document.onmousedown=clickNS4;}
+else if (document.all&&!document.getElementById){document.onmousedown=clickIE4;}
+document.oncontextmenu=new Function("return false")*/
+</script>
+$isDEFAULT
+	~;
+
+	$showPreloader = 0;
+
+	$chromed = "0";
+	if ($FORM{'chromed'}) { $chromed = "$FORM{'chromed'}"; }
+	##-- templateViewer
+	if (int($FORM{'screenThis'}) >= 1) {
+		$loadscript = "onLoad=\"hLS();\"";
+
+		$showPreloader = 1;
+	}
+	##-- no query-string
+	else {
+		$loadscript = "onLoad=\"hLS(); $resizeWindow $letsDrawDocument $checkWin\"";
+
+		##-- docuReady never gets set to one, so maybe write it in or, make it a triggered call, click [for instance: click to snap to proper size]
+		$resizescript = "onResize=\"if ($docuReady == 1) { $resizeWindow $letsDrawDocument $checkWin }\"";
+		$showPreloader = 1;
+
+		print qq~
+		$tbqScript
+		<style type="text/css">body{margin:0;padding:0;border:0;overflow:hidden; background:$docBGcolor; }</style>
+		~;
+	}
+
+	
+	
+	
+
+
+	##-- ADVERTISEMENT SETUP
+	##-- 234x60 ad for all documents
+	$sizeQ = "AND ((DisplayImage != '' AND DisplayImageWidth = '234' AND DisplayImageHeight = '60') OR (AdImageURL != '' AND AdImageWidth = '234' AND AdImageHeight = '60'))";
+	$myAdW = 234; $myAdH = 60; $myAdPadding = "padding-top:8px; padding-bottom:5px;";
+	##- if document width is reported to be higher than 980, we have room for 468x60 Ad
+	##- <!-- 468x60 max for ad spot, may use 728x90 and programmatically resize to 468x57 -->
+	##- if width of template is higher than 980px or no size info given (no size info: fullscreen website template/mainly HTML)
+	if ($pwi >= 980 || $pwi eq '') {
+		$sizeQ = "AND ((DisplayImage != '' AND DisplayImageWidth = '468' AND DisplayImageHeight = '60') OR (DisplayImage != '' AND DisplayImageWidth = '728' AND DisplayImageHeight = '90') OR (AdImageURL != '' AND AdImageWidth = '468' AND AdImageHeight = '60') OR (AdImageURL != '' AND AdImageWidth = '728' AND AdImageHeight = '90'))";	
+		$myAdW = 468; 
+		$myAdH = 60;
+		$myAdPadding = "padding-top:8px; padding-bottom:3px;";
+	}
+	$myad = &getMyAdvertisement("AdKeys LIKE '%Website%' OR AdKeys LIKE 'Website%' OR AdKeys LIKE '%Website' OR AdKeys LIKE '%Development%' OR AdKeys LIKE '%Development' OR AdKeys LIKE 'Development%'","$sizeQ");
+
+	
+	
+	
+	##-- PRELOADER OBJECT
+	if ($showPreloader == 1){
+		print qq~
+		<script type="text/javascript" language="JavaScript">
+		<!--
+		var hLS=function(){\$("#PreviewScreen").css({visibility: "visible"});\$("#ActivePreviewScreen").fadeIn('slow');\$("#processload").css({visibility: "hidden"});if(document.body&&(document.body.scrollTop)){document.body.scrollTop=0;}};
+		// -->
+		</script>
+		<style type="text/css">
+			body { background:$docBGcolor; margin:0; padding:0; border:0; overflow:hidden; }
+			#screenLoader { background:url(/web_design_imagery/preloadBacker.gif) repeat-x 0 0; }
+			#anilogo { width:48px;height:54px; overflow:hidden; background:url(/web_design_imagery/anilogo.gif) no-repeat; }
+			.ActiveMenuContainer { background:$docBGcolor; }
+			#ActivePreviewScreen { background: #fff; }
+			.ActiveMenuData { color:#333333; font-family:verdana,arial; font-size:9px; }
+			.ActiveMenuHLine {width:150px;height:2px;overflow:hidden;clip:rect(0px,150px,2px,0px);background:#FFF;}
+			.ActiveMenuTriggerTop {width:5px;height:75px;overflow:hidden;clip:rect(0px,5px,75px,0px);}
+			.ActiveMenuTriggerBot {width:5px;height:75px;overflow:hidden;clip:rect(0px,5px,75px,0px);}
+			.ActiveMenuHBarTop { width:75px;height:3px;overflow:hidden;clip:rect(0px,75px,3px,0px);}
+
+			.ActiveMenuHBar1 {width:75px;height:1px;overflow:hidden;clip:rect(0px,75px,1px,0px);background:#FFF;}
+			.ActiveMenuHBar2 {width:75px;height:1px;overflow:hidden;clip:rect(0px,75px,1px,0px);background:#AAAAAA;}
+			.ActiveMenuHBar3 {width:75px;height:1px;overflow:hidden;clip:rect(0px,75px,1px,0px);background:#F9F9F9;}
+
+			.ActiveMenuVLineTop {width:2px;height:75px;overflow:hidden;clip:rect(0px,2px,75px,0px);}
+			.ActiveMenuVLineBot {width:2px;height:75px;overflow:hidden;clip:rect(0px,2px,75px,0px);}
+			.ActiveMenuVBarTop {width:3px;height:75px;overflow:hidden;clip:rect(0px,3px,150px,0px);}
+			.ActiveMenuVBarBot {width:3px;height:75px;overflow:hidden;clip:rect(0px,3px,150px,0px);}
+			#ActiveMenuFootAd { display:none; $myAdPadding }
+		</style>
+		</head>
+		<body $loadscript $resizescript>
+		<div id="processload"  style="display:inherit;cursor:wait;z-index:1000;width:100%;position:absolute;left:0px;top:0px;visibility:$processLoadVisibility;background-color:$docBGcolor;width:100%;height:100%;overflow:hidden;">
+		<table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0">
+			<tr valign="middle"><td width="100%">
+			<table width="100%" border="0" cellpadding="0" cellspacing="0">
+				<tr><td width="100%" align="center" style="height:64px;padding: 1px 1px 0px 0px;"><div id="anilogo" title="OpenCanvas by Virtual Private, now loading . . ."><img src="/web_design_imagery/spacer.gif" width="48" height="54" alt="OpenCanvas by Virtual Private, now loading . . ." border="0"></div></td></tr>
+				<tr><td width="100%" bgcolor="#C9CDDF"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0"></td></tr>
+				<tr><td width="100%" bgcolor="$docBGcolor"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0"></td></tr>
+				<tr><td width="100%" align="center" id="screenLoader" style="height:100px;color:#333333;letter-spacing:2px;font-family:verdana,arial;font-size:9px;" title=". . . loading, please wait . . ." valign="top"><font style="font-size:11px;"><br><br><b>Open<font style=color:#266899>Canvas</font> Design</b><br><br><font style="font-size:13px;letter-spacing:4px;">$trueTN</font></font></td></tr>
+				<tr><td width="100%" bgcolor="$docBGcolor"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0"></td></tr>
+				<tr><td width="100%" bgcolor="#C9CDDF"><img src="/web_design_imagery/spacie.gif" height="1" width="1" border="0"></td></tr>
+			</table>
+			</td></tr>
+		</table>
+		</div>
+		~;
+	}
+	##-- NO-PRELOADER OBJECT
+	else {
+		print qq~
+		<style type="text/css">
+			body { margin:0; padding:0; border:0; overflow:hidden; scroll:no; }
+		</style>
+		</head>
+		<body>
+		~;
+	}
+
+	$myFullTemplateNumber = "OCv".$CualOC."".$TN;
+	@spacedFTNs = split(//,$myFullTemplateNumber);
+	$spacedFTN = join(' &nbsp;', @spacedFTNs);
+	$spacedFTN =~ s/O \&nbsp\;C \&nbsp\;v \&nbsp\;/O \&nbsp\;C \&nbsp\;v \&nbsp\;<font class="f0078AD">/gi;
+	$spacedFTN .= "</font>";
+	
+	## if we dont have UID yet, which means we havent created our OpenCanvasDesign Cookie yet, no items added to canvas
+	if (int($inUID) > 120975) {
+		my $sth = $dbh->prepare("SELECT CartID FROM customerScarts where UID='$inUID'");
+		$sth->execute;
+		$row2 = $sth->fetchrow_arrayref;
+		$CartID = $row2->[0];
+	}
+	else { $CartID = '000000'; }
+	$myFullCanvasNumber = $CualOC."".$CartID;
+	$myFullCanvasID = "OCv".$myFullCanvasNumber;
+
+
+	$coolClass = 'MoreWikiInfo';
+	$coolClassB = 'MoreInfoB';
+
+	##- PHP
+	##- terminology tie using PHP predefined arrays
+	$markedupT = $ttype;
+	#-> make the title smaller, if possible [limited space]
+	if ($markedupT =~ / \(/) {
+		($nmt, $trash) = split(/ \(/,$markedupT);
+		$markedupT = $nmt;
+	}
+
+	use PHP::Include;
+	include_php_vars( 'TerminologyMarkup.php' );
+	$cAT = 0;
+	foreach $aT (@term) {
+		$desc[$cAT] =~ s/\\'/'/gi; 
+		#- remove SOME styling used by OpenCanvas UI
+		$oldSt1F = 'display:inline;border:0px;';
+		$desc[$cAT] =~ s/$oldSt1F//gi;
+		#- replace scripted url with basic html url [since we can't show layers over media that we ourselves aren't serving, we know the reason why :) ]
+		if (($ptype eq "flash" || $ptype eq "hasmedia") && $goodMedia ne "true") {
+			$coolClass = 'NoWikiInfo';
+			$coolClassB = 'NoInfoB';
+			
+			$oldSt2F = " rel='";
+			$oldSt2R = " href='";
+			$oldSt3F = "onClick=";
+			$oldSt3R = "target=";
+			$oldSt4R = "Wikipedia";
+			$oldSt5F = "MoreWikiInfo";
+			$oldSt5R = $coolClass;
+			
+			$desc[$cAT] =~ s/$oldSt2F/$oldSt2R/gi;
+			$desc[$cAT] =~ s/$oldSt3F/$oldSt3R/gi;
+			$desc[$cAT] =~ s/runWikiBoard\(this\)\;/$oldSt4R/gi;
+			$desc[$cAT] =~ s/$oldSt5F/$oldSt5R/gi;
+		}
+		$markedupT =~ s/$aT/<b>$desc[$cAT]<\/b>/gi;
+		$cAT++;
+	}
+	##-- BUG WAS HERE [caused some of our template framing work to break due to problematic titles]
+	#if ($markedupT =~ / \(/) {
+	#	($nmt, $trash) = split(/ \(/,$markedupT);
+	#	$markedupT = $nmt;
+	#}
+	
+	$markedupT = $markedupT . " Design";
+	
+
+	## how the price is being called, template or canvas [ONLY IFRAMED FLASH MOVIES!]
+	$switchPriceName = "<b class=\"$coolClass\" title=\"Package price includes: Website template, text customization, setup, FREE domain name (1 year registration), FREE 12 month hosting plan and FREE advertising credits. Also includes Google Webmaster Tools, website support and state-of-the-art self-service website, hosting and domain management tools to help you easily keep your online business(es) up-to-date, secure and fully in your control.\" style=\"cursor:help;color:#0078AD;\">Package Price</b>";
+	if ($ppage =~ "images.templatemonster.com" && int($FORM{'isIFRAME'}) >= 1) {
+		$switchPriceName = "<b class=\"$coolClass\" title=\"Canvas ID# $myFullCanvasID\" style=\"cursor:help;color:#0078AD;\">Canvas Price</b>";
+	}
+
+
+	##- browser specific markup/stylings
+	$browser = $ENV{'HTTP_USER_AGENT'};
+	$browser = lc($browser);
+	$topMenuTopPad1 = 'top:8px;font-family:tahoma,arial,helvetica;';
+	if ($browser !~ "msie") {
+		$topMenuTopPad2 = 'top:4px;';
+		$topMenuButtonTopPad = 'padding:2px;padding-top:1px;';
+		$topMenuButtonTopPadL = '&nbsp; ';
+		$topMenuButtonTopPadR = ' &nbsp;';
+		# $browserOut = "<script>alert('$browser');</script>";
+	}
+
+
+
+
+	print qq~
+		$browserOut
+		$flasherOut
+		<div style="background:$docBGcolor url(/web_design_imagery/website-preview-wrap-3px-vBorder.gif) 5px 0 repeat-y;">
+		<div style="background:url(/web_design_imagery/website-preview-wrap-3px-vBorderR.gif) 0 0 repeat-y; background-position:right;">
+		<table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
+			<tr>
+				<td colspan="7" align="center" valign="top">
+					<div class="ActiveMenuContainer" style="position:relative;height:$RHeightTM;">
+						<div id="ActiveMenuDataTop" onMouseOver="$hideMenus" style="position:relative;top:0px;left:0;z-index:999;width:175px;height:$RHeightTMi;overflow:hidden;clip:rect(0px,175px,$RHeightTMi,0px);position:relative;">
+							<div style="position:relative;">
+								<table width="100%" cellpadding="0" cellspacing="0" border="0">
+									<form>
+									<tr valign="top">
+										<td width="40%" align="left" nowrap><div style="height:27px;" class="commonFont"><span style="padding-left:5px;position:relative;$topMenuTopPad1">$markedupT</span></div></td>
+										<td align="center" class="ActiveMenuData" width="20%" nowrap>
+											<div style="height:27px;">
+												<div id="HeaderInfo" class="commonFont" style="height:27px;padding-top:2px;font-size:17px;font-family:tahoma,arial,helvetica;">$spacedFTN</div>
+											</div>
+										</td>
+										<td width="40%" align="right" nowrap><div style="height:27px;" class="commonFont"><span style="padding-right:5px;position:relative;$topMenuTopPad2">$switchPriceName [ $CanvasPrice ] </span><input type="button" name="BuyItNow" id="BuyItNowButton" value="~;print $topMenuButtonTopPadL;print qq~Buy It Now!~;print $topMenuButtonTopPadR;print qq~" style="position:relative;top:3px;font-size:11px;font-family:verdana,arial,helvetica;font-weight:bold;padding:2px;$topMenuButtonTopPad"></div></td>
+									</tr>
+									</form>
+								</table>
+							</div>
+						</div>
+					</div>
+					<div style="width:100%;position:absolute;top:26px;left:0px;z-index:3;height:30px;">
+						<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FFFFFF url(/web_design_imagery/blankershim_backSpan.gif) 0 -5px repeat-x;">
+							<form>
+							<tr valign="top">
+								<td width="6" align="left" style="background:#F9F9F9;"><div style="width:6px;height:30px;clip:rect(0px,6px,30px,0px);overflow:hidden;"><img src="/web_design_imagery/spacer.gif" width="1" height="1" border="0"></div></td>
+								<td width="1" valign="bottom"><div style="background:#AAAAAA;width:1px;height:26px;clip:rect(0px,1px,26px,0px);overflow:hidden;"><img src="/web_design_imagery/spacer.gif" width="1" height="26" border="0"></div></td>
+								<td width="40%" align="left" nowrap><div class="commonFont"><span style="padding-left:5px;position:relative;">&nbsp;</span></div></td>
+								<td align="center" class="ActiveMenuData">
+									<div style="overflow:hidden;height:27px;">
+										<div style="background:url(/web_design_imagery/blankershim_centerLeft.gif) 0 -5px no-repeat;padding-left:153px;">
+											<div style="height:27px;background:url(/web_design_imagery/blankershim_centerRight.gif) 0 -5px no-repeat;padding-right:153px;"></div>
+										</div>
+										<div class="commonFont" style="position:relative;top:-29px;left:0px;font-size:9px;height:12px;font-family:arial,tahoma,helvetica;color:#E4E4E4;">d e s i g n &nbsp; i d</div>
+									</div>
+								</td>
+								<td width="40%" align="right" nowrap><div style="" class="commonFont"></div></td>
+								<td width="1" valign="bottom"><div style="background:#AAAAAA;width:1px;height:26px;clip:rect(0px,1px,26px,0px);overflow:hidden;"><img src="/web_design_imagery/spacer.gif" width="1" height="26" border="0"></div></td>
+								<td width="6" align="left" style="background:#F9F9F9;"><div style="width:6px;height:30px;clip:rect(0px,6px,30px,0px);overflow:hidden;"><img src="/web_design_imagery/spacer.gif" width="1" height="1" border="0"></div></td>
+							</tr>
+							</form>
+						</table>
+					</div>
+					<div class="ActiveMenuHBar3" style="z-index:1;position:relative;"><img src="/web_design_imagery/spacer.gif" width="1" height="1" border="0"></div>
+					<div class="ActiveMenuHBar2" style="z-index:1;position:relative;"><img src="/web_design_imagery/spacer.gif" width="1" height="1" border="0"></div>
+					<div class="ActiveMenuHBar1"><img src="/web_design_imagery/spacer.gif" width="1" height="1" border="0"></div>
+					<div class="ActiveMenuHLine" onMouseOver="$hideMenus" title="Close OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="2" height="1" border="0"></div>
+				</div>
+				</td>
+			</tr>
+			<tr valign="middle">
+				<td><div class="ActiveMenuTriggerTop"><img src="/web_design_imagery/spacer.gif" width="5" height="75" border="0"></div><div class="ActiveMenuTriggerBot" onMouseOver="showMenu('ActiveMenuDataBot');"><img src="/web_design_imagery/spacer.gif" width="5" height="75" border="0"></div></td>
+				<td><div class="ActiveMenuVBarTop"><img src="/web_design_imagery/spacer.gif" width="3" height="75" border="0"></div><div class="ActiveMenuVBarBot" onMouseOver="showMenu('ActiveMenuDataBot');" title="OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="3" height="75" border="0"></div></td>
+				<td><div class="ActiveMenuVLineTop" onMouseOver="$hideMenus" title="OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="2" height="75" border="0"></div><div class="ActiveMenuVLineBot" onMouseOver="$hideMenus" title="OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="2" height="75" border="0"></div></td>
+				<td align="center"><div onMouseOver="$hideMenus" id="ActivePreviewScreen" style="position:relative;top:0px;left:0px;display:none;overflow-x:hidden;overflow-y:hidden;border:#D6D6D6 1px solid;"><iframe onFocus="$hideMenus" src="$defaultURL" id="PreviewScreen" name="PreviewScreen" style="position:relative;top:$top;left:$left;visibility:$previewScreenVisibility;z-index:1;$previewScreenDefaults" frameBorder="0"></iframe></div></td>
+				<td><div class="ActiveMenuVLineTop" onMouseOver="$hideMenus" title="OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="2" height="75" border="0"></div><div class="ActiveMenuVLineBot" onMouseOver="$hideMenus" title="OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="2" height="75" border="0"></div></td>
+				<td><div class="ActiveMenuVBarTop"><img src="/web_design_imagery/spacer.gif" width="3" height="75" border="0"></div><div class="ActiveMenuVBarBot" onMouseOver="showMenu('ActiveMenuDataBot');" title="OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="3" height="75" border="0"></div></td>
+				<td><div class="ActiveMenuTriggerTop"><img src="/web_design_imagery/spacer.gif" width="5" height="75" border="0"></div><div class="ActiveMenuTriggerBot" onMouseOver="showMenu('ActiveMenuDataBot');"><img src="/web_design_imagery/spacer.gif" width="5" height="75" border="0"></div></td>
+			</tr>
+			<tr>
+				<td colspan="7" align="center" valign="top">
+					<div>
+						<div class="ActiveMenuHLine" onMouseOver="$hideMenus" title="Close OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="2" height="1" border="0"></div>
+						<div class="ActiveMenuHBar1" onMouseOver="showMenu('ActiveMenuDataBot');" title="Open OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="1" height="1" border="0"></div>
+						<div class="ActiveMenuHBar2" onMouseOver="showMenu('ActiveMenuDataBot');" title="Open OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="1" height="1" border="0"></div>
+						<div class="ActiveMenuHBar3" onMouseOver="showMenu('ActiveMenuDataBot');" title="Open OpenCanvas Browser Menu"><img src="/web_design_imagery/spacer.gif" width="1" height="1" border="0"></div>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="7" align="center" valign="top">
+
+
+					<div style="background:$docBGcolor url(/web_design_imagery/footerLogo_background.png) 0 4px no-repeat;">
+						<div id="ActiveMenuDataBot" onMouseOver="showMenu('ActiveMenuDataBot');" style="width:175px;height:$RHeightBM;overflow:hidden;clip:rect(0px,175px,$RHeightBM,0px);">
+							<table width="100%" cellpadding="0" cellspacing="0" border="0">
+								<tr valign="top">
+									<td align="left" width="100%" class="ActiveMenuData">
+										<div class="FooterLogo" style="height:100px;text-align:left;font-size:11px;font-family:arial,helvetica,verdana;">
+											<div style="padding-top:4px;padding-left:8px;">&copy; 2000-$year Virtual Private - <a href="" class="$coolClassB" title="Website and Internet Technology development solutions, custom engineered or pre-developed, to fit any type of business model, product, process or marketing platform. All at the guaranteed lowest possible information technology development cost.">Web Design</a> and <a href="" class="$coolClassB" title="Not only do we fully support all our technical work but we go further by extending our support unto technologies you might have acquired from other sources. Just give us a call or send us a message to let us know your concern, we're here for the sole purpose of helping you master your personal and business promotion and production technologies. State-of-the-art Information Technology development and support by 'Virtual Private Servers and Networks'.">Support</a></div>
+											<table width="100%" cellpadding="0" cellspacing="0" border="0">
+												<tr>
+													<td width="240"><img src="/web_design_imagery/spacer.gif" width="240" height="78" border="0"></td>
+													<td width="100%" align="left" style="padding-top:12px;padding-left:10px;padding-right:20px;">
+
+														<table width="100%" cellpadding="0" cellspacing="0" border="0" class="nobord">
+															<tr class="nobord" valign="top">
+																<td class="nobord" align="right">
+																<div style="height:20px;overflow:hidden;">
+																	<span title="We accept payments made through PayPal for our Website Design services."><img src="/web_design_imagery/web-design_payment_paypal_33x18.png" border="0" width="30" height="18" alt="We accept payments made through PayPal for our Website Design services." style="cursor:help;" vspace="2" hspace="2"></span>
+																	<span title="VISA payments are accepted for our Internet Marketing solutions."><img src="/web_design_imagery/internet-marketing_payment_visa_33x18.png" border="0" width="30" height="18" alt="VISA payments are accepted for our Internet Marketing solutions." style="cursor:help;" vspace="2" hspace="2"></span>
+																	<span title="You can use your American Express as payment for Domain Registration."><img src="/web_design_imagery/domain-registration_payment_amex_33x18.png" border="0" width="30" height="18" alt="You can use your American Express as payment for Domain Registration." style="cursor:help;" vspace="2" hspace="2"></span>
+																	<span title="The Virtual Private Search Engine Optimization Experts accept MasterCard payments."><img src="/web_design_imagery/search-engine-optimization_payment_mastercard_33x18.png" border="0" width="30" height="18" alt="The Virtual Private Search Engine Optimization Experts accept MasterCard payments." style="cursor:help;" vspace="2" hspace="2"></span>
+																	<span title="Our Email Marketing Team accepts payments made through Google Checkout"><img src="/web_design_imagery/email-marketing_google-checkout_33x18.png" border="0" width="30" height="18" alt="Our Email Marketing Team accepts payments made through Google Checkout" style="cursor:help;" vspace="2" hspace="2"></span>
+																</div>
+																</td>
+															</tr>
+															<tr class="nobord">
+																<td width="100%" class="nobord" align="right" valign="top">
+																	<div style="height:14px;padding-right:6px;padding-top:6px;"><span class="$coolClassB" title="We gladly accept, and develop our clients' technologies to also accept, these and other popular electronic payment methods. Securely! With the utilization of 256 bit keys to encrypt the transmission and storage of your data, in-essence promoting, and at the same time, adhering to a strict code of technological security that ensures no end-user or clients' mission critical data is left out-in-the-open and subject to hacks or theft. At Virtual Private, technological security is of the utmost importance!" style="color:#AAAAAA;cursor:help;">accepted here</span></div>
+																</td>
+															</tr>
+														</table>
+
+													</td>
+												</tr>
+											</table>
+										</div>
+									</td>
+									<td align="right" class="ActiveMenuData" nowrap>
+										<div id="ActiveMenuFootAd">
+											~;
+											if ($ADidX1 ne "") { print "<div style=\"$Adx1style\">$Adx1</div>"; }
+											print qq~
+										</div>
+										<div class="FooterAdvertisement" style="height:$RHeightBM;text-align:right;font-family:arial,helvetica,verdana;color:#000;">
+											~;
+											if ($ADidX1 ne "") { print "<div style=\"padding-top:4px;padding-right:8px;\"><span style=\"font-size:12px;\">$AdDescriptor</span></div>"; }
+											print qq~
+										</div>
+									</td>
+								</tr>
+							</table>
+						</div>
+					</div>
+
+
+
+				</td>
+			</tr>
+		</table>
+		</div>
+		</div>
+	</body>
+	</html>
+	~;
+}
+$dbh->disconnect;
+
+
+
+sub getMyAdvertisement {
+	my $LocalADQuery=$_[0];
+	my $LocalADSizedQuery=$_[1];
+	$sth = $dbh->prepare("SELECT * FROM AffAdvertisements where VirtualStatus='Active' $LocalADSizedQuery AND ($LocalADQuery) order by rand() limit 1");
+	$sth->execute; 
+	$row = $sth->fetchrow_arrayref;
+	$AID = $row->[0];
+	$Advertiser = $row->[0];
+	$AdLink = $row->[3];
+	$AdTitle = $row->[5];
+	$AdText = $row->[6];
+	$AdKeys = $row->[7];
+	$AdImpressionURL = $row->[8];
+	$AdImageURL = $row->[9];
+	$AdImagew = $row->[10];
+	$AdImageh = $row->[11];
+	$DisplayImage = $row->[13];
+	$DisplayImagew = $row->[14];
+	$DisplayImageh = $row->[15];
+	$ShowBorder = $row->[16];
+	$BorderStyle = $row->[17];
+	$Impressions = $row->[21];
+
+	##-->> AD NO LOCAL IMAGE [always force display image if it exists]
+	if ($DisplayImage eq "") {$Adx1 = '<div><a href="'.$AdLink.'" target="Advertisement" title="'.$AdKeys.'" style="color:#000000;" target="VPS-Advertiser-$Advertiser"><img src="'.$AdImageURL.'" width="'.$myAdW.'" height="'.$myAdH.'" border="0" alt="'.$AdText.'"></a></div>'; $Adx1w = $myAdW;  $Adx1h = $myAdH; }
+	##-->["> AD LOCAL IMAGE [AD IMPRESSION IMAGE TO AD]
+	else { $Adx1 = '<div><a href="'.$AdLink.'" target="Advertisement" title="'.$AdKeys.'" style="color:#000000;" target="VPS-Advertiser-$Advertiser"><img src="'.$DisplayImage.'" width="'.$myAdW.'" height="'.$myAdH.'" border="0" alt="'.$AdText.'"></a></div>'; $Adx1w = $myAdW;  $Adx1h = $myAdH; }
+	$Adx1title = $ADx1advert.': <a href="'.$AdLink.'" target="Advertisement" title="'.$AdText.'" target="VPS-Advertiser-$Advertiser">'.$AdTitle.'</a>';
+	##-->["> AD STYLE THE LAYER
+	$Adx1style = "width:".($Adx1w+1)."px;height:".($Adx1h+1)."px;";
+
+	##-->["> IF IS ON USE DB BORDER SETTINGS [AD PRESET PADDING AND DIV RESIZE]
+	#if (int($ShowBorder) > 0) { $Adx1style = $Adx1style . "border:".$ShowBorder."px ".$BorderStyle.";padding:".$ShowBorder."px;"; }
+	##-->> ELSE, FORCE BORDER FOR ALL OTHERS [ad in this spot shouldnt have preset image borders]  [AD PRESET PADDING AND DIV RESIZE]
+	#else { 
+		$Adx1style = $Adx1style . "border:1px #D6D6D6 dashed;padding:1px;"; 
+	#}
+
+	##-->["> ADx1 SPACER AFTER ADVERTISEMENT
+	$Adx1spacerW='220';$Adx1spacerH='40';
+	$Adx1spacer='width:220px;height:40px;overflow:hidden;clip:rect(0px,220px,40px,0px);';
+	
+	$AdDescriptor = '<span style="font-size:9px;">Advertisement</span>&nbsp; | &nbsp;<a href="'.$AdLink.'" title="'.$AdText.'" style="font-weight:bold;color:#5F9A14;" target="VPS-Advertiser-$Advertiser">'.$AdTitle.'</a><div style="width:0px;height:0px;overflow:hidden;clip:rect(0px,0px,0px,0px);"><img src="'.$AdImpressionURL.'" width="1" height="1" border="0" alt="'.$AdText.'"></div>';
+	
+	##-->["> AD SETUP IMPRESSION COUNT
+	$ADcountX1 = int($Impressions) + 1; 
+	$ADidX1 = $AID;
+	
+	$sth->finish;
+}
+
+
+#- set all javascript variables to their obfuscated counterparts
+sub obfuscateVars {
+	$checkWin =~ s/defaultWindowCheck/dWC/gi;
+	$checkWin =~ s/checkWindow/chW/gi;
+	$letsDrawDocument =~ s/letsDrawDocument/LDDoc/gi;
+	$hideMenus =~ s/hideMenus/hiMs/gi;
+	$docuReady =~ s/docuReady/dxR/gi;
+}
+
+exit;

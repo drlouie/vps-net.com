@@ -1,0 +1,158 @@
+#!/usr/bin/perl -s
+
+##################################################################
+#   Program:        OpenCanvas Interactive Website Design        #
+#   Author:         Luis Gustavo Rodriguez (drlouie)             #
+#   Copyright:      (c) 2009 Luis G. Rodriguez                   #
+#   Licensing:      MIT License                                  #
+#                                                                #
+#   About                                                        #
+#        Type:      User Interface Design and User Experience    #
+#        Module:    OpenCanvas (OCv) Template Image Parser       #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$raIzes = "H:/dvwf/rbsd_IO/vhosts/ngen/htdocs/";
+}
+else { 
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$raIzes = "/var/www/vps-net.com/hMedia/";
+}
+
+###########################################################
+### GET THE PROPER SCREENSHOT FOR THOSE WE MIS-ACQUIRED
+###########################################################
+
+$|=1;
+
+require($HTTPRoot."q.nsp");
+
+##--> no date parse directive
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+##-->> sanitize
+foreach $afi (@FORM) {
+	$afi =~ s/'//gi;
+	$afi =~ s/"//gi;
+	$afi =~ s/%//gi;
+}
+
+$elIP = $ENV{'REMOTE_ADDR'};
+##-- 
+##-- concatenate image didnt work for windows without following line
+use CGI qw(:standard);
+use FileHandle;
+use locale;
+use DBI;
+
+$ext = 'gif';
+$sorryNoThumb = $HTTPRoot."web_design_imagery/spacer." . $ext;
+$sorryNoScreen = $HTTPRoot."web_design_imagery/spacer." . $ext;
+$sorryNoFile = $HTTPRoot."web_design_imagery/spacer." . $ext;
+$sorry = $sorryNoThumb;
+
+$source = 'templatemonster';
+if (($FORM{'t'} =~ "OCv" || $FORM{'t'} =~ "ocv") && length($FORM{'t'}) > 5 && length($FORM{'k'}) > 0 && length($FORM{'s'}) > 1) {
+	if ($FORM{'s'} eq "tm") { $source = 'templatemonster'; }
+
+	my $dbh = DBI->connect('DBI:mysql:vpsnetcom','vpsnetcom','YOUR-MySQL-PASSWORD') or die "Unable to connect to database: <b>Templater</b>\n"; 
+	$dbh->{RaiseError} = 1;
+
+	##$TN = int($FORM{'t'});
+	##-- target = OCX|OC2|OC3 and TEMPLATE-ID
+	$CualOC = substr $FORM{'t'}, 3, 1;
+	$gTN = int(substr $FORM{'t'}, 4);
+	
+	my $sth = $dbh->prepare("SELECT TID, TemplateNumber, Thumbnails, Screenshots, TemplateSource, TemplateName FROM TemplateCentral where TID = '$gTN'");
+	$sth->execute;
+	$row = $sth->fetchrow_arrayref;
+	$TID = $row->[0];
+	$realtn = $row->[1];
+	$thumb = $row->[2];
+	$screen = $row->[3];
+	$tsource = $row->[4];
+	$tname = $row->[5];
+	$sth->finish;
+
+	##- first condition: realtn = templatemonster(and others w their own templatenumbers) OR tname = templateName (other sources have named source file convention)
+	if (($realtn ne "" || $tname ne "") && (($thumb eq "1" && $FORM{'k'} eq "t") || ($screen eq "1" && $FORM{'k'} eq "s"))) {
+		if ($screen eq "1" && $FORM{'k'} eq "s") { $kind = 'screens'; $ext = 'jpg'; $sorry = $sorryNoScreen; }
+		if ($thumb eq "1" && $FORM{'k'} eq "t") { $kind = 'thumbs'; $ext = 'jpg'; $sorry = $sorryNoThumb; }
+		##--template doesn't exist [wth!]
+		if (!$kind) { &besorry; }
+		##--try loading file
+		else {
+			##-- find by templatesource and templatenumber
+			if ($realtn ne "") {
+				$localSourceDir = lc($tsource);
+				$fileName = $realtn;
+			}
+			else {
+				$localSourceDir = 'others';
+				$fileName = $tname;
+			}
+			$pilaLocation = $raIzes . "templater/$localSourceDir/".$kind."/" . $fileName . "." . $ext;
+			if (-e $pilaLocation) { 
+				#-$image = `cat $pilaLocation`; 
+				my $fh = new FileHandle;
+				open($fh,$pilaLocation) or die "Cannot find image";
+				binmode($fh);
+				my $size = (stat($fh))[7];
+				my($data,$type);
+				($type) = 'image/'.$ext;
+				read($fh,$data,$size) == $size or error ("Failed to read entire file: $!");
+				$fh->close();
+				$image = $data;
+			}
+			##--file DOESNT exist [mind helping check if there is a new available really quick?]
+			else { &besorry; }
+		}
+	}
+	$sth->finish;
+	$dbh->disconnect;
+}
+##-- show placeholder logo, contact form and such
+elsif (length($FORM{'k'}) > 0 && length($FORM{'s'}) > 1) {
+	$ext = 'png';
+	$sorryNoFile = $HTTPRoot."web_design_imagery/placeholderLogo.".$ext;
+}
+##--template doesn't exist [wth!]
+if (!$image){ 
+	$sorry = $sorryNoFile;
+	&besorry;
+}
+
+print "Content-type: image/".$ext."\n\n";
+print "$image";
+
+
+sub besorry {
+	#-$image = `cat $sorry`;
+	$fh = new FileHandle;
+	$mf = $sorry;
+	if ($fh->open("< $mf")) { push(@splitFH,<$fh>); $fh->close; }
+	$image = join("",@splitFH);
+}
+	
+exit;
