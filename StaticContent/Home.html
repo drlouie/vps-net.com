@@ -1,0 +1,75 @@
+<!--Virtual-Private-Servers-And-Networks-VPS-NET-Home-->
+<script type="text/JavaScript" src="website_design_template_javascripts/cloud-carousel.1.0.5.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+	$("#virtual-private-servers-and-networks-services").CloudCarousel( { 
+		reflHeight: 24,
+		reflGap:-1,
+		titleBox: $('#vps-net-services-javascript-jquery-carousel-title'),
+		altBox: $('#vps-net-services-javascript-jquery-carousel-alt'),
+		buttonLeft: $('#virtual-private-services-javascript-jquery-carousel-left'),
+		buttonRight: $('#virtual-private-services-javascript-jquery-carousel-right'),
+		yRadius:30,
+		xPos: 480,
+		yPos: 16,
+		speed:0.01,
+		mouseWheel:true
+	});
+});
+</script>
+<style>
+#virtual-private-servers-and-networks-services { 
+	width:960px;
+	height:330px;
+	position:relative;
+	top:90px;
+	left:0px;
+}
+#virtual-private-servers-and-networks-services img { }
+#vps-net-services-javascript-jquery-carousel-title, #vps-net-services-javascript-jquery-carousel-alt {
+	position:relative;
+	top:250px;
+}
+#virtual-private-services-javascript-jquery-carousel-left, #virtual-private-services-javascript-jquery-carousel-right {
+	font-size:1.85em;
+	cursor:pointer;
+	position:absolute;
+	top:150px;
+	z-index:2000;
+}
+#virtual-private-services-javascript-jquery-carousel-left:hover, #virtual-private-services-javascript-jquery-carousel-right:hover {
+	color:#C00;
+}
+#virtual-private-services-javascript-jquery-carousel-left {
+    left:0px;
+    display: none;
+    width: 40px;
+    height: 40px;
+}
+#virtual-private-services-javascript-jquery-carousel-right {
+    right:0px;
+	display: none;
+    width: 40px;
+    height: 40px;
+	text-align:right;
+}
+.cloudcarousel {
+	border:1px dashed #C5DAED;
+}
+.cloudcarousel:hover {
+	border:1px dashed #5794BF;
+}
+.reflection {
+	border:1px dashed #ECF2F9;
+}
+.reflection  {
+	border-bottom:0;
+}
+</style>
+<div id="virtual-private-servers-and-networks-services">
+	<div id="virtual-private-services-javascript-jquery-carousel-left" class="carouselLeft">&lt;</div>
+	<div id="virtual-private-services-javascript-jquery-carousel-right" class="carouselRight">&gt;</div>
+	%%CarouselItems%%
+	<div id="vps-net-services-javascript-jquery-carousel-title"></div>
+	<div id="vps-net-services-javascript-jquery-carousel-alt"></div>
+</div>
