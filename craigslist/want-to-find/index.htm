@@ -1,0 +1,1160 @@
+#!/usr/bin/perl -s
+
+##################################################################
+#   Program:      Craigslist SuperSearch                         #
+#   Author:       Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:    (c) 2010 Luis G. Rodriguez                     #
+#   Licensing:    MIT License                                    #
+#   About                                                        #
+#        Type:    Web Scraper                                    #
+#        For:     Craigslist USA                                 #
+#        Module:  Core Application                               #
+#        Desc:    Allows for full-state searching of Craigslist  #
+#                 as well as other time saving and power user    #
+#                 features.                                      #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+}
+else { $HTTPRoot = '/var/www/vps-net.com/htdocs/'; }
+
+###############
+##<-- 2k10 -->##
+###############
+
+$|=1;
+
+use LWP::Simple;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use HTML::SimpleLinkExtor;
+use HTML::TokeParser;
+use HTML::ResolveLink;
+use Text::Autoformat;
+autoformat;
+
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+require($HTTPRoot."q.nsp");
+
+print "Content-type: text/html\n\n";
+
+#-$logreq = 1;
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+##--power functions
+require($HTTPRoot."vfunc.nsp");
+
+$ms = $FORM{'query'};
+
+
+
+##-- if logged in, set last login IP to unlocking IP, if not same, must relogin
+if ($ISIN ne "") {
+	$AIP = $UserIP;
+	@pEmail = split(/\[at\]/,$Email);
+	$tEm = $pEmail[0] . '@' . $pEmail[1];
+	if ($FORM{'adi'} =~ "@") {
+		$adi = $FORM{'adi'};
+	}
+}
+else {
+	$adi = $FORM{'adi'};
+	$tEm = $adi;
+}
+
+$mip = $ENV{'REMOTE_ADDR'};
+if (($mip && ($mip ne $AIP)) || ($ISIN && !($ISIN ne ""))) {
+	#print "<script language=\"Javascript\" type=\"text/javascript\">alert('Error 2150: It is advisable you take note of this error and report it to the site administrator. Thanks. ($mip)');</script>";
+
+	#--> Hack attempt / or bad input
+	if (($ISIN && !($ISIN ne "")) || ($mip && ($mip ne $AIP))) {
+		$NOPASS = 1;
+	}
+}
+
+
+## - adi = Admin Email Communications
+## - ajax on this one simply spit back message, client won't do anything with results anyway (silent)
+if ((!(!$adi) || ($ISIN ne "")) && !$NOPASS){
+
+	$hssel = '';
+	if ($FORM{'hasPic'} eq "1") { $hssel = 'checked'; }
+
+	#$rsssel = '';
+	#if ($FORM{'format'} eq "rss") { $rsssel = 'checked'; }
+
+	$shoth = '';
+	$showThumbs = '0';
+	if ($FORM{'showThumbs'} eq "1") { $shoth = 'checked'; $showThumbs = '1'; }
+
+	##-- set defaults
+	$cualstate = 'California';
+	$location = 'losangeles';
+
+	if ($FORM{'state'} ne '') { $cualstate = $FORM{'state'}; }
+	if ($FORM{'loc'}) { $location = $FORM{'loc'}; }
+
+	if ($cualstate ne '') {
+		$usaListLocations = `cat ../craigslistLocations-US.nsf`;
+		@clStates = split(/\n\n/,$usaListLocations);
+
+		$iveSeenState = '';
+		foreach $clstate (@clStates) {
+			@estosStateLocations = split(/\n/,$clstate);
+			
+			$currentState = '';
+			foreach $thisStateLocations (@estosStateLocations) {
+				@esteStateLocationOne = split(/-/,$thisStateLocations);
+				if ($iveSeenState !~ $esteStateLocationOne[1]) {
+					$iveSeenState .= $esteStateLocationOne[1];
+					$currentState = $esteStateLocationOne[1];
+					$stateSelected = '';
+					if ($cualstate eq $esteStateLocationOne[1]) { $stateSelected = 'selected'; }
+					push(@clEstados,"<option value='$esteStateLocationOne[1]' $stateSelected>$esteStateLocationOne[1]</option>");
+				}
+				$thisStateLocations =~ s/^\s*(\S*(?:\s+\S+)*)\s*$/$1/;
+				$thisStateLocations =~ s/\n//gi;
+				$thisStateLocations =~ s/\r//gi;
+				if ($cualstate eq $currentState) {
+					if ($thisStateLocations ne '') {
+						push(@clEstadoLocations,"$thisStateLocations");
+					}
+				}
+			}
+		}
+	}
+	$todosCLstates = join "\n", @clEstados;
+
+	$multicit = '';
+	$multiCities = '0';
+	$paginator = '';
+	if ($FORM{'multipleAreas'} eq "1") { 
+		$multicit = 'checked'; 
+		$multiCities = '1'; 
+		#-- hide .paginator, prev/next controls
+		$paginator = 'display:none;';
+	}
+
+	if ($FORM{'SLS'} ne "" && $FORM{'multipleAreas'} eq "1") {
+		$multiCities = '1'; 
+	}
+
+	$stAsel = 'checked'; $stTsel = '';
+	if ($FORM{'srchType'} eq "T") { $stTsel = 'checked'; $stAsel = ''; }
+
+	$catAbb = 'sss';
+	if ($FORM{'catAbb'}) { $catAbb = $FORM{'catAbb'}; }
+
+	#- query=2009&srchType=A&minAsk=1000&maxAsk=3500&hasPic=1&showThumbs=1&multipleCities=1
+	#- srchType = A [entire post] | T [title only]
+	#- hasPic [pass this param only if true]
+	#- showThumbs [never pass, only a local param]
+	#- catAbb=cto
+	#- allSelectedStateCities=1
+
+	#- added 2013 pagination support
+	#- s=100
+
+
+	$craigsList = `cat ./craigslist.nsf`;
+	$craigsListSort = `cat ../craigslistSort.nsf`;
+	@clList = split(/\n/,$craigsList);
+	@clSort = split(/\n/,$craigsListSort);
+	foreach $cll (@clList) {
+		$cll =~ s/<\/option>//gi; $cll =~ s/>//gi; $cll =~ s/\r//gi;
+		($cll,$value,$name) = split(/"/,$cll);
+		$isSelected = '';
+		if ($catAbb eq $value) { $isSelected = 'selected'; }
+		push(@TheCL,"<option value='$value' $isSelected>$name</option>");
+	}
+	$craigsList = join "\n", @TheCL;
+
+	##-- push the blank option for dynamic selection upon change of state, should be first option
+	push(@TheCLLocations,"<option value=''></option>");
+	$properStateLocationSelected = 0;
+	$allChecked = 0;
+	##--all or multiple
+	$AllMulti = 'Selected';
+	$Locations = 'Location';
+	foreach $clloc (@clEstadoLocations) {
+		($country,$state,$url,$name) = split(/-/,$clloc);
+		$myShortLocation = $url;
+		$http = 'http://';
+		##-- common url attributes
+		$myShortLocation =~ s/$http//gi;
+		$myShortLocation =~ s/\.craigslist\.org//gi;
+		##-- remove spaces
+		$isSelected = '';
+		if ($location eq "$myShortLocation") {
+			$isSelected = 'selected';
+			$properStateLocationSelected++;
+		}
+
+		@myTSLs = split(/ /,$name);
+		@newTSL = '';
+		foreach $unTSL (@myTSLs) {
+			$thisTSL = $unTSL;
+			$thisTSL = autoformat $thisTSL, { case => 'title' };
+			chomp($thisTSL);
+			$thisTSL =~ s/\n//gi;
+			push(@newTSL,$thisTSL);
+		}
+		$name = join " ", @newTSL;
+
+		##-- select list options
+		push(@TheCLLocations,"<option value='$myShortLocation' $isSelected>$name</option>");
+
+		push(@ShortCLlocations,"$myShortLocation");
+
+		##-- checkboxes
+		$LocationChecked = '';
+		if ($FORM{'SLS'} =~ "$myShortLocation" && $FORM{'multipleAreas'} eq "1") { $allChecked++; $LocationChecked = 'checked'; }
+		push(@TheCLLocationCheckboxes,"<span class='activeLocationData'><span><input type='checkbox' name='SLS' value='$myShortLocation' id='$myShortLocation' onChange='javascript:locChange(this);' $LocationChecked><label for='$myShortLocation'>$name</label></span></span>");
+		
+		##-- hash the location names by their relative values
+		$theLocationNames{$myShortLocation}="$name";
+	}
+	##--all or multiple
+	if ($allChecked == 0) { $AllMulti = 'All'; $Locations = 'Locations'; }
+	elsif ($allChecked >= 2) { $Locations = 'Locations'; }
+
+	##-- if changing state, meaning location must be improper, force search on 1st available location of state
+	if ($properStateLocationSelected == 0) {
+		$TheCLLocations[0] =~ s/'>/' selected>/gi;
+		$location = $ShortCLlocations[0];
+	}
+	$craigsLocations = join "\n", @TheCLLocations;
+
+	$craigsSort = '';
+	foreach $clsort (@clSort) {
+		$clsort =~ s/<\/option>//gi; $clsort =~ s/>//gi; $clsort =~ s/\r//gi;
+		($clsort,$value,$name) = split(/"/,$clsort);
+		$isSelected = '';
+		if ($FORM{'sort'} eq $value) { $isSelected = 'selected'; }
+		push(@TheCLSort,"<option value='$value' $isSelected>$name</option>");
+	}
+	$craigsSort = join "\n", @TheCLSort;
+
+	#-$myloc = '&loc='.$FORM{'loc'}.'';
+	$mypic = '&hasPic=0';
+	$showt0 = '&showThumbs=0';
+	$allc0 = '&multipleCities=0';
+	$myQS = $ENV{'QUERY_STRING'};
+	$myQS =~ s/$mypic//gi;
+	$myQS =~ s/$showt0//gi;
+	$myQS =~ s/$allc0//gi;
+	#-$myQS =~ s/$myloc//gi;
+
+	$elURL = 'http://www.craigslist.org/';
+
+
+		$showImages = 'onload="javascript:CLoad();"';
+		if ($shoth eq "checked") {
+			$showImages = 'onload="javascript:ToggleCLimgs();CLoad();"';
+		}
+
+
+	##--/**v1**/
+	##--$('span.ih').removeClass('ih').removeClass('ih').addClass('i').each(function(){if(\$(this).attr('id')){var iP=\$(this).attr('id').split(':');thumbURL='http://'+iP[0]+'.craigslist.org/thumb/'+iP[1];postURL=\$(this).siblings('a').attr('href');\$(this).html('<a target="Craigslist" href="'+postURL+'"><img alt="" src="'+thumbURL+'"></a>').mouseover(function(){var iP=\$(this).attr('id').split(':');fullURL='http://'+iP[0]+'.craigslist.org/'+iP[1];\$('#floater').html('<img src="'+fullURL+'">').show();}).mouseout(function(){\$('#floater').hide();}).mousemove(function(e){\$('#floater').css({'left':e.pageX+15+'px','top':e.pageY+15+'px'});})}})\$('#showImgs').hide();\$('#hideImgs').css('display','inline');var date=new Date();date.setTime(date.getTime()+(365*24*60*60*1000));document.cookie="cl_img=show; domain=craigslist.org; expires="+date.toGMTString()+"; path=/";
+
+
+	#-- kill toclegend (the pagination functionality), if no query has been introduced, meaning by default
+	if ($FORM{'query'} eq '' || $FORM{'query'} eq ' ') {
+		$toclegend = 'display:none;'
+	}	
+	##- no longer = //-- \$('.bchead').hover(function() { \$('.bchead blockquote, #ef').css('display','block'); },function() { \$('.bchead blockquote, #ef').css('display','none'); });
+	##- X1 = //-- if pre-processing has not fixed all outgoing links, fix them now
+	##- X2 = //-- if class is not 'ban' by itself = restulshdr (results header and footer) and other unwanted
+	##- X3 = //-- ban = restulshdr (results header and footer) and date (main bold date per section)
+	print qq~
+	<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+	<!-- $myQS -->
+	<head>
+	<title>Craigslist SuperSearch (Beta) by VPS-NET</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	~; if ($myHead) { print $myHead; } print qq~
+	<script src="/cross_browser_javascripts/jquery-1.7.2.min.js"></script>
+	<script type="text/javascript" language="JavaScript">
+	var IveSeenPID = '';
+	var hDs = 0;
+	var ToggleDuplicates = function(state) {
+		if (state == 'hide'){hDs=1;}
+		else if (state == 'flag'){hDs = 2;}
+		else{hDs = 0;}
+		IveSeenPID='';
+		//-> pre-2016
+		//-> \$('p.row').each(function(){
+		//-> post-2016
+		\$('li.result-row').each(function(){
+			var cA=\$(this);var MyPID=''+cA.attr('data-pid')+'';
+			if(MyPID!=''&&IveSeenPID.indexOf(':'+cA.attr('data-pid')+':')==-1){IveSeenPID+=':'+cA.attr('data-pid')+':';}
+			else{
+				if(hDs == 2){cA.show();cA.fadeTo('slow','.4');\$("#flagDupes").prop('checked','checked');}
+				else if(hDs == 1){cA.fadeTo('fast','0.0');cA.hide();\$("#hideDupes").prop('checked','checked');}
+				else{cA.show();cA.fadeTo('fast','1.0');\$("#showDupes").prop('checked','checked');}
+			}
+		});
+	};
+	var IveSeenDate = '';
+	var AllMyDates = new Array();
+	var DefineDateRange = function() {
+		var TheMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+		var Today = new Date();
+		var TodayD = Today.getDate();
+		var TodayM = Today.getMonth()+1;
+		var TodayY = Today.getFullYear();
+		var CurrentMonthDates = new Array();
+		var AllOtherMonthsDates = new Array();
+		var SeenMonth = '';
+		var DefineMonths = new Array();
+		var DateCheckbox = "<span class='activeDateData'><span><input type='checkbox' name='ActiveDateRange' value='%%VALUE%%' id='%%VALUE%%' %%DATESELECTED%%><label for='%%VALUE%%'>%%VALUE%%</label></span></span>";
+		\$('p.row span.date').each(function(){
+			var MyDate = ''+\$(this).html()+'';
+			MyMonth = MyDate.substring(0,3);
+			if (!isNaN(MyDate.substring(MyDate.length - 2))) {
+				MyDay = MyDate.substring(MyDate.length - 2);
+			}
+			else {
+				MyDay = MyDate.substring(MyDate.length - 1);
+			}
+
+			MyDate = ''+MyMonth+' '+Number(MyDay)+'';
+
+			if (MyDate != '' && IveSeenDate.indexOf(':'+MyDate+':') == -1) {
+				/* current months' dates seen */
+				var TheAdDate = new Date(''+TheMonths[Today.getMonth()]+' '+MyDay+', '+TodayY+' 00:00:01');
+				if (MyMonth == TheMonths[Today.getMonth()].substring(0,3)) {
+					CurrentMonthDates.push(TheAdDate);
+				}
+
+				/* if computed date is later than today, must be previous year, for instance december, november of previous year */
+				TryDate = new Date(''+MyMonth+' '+MyDay+', '+TodayY+' 00:00:01');
+				/* only if not a current month date */
+				if (MyMonth != TheMonths[Today.getMonth()].substring(0,3)) {
+					/* date is after 'current date', make it right*/
+					if (TryDate > TheAdDate) { RightDate = new Date(''+MyMonth+' '+MyDay+', '+(TodayY-1)+' 00:00:01'); }
+					/* date is good to go as is */
+					else { RightDate = new Date(''+MyMonth+' '+MyDay+', '+TodayY+' 00:00:01'); }
+					AllOtherMonthsDates.push(RightDate);
+				}
+				/* tracking */
+				IveSeenDate += ':'+MyDate+':';
+				AllMyDates.push(MyDate);
+				
+			}
+			/* set rel for later use, hence showing/hiding based on processed data */
+			\$(this).parent().parent().attr('rel',MyDate);
+		});
+
+		if (CurrentMonthDates.length >= 1) {
+			CurrentMonthDates.sort(SortDatesDescending);
+			for (var i=0; i<CurrentMonthDates.length; i++) {
+				//"<span class='activeDateData'><span><input type='checkbox' name='ActiveDateRange' value='%%VALUE%%' id='%%VALUE%%' onChange='javascript:dateRangeChange(this);' %%DATESELECTED%%><label for='%%VALUE%%'>%%VALUE%%</label></span></span>";
+				MyDateCheckbox = DateCheckbox.replace('%%DATESELECTED%%','').replace(/%%VALUE%%/g,TheMonths[CurrentMonthDates[i].getMonth()].substring(0,3)+' '+CurrentMonthDates[i].getDate());
+				\$("#dateRange").html(''+\$("#dateRange").html()+''+MyDateCheckbox+'');
+			}
+		}
+		if (AllOtherMonthsDates.length >= 1) {
+			AllOtherMonthsDates.sort(SortDatesDescending);
+			for (var i=0; i<AllOtherMonthsDates.length; i++) {
+				var ProcessingMonth = TheMonths[AllOtherMonthsDates[i].getMonth()].substring(0,3);
+				if (SeenMonth.indexOf(':' + ProcessingMonth + ':') == -1) {
+					SeenMonth += ':'+ProcessingMonth+':';
+					DefineMonths.push(ProcessingMonth);
+				}
+			}
+			if (DefineMonths.length > 1) {
+				for (var i=0; i<DefineMonths.length; i++) {
+					for (var i2=0; i2<AllOtherMonthsDates.length; i2++) {
+						if (DefineMonths[i] == TheMonths[AllOtherMonthsDates[i2].getMonth()].substring(0,3)) {
+							MyDateCheckbox = DateCheckbox.replace('%%DATESELECTED%%','').replace(/%%VALUE%%/g,TheMonths[AllOtherMonthsDates[i2].getMonth()].substring(0,3)+' '+AllOtherMonthsDates[i2].getDate());
+							\$("#dateRange").html(''+\$("#dateRange").html()+''+MyDateCheckbox+'');
+						}
+					}
+				}
+			}
+			/* if not more than a single month (past), parse it as is */
+			else if (DefineMonths.length == 1) {
+				for (var i=0; i<AllOtherMonthsDates.length; i++) {
+					MyDateCheckbox = DateCheckbox.replace('%%DATESELECTED%%','').replace(/%%VALUE%%/g,TheMonths[AllOtherMonthsDates[i].getMonth()].substring(0,3)+' '+AllOtherMonthsDates[i].getDate());
+					\$("#dateRange").html(''+\$("#dateRange").html()+''+MyDateCheckbox+'');
+				}
+			}
+		}
+
+		var AllDatesCombined = new Array();
+		\$(".activeDateData input").change(function(){
+			AllDatesCombined = [];
+			for (var i=0; i<CurrentMonthDates.length; i++) { AllDatesCombined.push(CurrentMonthDates[i]); }
+			for (var i=0; i<AllOtherMonthsDates.length; i++) { AllDatesCombined.push(AllOtherMonthsDates[i]); }
+			
+			/*reset the stage*/
+			var findPivot = -1;
+			\$('p[rel]').each(function(){ \$(this).show(); });
+			\$('span.activeDateData').each(function(){ \$(this).fadeTo('fast','1.00'); });
+
+			/* mark the stage*/
+			for (var i=0; i<AllDatesCombined.length; i++) { 
+				if (findPivot == -1 && TheMonths[AllDatesCombined[i].getMonth()].substring(0,3) + ' ' + AllDatesCombined[i].getDate() == \$(this).attr('id')) {
+					findPivot = i;
+				}
+				if (findPivot >= 0 && i > findPivot) {
+					\$("input#"+TheMonths[AllDatesCombined[i].getMonth()].substring(0,3) + ' ' + AllDatesCombined[i].getDate()+"").parent().parent().fadeTo('slow','0.30');
+
+					\$('span.activeDateData').each(function(){ 
+						if (\$(this).find('input').attr('id') == TheMonths[AllDatesCombined[i].getMonth()].substring(0,3) + ' ' + AllDatesCombined[i].getDate()) {
+							\$(this).fadeTo('fast','0.30'); 
+						}
+					});
+
+					//alert(TheMonths[AllDatesCombined[i].getMonth()].substring(0,3) + ' ' + AllDatesCombined[i].getDate());
+					\$('p[rel]').each(function(){
+						if (\$(this).attr('rel') == TheMonths[AllDatesCombined[i].getMonth()].substring(0,3) + ' ' + AllDatesCombined[i].getDate()) {
+							//alert(TheMonths[AllDatesCombined[i].getMonth()].substring(0,3) + ' ' + AllDatesCombined[i].getDate());
+							//alert(\$(this).attr('rel'));
+							\$(this).hide();
+						}
+					});
+				}
+			}
+			//alert(\$(this).parent().html());
+		});
+	};
+	var SortDatesAscending = function (d1, d2) {
+	  if (d1 > d2) return 1;
+	  if (d1 < d2) return -1;
+	  return 0;
+	};
+	var SortDatesDescending = function (d1, d2) {
+	  if (d1 > d2) return -1;
+	  if (d1 < d2) return 1;
+	  return 0;
+	};
+	var CLoad=function(){
+		/*nolonger*/
+		/*X1*/
+		//ToggleDuplicates();
+		DefineDateRange();
+		//-> pre-2016
+		//-> jQuery('.row a').each(function(){
+		//-> post-2016
+		jQuery('.result-row a').each(function(){
+			if(jQuery(this).attr('target') || !jQuery(this).attr('target')){
+				jQuery(this).attr('target','Craigslist');
+			}
+		});
+		//alert(IveSeenPID);
+		\$('h4.ban').each(function(){
+			/*X2*/
+			if(\$(this).attr('class')!='ban'){
+				\$(this).html('');
+			}
+			/*X3*/
+			\$(this).css('position','inline').css('left','-10px').css('display','block');
+		});
+		\$('.button.next').each(function(){
+			CreatePaginationLink(\$(this));
+		});
+		\$('.button.prev').each(function(){
+			CreatePaginationLink(\$(this));
+		});
+		\$('.button.first').each(function(){
+			\$(this).removeAttr('href').removeAttr('target').css('text-decoration','underline').css('cursor','pointer').click(function(){
+				\$("#CLFORM").submit();
+			});
+		});
+		
+		/* date search, aka in-document list search, can search by dates, keywords or phrases, hiding all non-matching and only showing matching */
+		jQuery("#datesearch").show();
+		jQuery("#datesearch input").keyup(function(e){
+			if (e.keyCode == 13) {
+				//-> pre-2016
+				//-> jQuery('p[class="row"]').each(function(){
+				//-> post-2016
+				jQuery('li[class="result-row"]').each(function(){
+					var SearchContents = jQuery(this).html().toString();
+					var SearchString = jQuery("#datesearch input").val();
+					if (SearchContents.toLowerCase().indexOf(SearchString.toLowerCase()) != -1) {
+						jQuery(this).show();
+					}
+					else {
+						jQuery(this).hide();
+					}
+				});
+			}
+		});	
+		
+		/* force Craigslist saftey/prohibited/recalls/scams open up in Craigslist window/tab */
+		/* on second thought, dont show TSB until we can fix any display or usability bugs */
+		/* jQuery("aside.tsb a").each(function(){
+			jQuery(this).attr('target','Craigslist');
+		});
+		*/
+	};
+
+	var CreatePaginationLink = function(that){
+		var PaginationHref = ''+\$(that).attr('href')+'';
+		var DocHref = document.location.href;
+		var UniquePagination=PaginationHref.split('&').filter(function(item,i,allItems){ return i==allItems.indexOf(item); }).join('&');
+		var DefinePagination = UniquePagination.split('?');
+		var DefineHREF = DocHref.split('?');
+		var MergeUnique = DefinePagination[1] + '&' + DefineHREF[1];
+		var MakeUniquePagination=MergeUnique.split('&').filter(function(item,i,allItems){ return i==allItems.indexOf(item); }).join('&');
+		\$(that).attr('href',''+ DefineHREF[0] +'?'+ MakeUniquePagination + '').removeAttr('target');
+	};
+
+	var showingImages=0;
+	var mystyle='width:100%;margin:0;float:left;padding:0 0 0.62em 0;';
+	var noImage='<div style="float:left;width:50px;height:50px;overflow:hidden;clip:rect(0px,50px,50px,0px,);" class="CLimage" title="This Craigslist ad has no thumbnail, but may still have a photo."><center>-</center></span>';
+	var ToggleCLimgs=function(){
+		var myImage=noImage;
+		if(showingImages==0){
+			\$('a.result-image').each(function(){
+				myImage=noImage;
+				if(\$(this).attr('data-ids')){
+					if(!(\$(this).attr('data-ids').indexOf('1:')!=-1)){myImage=noImage;}
+					else{
+						/* was */
+						/* myImage='<img align="left" src="http://images.craigslist.org/thumb/'+\$(this).attr('data-ids')+'" class="CLimage">'; */
+						/* now */
+						trueImage = \$(this).attr('data-ids').split('1:');
+						myImage='<img align="left" src="//images.craigslist.org/'+trueImage[1].replace(',','')+'_50x50c.jpg" class="CLimage">';
+					}
+				}
+				\$(this).html(myImage);
+				if(\$(this).parent().attr('class')!='dynimage'){
+					\$(this).parent().html('<div class="dynimage" style="'+mystyle+'">'+\$(this).parent().html()+'</div>');
+				}
+				else{	
+					\$(".dynimage").attr('style',mystyle);
+					\$(this).show();
+				}
+			});
+			showingImages=1;
+		}
+		else{
+			\$('.CLimage').each(function(){
+				\$(".dynimage").attr('style','');
+				\$(this).hide();
+			});
+			showingImages=0;
+		}
+	};
+	</script>
+	<style style="text/css">
+	body {
+		font-size:0.90em;
+		line-height:1.2em;
+		overflow-x:hidden;
+		overflow-y:auto;
+		font-family: tahoma, arial, helvetica, verdana;
+		background:#F7F7F7 url(/craigslist/electrostatic.png) 0 0 repeat;
+	}
+	font { font-size:9px; color:#D1D1D1;}
+	a { color:#266899; }
+
+	label { color:inherit; cursor:pointer; }
+	label:hover { color:#266899; cursor:pointer; }
+
+	/* INVALID CSS DECLARATION, MUST BE 'hidden' | 'block' not 0|1 */
+	#showImgs { display:$showThumbs; }
+
+
+	/* START DISPLAY:NONE DECLARATION */
+	/* NOT SURE! */
+	#sortByDiv, .contents, #ef, .loadposting, .sortby, .resultshdr, #footer, #messagetable, #fmtsel li, span.p, .searchbox, table
+
+	/* h4.ban = main date */
+	,h4.ban
+
+	/* loading animation */
+	, #floater
+
+	/* sEx = selfExplanatory */
+	,header, footer, hr
+
+	/* press to search craigslist */
+	,.querybox
+
+	/* search type: list/thumb/gallery/map */
+	,.search-legend
+
+	/* SINCE CONTAINER IS .search-legend, previous declaration, REMOVED: */
+	/* ,#listview, #picview, #gridview, #mapview */
+
+	/* newest relevant */
+	,.search-sort
+
+	/* parent ID: sortable-results */
+	,.favlistinfo, .banishlistinfo
+
+	/* favorited/no longer favorited & hidden/no longer hidden */
+	,.slidemessage
+
+	/*!!! ADDED 2013 !!!*/
+	/* as ID implies */
+	, #mapcontainer
+	/*- NOT SURE! -*/
+	,span.tocsort, .catfilterbox
+
+
+	/* favorite/hide this post links */
+	,.screen-reader-text
+
+	/* options: close */
+	,.search-options-header.linklike
+
+	/* search form and other original document elements */
+	,.searchgroup
+
+	/*!!! ADDED 2016 !!!*/
+	/* banish/unbanish: hide/restore this posting */
+	,.unbanish, .banish, .restore-link
+
+	/* pic/map post list item link */
+	, .result-tags
+
+	/*!!! ADDED 2017 !!!*/
+	/* 'Try also' */
+	, .searchHints
+
+	/* 'displaying ... postings' */
+	, .for-map
+
+	/* 'see in map view' */
+	, .open-map-view-button
+
+	/* linked price */
+	, a span.result-price
+
+	{
+		display:none;
+	}
+
+	/* END DISPLAY:NONE DECLARATION */
+
+
+	fieldset {
+		margin:0;
+		background: #FFFFFF;
+		border: 1px solid #CDCDCD;
+		padding:0;
+		-moz-border-radius: 5px;
+		-webkit-border-radius: 5px;
+		border-radius: 5px;
+		padding-bottom:10px;
+	}
+	.itempn font, .itempnr font {
+		color:#333333;
+	}
+	#clChecks {
+		float:left;
+		padding:0 1% 0 1%;
+	}
+	/*works only in fire, will remake*/
+	/*span.date { position:absolute; clear:right; width:28px; left: 3.2em; padding-top:1px; text-align:right; white-space:nowrap; }*/
+	span.date { float:left; left: 3.2em; padding: 1px 5px 0 5px; text-align:right; white-space:nowrap; }
+
+	a.gc { font-size:9px; color: #333333; text-decoration:none; }
+	span.price { padding-left:0px; }
+	.clban { position:inline; left: 30px; width:auto; padding-top:1px; }
+	img.CLimage { border: #266899 1px solid; padding:1px; }
+	#maxAsk, #minAsk { width:100px; }
+
+	.paginator {
+		$paginator
+	}
+	.toc_legend {
+		$toclegend
+	}
+
+	.ContactOptionItem, .ContactOptionItem:hover { color:#000000; text-decoration:none; margin-left: 4px; }
+	.delete { margin: 2px 0 -4px 1px; outline: none; }
+	.miniclose { cursor: pointer; display: inline-block; padding:1px; margin-top: 2px; margin-left: 4px; background-image: url(/web_design_imagery/graphical-user-interface-delete_off.gif); background-repeat: no-repeat; height: 11px; width: 11px; border:1px solid #D5DFE5; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; }
+	.miniclose:hover { padding:1px; background-image: url(/web_design_imagery/graphical-user-interface-delete_over.gif); border:1px dashed #D5DFE5; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; }
+
+	.activeUserData span { font-size:13px; background:transparent; border: none; padding: 1px 3px 1px 3px; cursor: default; display: block; float: left; height: 19px; margin: 3px 0 3px 0; position: relative; white-space: nowrap; }
+	.activeUserData span:hover { cursor:pointer; border: none; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; padding: 1px 3px 1px 3px; }
+
+	span.activeLocationData { background:#F8F9FA; border: 1px solid #E1E3EC; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; cursor: default; display: block; float: left; height: 19px; margin: 2px 2px 2px 2px; padding: 0 4px 0 0; }
+	.activeLocationData span { font-size:12px; background:transparent; border: none; padding: 0px 2px 0px 2px; color: #555555; cursor: default; display: block; float: left; height: 19px; margin: 0; position: relative; white-space: nowrap; }
+	.activeLocationData span:hover { cursor:pointer; }
+	.activeUserData label, .activeLocationData label, .activeDateData label { position:relative;top:-2px;left:0px; }
+
+	span.activeDateData { font-size:12px; background:#F8F9FA; border: 1px solid #E1E3EC; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; cursor: default; display: block; float: left; margin: 2px 2px 2px 2px; padding: 4px  4px 0px 4px; }
+	.activeDateData span { background:transparent; border: none; padding: 0px 2px 0px 2px; color: #555555; cursor: default; display: block; float: left; margin: 0; position: relative; white-space: nowrap; }
+	.activeDateData span:hover { cursor:pointer; }
+	span.activeDateData input { display:none; }
+
+	span .userarrow, span .userconfig { margin: 0; outline: none; }
+	.activeUserData span .userarrow { cursor: pointer; display: inline-block; padding:2px; margin-top: 1px; margin-left: 1px; background: url(/web_design_imagery/website_design_communications/arrow-dark.png) -1px 0px no-repeat; height: 9px; width: 9px; border:none; }
+	.activeUserData span:hover .userarrow { padding:2px; background: url(/web_design_imagery/website_design_communications/arrow-dark-over.png) -1px 0px no-repeat; border:none; }
+
+	.activeUserData span .userconfig { cursor: pointer; display: inline-block; padding:0; background: url(/web_design_imagery/website_design_communications/gear_dark.png) 0 1px no-repeat; height:17px; width:16px; border:none; }
+	.activeUserData span:hover .userconfig { background: url(/web_design_imagery/website_design_communications/gear_dark_dropdown.png) 0 1px no-repeat; border:none; height:17px; width:16px; }
+	.activeUserData span.config { padding: 1px 3px 1px 3px; }
+	.activeUserData span.config:hover { border:0; padding: 1px 3px 1px 3px; }
+
+	/* new clearfix */
+	.clearfix:after { visibility: hidden; display: block; font-size: 0; content: " "; clear: both; height: 0; }
+	* html .clearfix             { zoom: 1; } /* IE6 */
+	*:first-child+html .clearfix { zoom: 1; } /* IE7 */
+
+	.mobile-only, a.i {
+		display:none;
+	}
+
+	p.row, 
+	p.result-row,
+	.noresults {
+		margin:10px 20px;
+	}
+	#datesearch {
+		display:none;
+	}
+	#datesearch input {
+		width: 300px;
+		padding: 5px;
+
+	}
+
+
+
+
+	ul.rows {
+		list-style:none;
+	}
+
+
+	/* on second thought, dont show TSB until we can fix any display or usability bugs */
+	aside.tsb {
+		display:none;
+	}
+	/*
+	aside.tsb {
+	  width: auto;
+	  margin:10px 10px 0 10px;
+	}
+	  
+	aside.tsb ul {
+	  list-style-type: none;
+	  margin: 0;
+	  padding: 0;
+	}
+	 
+	aside.tsb li {
+	  font: 100 16px/1 Helvetica, Verdana, sans-serif;
+	  border-bottom: 1px solid #ccc;
+	}
+	aside.tsb li:first-child {
+	  border-top: 1px solid #ccc;
+	}
+	 
+	aside.tsb li a {
+	  text-decoration: none;
+	  color: #000;
+	  display: block;
+	  padding:5px;
+	  text-align:center;
+	 
+	  -webkit-transition: font-size 0.3s ease, background-color 0.3s ease;
+	  -moz-transition: font-size 0.3s ease, background-color 0.3s ease;
+	  -o-transition: font-size 0.3s ease, background-color 0.3s ease;
+	  -ms-transition: font-size 0.3s ease, background-color 0.3s ease;
+	  transition: font-size 0.3s ease, background-color 0.3s ease;
+	}
+	 
+	aside.tsb li a:hover {
+	  font-size: 20px;
+	  background: #f6f6f6;
+	}
+	*/
+
+
+	/* NOT SURE! */
+	#searchfieldset { display:none; visibility:hidden; }
+	#satabs { display:none; visibility:hidden; }
+	.bchead, header { position:absolute;top:0px;left:0px; width:100%; height:10px; }
+	.bchead:hover { position:absolute;top:0px;left:0px; width:100%; height:auto; }
+
+
+
+
+	</style>
+	</head>
+	<body bgcolor="#E5E5E5" style="margin:0;padding:0px;" $showImages>
+
+	<div>
+	<div style="text-align:left;padding:1.6em;$noBotTopPad">
+	<div id="content">
+	<div id="datesearch"><fieldset style="margin:0 0 20px 0;"><legend style="font-weight:bold">NEW: In-Doc QuickSearch</legend><div style="margin:10px 10px 20px 10px;"><div style="margin:0 0 10px 0;">Just type and hit enter, if a listing matches your search, its shown, otherwise its hidden.</div><input type="text" value="" placeholder="Search, eg: Jan 21 OR 01-21"></div></fieldset></div>
+
+	~;
+
+	##-- SLS single or multiple [if multiple selected show multiple checkboxes]
+	$allState = '0';
+	$allChecks = '0';
+	$foundRowDate = 0;
+	$showHideStateLocationsList = '';
+	if ($FORM{'multipleAreas'} eq "1") {
+		$allState = 1;
+		$allChecks = int(@TheCLLocationCheckboxes);
+		$showHideStateLocationsList = 'display:none;';
+		$myLocationCheckboxes = join '', @TheCLLocationCheckboxes;
+	}
+
+	require($HTTPRoot."/craigslist/craigslistSearchForm.nsp");
+
+	#-- SINGLE SEARCH: ORIGINAL
+	#-- print qq~ $myBody ~;
+
+	###-- now search and print results
+	#-- MULTI SEARCH
+	##-- count how many times we've found span.date
+	$cRowPad = 0;
+	$allScripts = '';
+	$cRuns = 0;
+	if ($multiCities eq "1") {
+		@myQS = split(/&/,$myQS);
+
+		##-- statelocationselection single or multiple
+		if ($FORM{'SLS'} ne "") {
+			@ShortCLlocations = split(/, /,$FORM{'SLS'});
+		}
+
+		foreach $unLocale (@ShortCLlocations) {
+			$thyBody = '';
+			foreach $qspart (@myQS) {
+	#			if (substr($qspart,0,3) eq 'loc') {
+	#				$mqs .= '&' . $unLocale;
+	#			}
+	#			else {
+					$mqs .= $myQS;
+	#			}
+			}
+			$thyBody = &runSearch($mqs, $unLocale, $cRuns);
+			$cRuns++;
+
+			##--pad left to overcome date placement [only need css once, not many times]
+			$pRowPad = '';
+			if ($thyBody =~ 'span class="date"' && $cRowPad == 0) {
+				$cRowPad++;
+				$pRowPad = 'padding-left:0;'; print "<style type=\"text/css\">span.pl, span.pl:hover { $pRowPad }</style>";
+			}
+
+			$mqs = "";
+			#-- sleep (timeout) doesn't really help overcome the loss of location results, therfore removed, could maybe use this in the future, so leave it here for now
+			### sleep(20);
+			
+			print $thyBody;
+
+		}
+	}
+	#-- SINGLE SEARCH: ORIGINAL
+	else {
+		$thyBody = &runSearch($myQS,$location, $cRuns);
+
+		##--pad left to overcome date placement [only need css once, not many times]
+		$pRowPad = '';
+		if ($thyBody =~ 'span class="date"' && $cRowPad == 0) { 
+			$cRowPad++;
+			$pRowPad = 'padding-left:0;'; print "<style type=\"text/css\">span.pl, span.pl:hover { $pRowPad }</style>";
+		}
+		print $thyBody;
+	}
+
+
+
+
+	print qq~</div></div></div>
+
+	<!--<div style="padding:15px;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td width="100%">&nbsp;</td><td align="right" style="border-top:#000 1px solid;border-bottom:#000 1px solid;"><div style="padding:3px;padding-top:6px;"><a href="http://www.craigslist.org/" target="World-Wide-Web-Consortium" title="World Wide Web Consortium (W3C)"><img height="32" width="211" src="http://www.craigslist.org/Icons/w3c_main" alt="World Wide Web Consortium (W3C)" /></a></div></td></tr></table></div>-->~;
+}
+else {
+	if (!(!$NOPASS)) {
+		print qq~ 
+			<div class="admincomtitle">Virtual Private: Craigslist SuperSearch(<a href="/login.htm?redirect=/craigslist/" title="Virtual Private Login">Login Required</a>)</div> 
+		~;
+	}
+	else {
+		print qq~ <div class="admincomtitle">Virtual Private: Craigslist SuperSearch$HeaderGuide</div> ~;
+	}
+}
+
+
+print qq~
+</body>
+~;
+
+
+print qq~</html>~; 
+
+
+
+
+
+####---END FOOTER
+
+sub runSearch {
+	$runQS = $_[0];
+	$myLocation = $_[1];
+	$cRuns = $_[2];
+
+	#- run one for test
+	#-if ($myLocation eq "orangecounty") {
+
+	## SINGLE - orangecounty - query=&loc=orangecounty&catAbb=cpg&srchType=A&minAsk=&maxAsk=&sort=date
+	## MULTIPLE - orangecounty - query=&loc=orangecounty&multipleAreas=1&catAbb=cpg&srchType=A&minAsk=&maxAsk=&sort=datequery=
+	
+	$myBodyStart = "<fieldset><legend><div style=\"font-weight:bold;\">$theLocationNames{$myLocation}, $cualstate</div></legend>";
+	$searchURL = "http://$myLocation.craigslist.org/search/sss";
+	$localURL = "http://$myLocation.craigslist.org/";
+	$contentROOT = 'http://www.craigslist.org/search/';
+	$reSearchURL = $searchURL.'?';
+
+	$bp = $elURL; 
+	## if base path doesn't have a trailing forward slash we need to add it
+	if ((substr $bp, -1) ne $forsl) { $bp .= $forsl; }
+
+	## if base path doesn't have our location in search string, we need to add it
+	#if ((substr $bp, -1) ne $forsl) { $bp .= $forsl; }
+
+	@myTruePath = split(/\//,$bp);
+	pop(@myTruePath);
+	$oneBack = join($forsl,@myTruePath);
+	pop(@myTruePath);
+	$twoBack = join($forsl,@myTruePath);
+
+	$oneBackLoco = $oneBack;
+	$oneBackLoco =~ s/$elURL//gi;
+	$twoBackLoco = $twoBack;
+	$twoBackLoco =~ s/$elURL//gi;
+
+	##-- get the document
+	if ($ms =~ "http:") { 
+		#$text = get($ms);
+		#print "<script>alert('HERE')</script>";
+		$docloc = $ms;
+	}
+	else { 
+		$text = get("$searchURL?$runQS");
+		$docloc = "$elURL".$ms;
+	}
+	
+	##-- setup the document for our parser
+	##-- make sure HEAD BODY open & close ARE ON OWN LINE [splitting using newline]
+	##-- do the same to P to cut off the logo from top
+	$text =~ s/<head>/\n<head>\n/gi;
+	$text =~ s/<\/head>/\n<\/head>\n/gi;
+	$text =~ s/<body>/\n<body>\n/gi;
+	$text =~ s/<\/body>/\n<\/body>\n/gi;
+	$text =~ s/<p>/\n<\!--changed--><p>/gi;
+	$text =~ s/<\/p>/<\/p><\!--changed-->\n/gi;
+
+	$text =~ s/<div class=\"head\">/<div class=\"head\">\n/gi;
+
+	#-- clean links [make them absolute based on remote path]
+  	my $count;
+  	my $resolver = HTML::ResolveLink->new(
+   	  	base => $bp,
+   		callback => sub {
+			my($uri, $old) = @_;
+     		$count++;
+   		},
+	);
+	$text = $resolver->resolve($text);
+
+	##-- split text into DocumentArray by newline
+	my @elDocu = "";
+	@elDocu = split(/\n/,$text);
+
+	##-- get head contents
+	my $myHead;
+	foreach $_ (@elDocu){
+		#-- some documents missing head closer [so cut it at body opener]
+    	if(/<HEAD>/i .. /<BODY/i ) {
+        	if ($_ ne '<head>' && $_ ne '</head>' && $_ !~ '<body') {
+				$myHead .= $_ . "\n";
+			}
+    	}
+	}
+
+	##-- get title [no longer needed but cool, so keep for later use] (now used to verify the existence of a title in the document, since some docs are missing head but have title, body and headContents)
+	$p = HTML::TokeParser->new( \$text );
+	if ($p->get_tag("title")) {
+		$myTitle = $p->get_trimmed_text;
+	}
+	
+	##-- get body contents
+	my $myBody;
+	foreach $_ (@elDocu){
+    	if(/<BODY/i .. /<\/BODY>/i ) {
+        	if ($_ !~ '<body' && $_ ne '</body>' && $_ ne '</body>') {
+					##-- if inDocument ANCHOR :: these need to be escaped for a prematch \ . ^ $ * + ? { } [ ] ( ) |
+					##-- EXAMPLES: <a name="anchorname" OR <a target="target" name="anchorname"
+					# if ($_ =~ /(<a \b[^>]*>.*?<\/a>)/i && $_ =~ /( name=)/i) { $_ =~ s/(<a \b[^>]*>.*?<\/a>)/<span class="anchor-spacer">$1<\/span>/gi; }
+					# if ($_ =~ /(<a \b[^>]*>.*?<\/a>)/i && $_ =~ 'class="i"' && $_ =~ 'data-id=' ) { $_ =~ s/(<a \b[^>]*>.*?<\/a>)/<span class="showImages">$1<\/span>/gi; }
+					
+					##-- considering we only need one set of scripts, load those at first run only, all subsequent runs don't parse scripts
+					if ($_ =~ /(<script \b[^>]*>.*?<\/script>)/i && $_ =~ 'src' && $cRuns >= 1) { 
+						$_ =~ s/(<script \b[^>]*>.*?<\/script>)//gi;
+					}
+					
+					##-- query strings missing location and showThumbs, add em
+					$myLoc = '?loc='.$myLocation.'&showThumbs='.$showThumbs.'&multipleCities='.$multiCities.'&catAbb';
+					$_ =~ s/\?catAbb/$myLoc/g;
+
+					##-- turn craigslist.org/index to craigslist.org/sss/index [for l18n]
+					##$_ =~ s/org\/index/org\/sss\/index/g;
+					
+					##-- replace next 100[x] postings link with NOTHING
+					if ($_ =~ '<a ' && $_ =~ 'next ' && $_ =~ ' postings') { $_ = ''; }
+					elsif ($_ =~ '<a ' && $_ =~ ' name=') {
+						##-- must assign an ID to anchors without, scrollTo
+						@myLineAnch = split(/<a/,$_);
+						foreach $MLA (@myLineAnch) {
+							if ($MLA =~ 'name=' && $MLA !~ 'id=') {
+								@myanch = split(/ /,$MLA);
+								$newA = '';
+								foreach $ma(@myanch) {
+									if ($ma =~ 'name=') {
+										$newA = 1;
+										$elNom = $ma;
+										my ($fi,$sec,$thir) = split(/"/,$elNom);
+										$suNAME = 'name="'.$sec.'"';
+										$newID = 'id="'.$sec.'"';
+									}
+								}
+								if ($newA == 1) { $_ =~ s/$suNAME/$suNAME $newID/gi; }
+							}
+						}
+					}
+
+					$myBody .= "\n" . $_;
+			}
+    	}
+	}
+	
+	#- added 2016, to remove document cross-contamination of inline scripting
+	$myBody =~ s/<script[^>]*>.*?<\/script>//igs;
+	
+	##-- didnt find head at first pass, head tag missing, but we found $myBody [will test for title]
+	if (!$myHead && $myBody && (length($myBody) > 0)) {
+
+		##-- we found $myTitle 
+		if (length($myTitle) > 0) {
+			##-- only if we have a well formed title and existence of body open tag
+			if ($text =~ '<title' && $text =~ '</title' && $text =~ '<body') {
+				$text =~ s/<title>/\n<head>\n<title>/gi;
+				$text =~ s/<body/\n<\/head>\n<body/gi;
+
+				##-- try for head again
+				@elDocu2 = split(/\n/,$text);
+				foreach $_ (@elDocu2){
+	    			if(/<HEAD>/i .. /<\/HEAD>/i ) {
+        				if ($_ ne '<head>' && $_ ne '</head>') {
+							$myHead .= $_ . "\n";
+						}
+    				}
+				}
+			}
+		}
+	}
+	
+	##-- didnt find head at 2nd pass and/or empty title and/or empty body
+	if ($myHead && $myBody && (length($myHead) <= 0 || length($myBody) <= 0 || length($myTitle) <= 0)) {
+		$myTitle = 'Redirecting to W3C: $docloc';
+		$myHead = '<meta http-equiv="Refresh" content="URL=$docloc" \>';
+		$myBody = 'There was an error parsing this document, we are now forwarding you to its location at W3C.ORG';
+		exit;
+	}
+	
+	## DO IT ourselves (maybe when we upgrade back to a faster server package we can run these quickly)
+	##- ONCE WE TAG it with our TARGET=, we've altered the link from its original format and will not alter it furthermore [finalized link]
+
+	##-- clean up our changes to the original markup
+	$myBody =~ s/\n<\!--changed--><p>/<p>/gi;
+	$myBody =~ s/<\/p><\!--changed-->\n/<\/p>/gi;
+
+	##-- inDocument ANCHORS will be resolving back to current URL/PAGE [won't request new doc from our server, simple jump down/up]
+	##-- helps with MAP links and the like, makes them resolve...
+	##-- but must remove _self at loadtime, switch to Craigslist as target
+	$linkEXT1 = ' href="'.$bp.'#';
+	$linkEXT1R = ' target="_self" href="#';
+	$myBody =~ s/$linkEXT1/$linkEXT1R/gi;
+
+	##-- search results re-search using paging and other cl mechanisms
+	$myBody =~ s/$reSearchURL//gi;
+	$myBody =~ s/search\/sss?//gi;
+
+	##-- sort by div customized for removal using css, not needed
+	$myBody =~ s/<div>sort by /<div id=sortByDiv>sort by /gi;
+	
+	##-- force new target on http://$myLocation.craigslist.org/ URIs
+	$linkEXT2 = ' href="'.$localURL;
+	$linkEXT2R = ' target="Craigslist" href="'.$localURL;
+	$myBody =~ s/$linkEXT2/$linkEXT2R/gi;
+
+	##-- force new target on http://www.craigslist.org/ URIs
+	##-- while flipping them to their proper locale at the same time [humbolt.craigslist.org]
+	$linkEXT3 = ' href="'.$elURL;
+	$linkEXT3R = ' target="Craigslist" href="'.$localURL;
+	$myBody =~ s/$linkEXT3/$linkEXT3R/gi;
+
+	##-- if $myBody still contains NOGOODHERE beyond this point [catch it]
+
+	##-- all other /search/ urls
+	$linkEXT3 = '<a href="'.$contentROOT;
+	$linkEXT3R = '<a target="_self" href="?st=search/';
+	$myBody =~ s/$linkEXT3/$linkEXT3R/gi;
+	
+	##-- turn all non https to common route protocol
+	$linkHTTP = 'http://';
+	$linkHTTPR = '//';
+	$myBody =~ s/$linkHTTP/$linkHTTPR/gi;
+	
+	##-- clean the title remove unicode non-breaking space
+	$myTitle =~ s/\xa0/ /gi;
+	$myTitle =~ s/&nbsp;//gi;
+	##-- just in case
+	$myTitle =~ s/\n//gi;
+	
+	my $noBotTopPad = '';
+	if ($myBody=~"navbar") { $noBotTopPad = 'padding-top:0px;padding-bottom:0px;'; }
+
+	$myBody =~ s/[^[:ascii:]]+//g;
+	
+	return "$myBodyStart<div style=\"position:relative;top:0px;\">$myBody</div> </fieldset>";
+	
+	#- end run one for test
+	#-}
+}
+###--end runSearch
+
+exit;
+
+
