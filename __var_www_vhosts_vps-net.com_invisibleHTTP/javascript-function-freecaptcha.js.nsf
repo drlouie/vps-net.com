@@ -1,0 +1,63 @@
+
+/* OBFUSCATION: of the following lines, obfuscatables contain ( = ) and (// ) */
+/*<OBF>*/
+// FreeCaptchaPrompter = visual
+// fCapS = audio
+// action = captcha
+// cCap = confirmation
+// aCap = application
+// rCap = programming
+// dynCall = interface
+// actColor = virtual
+// restColor = private
+/*</OBF>*/
+
+//################################################################
+//#   Program:    FreeCaptcha                                    #
+//#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+//#   Copyright:  (c) 2009 Luis G. Rodriguez                     #
+//#   Licensing:  MIT License                                    #
+//################################################################################################################
+//# You should have received a copy of the GNU General Public License along with this program; if not, write to: #
+//# the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.            #
+//################################################################################################################
+
+var freeCaptcha = function(action) {
+	var FreeCaptchaPrompter = document.getElementById('FreeCaptchaPrompt');
+	var fCapS = FreeCaptchaPrompter.style;
+	var cCap = document.images.cFreeCaptcha;
+	var aCap = document.images.aFreeCaptcha;
+	var rCap = document.images.rFreeCaptcha;
+	var actColor = '#1841B7';
+	var restColor = '';
+	var dynCall = Math.round(new Date().getTime() / 1000);
+	if (action == 'click') {
+		cCap.src = '/freeCaptcha/?'+dynCall;
+	}
+	else if (action == 'tts-audio-player') {
+		//parent.FreeCaptchaTTS.location.href = '/freeCaptcha/text-to-speech/tts-audio-file-player.htm?'+dynCall+'';
+	}
+	else if (action == 3) {
+		aCap.src = '/web_design_imagery/aFreeCaptcha_over.gif';
+		FreeCaptchaPrompter.innerHTML = 'Click to hear the challenge code. The audio file is in .wav format';
+		fCapS.color = actColor;
+	}
+	else if (action == 2) {
+		aCap.src = '/web_design_imagery/aFreeCaptcha_off.gif';
+		FreeCaptchaPrompter.innerHTML = 'Type all the characters you see in the new challenge code picture.';
+		fCapS.color = restColor;
+	}
+	else if (action == 1) {
+		rCap.src = '/web_design_imagery/rFreeCaptcha_over.gif';
+		FreeCaptchaPrompter.innerHTML = 'Is the challenge code too hard to read? Click to generate a new one.';
+		fCapS.color = actColor;
+	}
+	else {
+		rCap.src = '/web_design_imagery/rFreeCaptcha_off.gif';
+		FreeCaptchaPrompter.innerHTML = 'Type all the characters you see in the new challenge code picture.';
+		fCapS.color = restColor;
+	}
+};
+var freeCaptchaTTS = function() {
+	var ttsPlayer = '/freeCaptcha/text-to-speech/tts-audio-file-player.htm?tts=';
+};

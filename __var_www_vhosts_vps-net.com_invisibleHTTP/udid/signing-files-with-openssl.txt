@@ -1,0 +1,9 @@
+2308# su root
+2308# cp /usr/local/etc/apache22/ssl.crt/vpsnetcom.crt /usr/local/www/vhosts/vps-net.com/
+2308# cp /usr/local/etc/apache22/ssl.crt/gd_bundle-g2-g1.crt /usr/local/www/vhosts/vps-net.com/
+2308# cp /usr/local/etc/apache22/ssl.key/vpsnetcom.key /usr/local/www/vhosts/vps-net.com/
+2308# cp htdocs/udid/finder.mobileconfig ./
+2308# openssl smime -sign -in finder.mobileconfig -out signedFinder.mobileconfig -signer vpsnetcom.crt -inkey vpsnetcom.key -certfile gd_bundle-g2-g1.crt  -outform der -nodetach
+2308# mv signedFinder.mobileconfig htdocs/udid/
+2308# 
+2308# 

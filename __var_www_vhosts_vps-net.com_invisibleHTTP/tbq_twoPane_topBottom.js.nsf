@@ -1,0 +1,388 @@
+
+/* in the original format, within main doc, dollar signs ($) were escaped (\) */
+/* OBFUSCATION: of the following lines, obfuscatables contain ( = ) and (// ) */
+/*<OBF>*/
+// redrawDocument = rdD
+// checkSize = xHtMl
+// reWindow = rW
+// findWindowFramingArea = sHtMl
+// checkWindow = chW
+// letsDrawDocument = LDDoc
+// defaultWindowCheck = dWC
+// docuReady = dxR
+// currWidth = wYsIwYG
+// currHeight = unIX
+// currW1 = vPs
+// currH1 = MaStEr
+// highestW = ooP
+// highestH = hTm
+// highestDiffW = sSl
+// highestDiffH = SeO
+// calculatedAreaW = aPi
+// calculatedAreaH = RsS
+// calculatedAreaDiffW = pHp
+// calculatedAreaDiffH = W3c
+// windowFramingW = mP3
+// windowFramingH = cUsToM
+// msieAppName = mArKeTiNg
+// elUserAgent = DeVeLoPeR
+// cWINw = NsFINw
+// cWINh = PdF
+// countTries = tEmPlAtEs
+/* ADDED FOR SEO/FUN (TtF=0,tTf=0,xSl=0,nSf=0) */
+// ogFRAMEheight = ogRtF
+// ogFRAMEwidth = ogwiKI
+// lastShown = laSH
+// hideMenu = hiM
+// cualMenu = cMe
+// FRAMEheight = RtF
+// FRAMEwidth = wiKI
+// nfh = JsP
+// nfw = nSP
+// hideMenus = hiMs
+/* new since jun1311 */
+/* RH ties to pre-processor scripting for dyn parsing of document params (lines regurg'd there) */
+// RHeightTopMenu = WeB
+// RHeightBottomMenu = wEbSiTe
+// TotalHeightTBMenus = iNtErnEt
+// TotalBorderPad = dEsIgN
+// TotalWidthTBMenus = dEvElOpMeNt
+// expandedSize = hOsTiNg
+// lastRetractedSize = rEgIsTrAtIoN
+// retractedSize = dOmAiN
+// removeWscroll = sEaRcH
+// removeHscroll = EnGiNe
+// scrollH = OpTiMiZaTiOn
+// scrollW = SoCiAl
+// elScroll = mEdIa
+// dH = fLaSh
+// wH = JoOmLa
+// wW = wOrDpReSs
+// dh = dRuPal
+// dw = CrElOaDeD
+// wh = mAmBo
+// ww = pHpBb
+// addLength = MaGeNtO
+// isShowing = ZeNcArT
+// isHiding = oScOmMeRcE
+// naviG = SwIsH
+// cntsize = fIrEfOx
+// cAMTheight = mSiE
+// cAMBheight = OpErA
+// cAPSFRAMEheight = sAfArI
+// cPSFRAMEheight = wEbKiT
+/* end jun1311 */
+/*</OBF>*/
+
+//################################################################
+//#   Program:    OpenCanvas - Template Browser Query            #
+//#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+//#   Copyright:  (c) 2009 Luis G. Rodriguez                     #
+//#   Licensing:  MIT License                                    #
+//################################################################################################################
+//# You should have received a copy of the GNU General Public License along with this program; if not, write to: #
+//# the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.            #
+//################################################################################################################
+
+var RHeightTopMenu = 15,RHeightBottomMenu = 15,TotalHeightTBMenus = parseFloat(RHeightTopMenu + RHeightBottomMenu),expandedSize = 100,TotalWidthTBMenus = 10,TotalBorderPad = 10,retractedSize = 0,lastRetractedSize = 0,docuReady = 0,currWidth = '',currHeight = '',currW1 = 0,currH1 = 0,highestW = 0,highestH = 0,highestDiffW = 0,highestDiffH = 0,calculatedAreaW = 0,calculatedAreaH = 0,calculatedAreaDiffW = 0,calculatedAreaDiffH = 0,windowFramingW = 0,windowFramingH = 0,countTries = 0,naviG = navigator.userAgent;
+function redrawDocument() {
+	var gva = getViewableArea();
+	currWidth = gva[0];currHeight = gva[1];
+	document.getElementById("PreviewScreen").style.width = '' + currWidth + 'px';
+	document.getElementById("PreviewScreen").style.height = '' + currHeight + 'px';
+	document.getElementById("PreviewScreen").style.clip = 'rect(0px,'+currWidth+'px,'+currHeight+'px,0px)';
+	document.getElementById("ActivePreviewScreen").style.width = '' + currWidth + 'px';
+	document.getElementById("ActivePreviewScreen").style.height = '' + currHeight + 'px';
+	document.getElementById("ActivePreviewScreen").style.clip = 'rect(0px,'+currWidth+'px,'+currHeight+'px,0px)';
+}
+var checkWindow = function(ww,wh,dw,dh) {
+	dW = Number(dw);
+	dH = Number(dh);
+	var cntsize = 0;
+	var naviG = navigator.userAgent;
+	var mcz = checkSize();
+};
+
+// WHAT MOST BROWSERS DO: window.open(highestscreen) MAY open window with a size smaller than actual screen available space, to counter we must tell chrome to resize itself to highest screen, which will fix the window.size issue...
+// NOW: we find real document.innerSize
+
+function checkSize() {
+	var gva = getViewableArea();
+	currW1 = gva[0];currH1 = gva[1];
+	// if takes a bit more to capture requested sizing then simply try again
+	if ((currW1 == 0 || currH1 == 0) && countTries < 3) { setTimeout(checkSize,100); }
+	else {
+		// remaking window to large gives us highest window document.innerSize availability
+		remakeWindow(screen.width,screen.height);
+		// capture final w/h
+		setTimeout(reWindow,100);
+	}
+	countTries++;
+}
+// help find true document.innerSize
+// remaking window to 500x500 gives us window.framing sizing hence status/address/scroll bars
+function reWindow() {
+	var gva2 = getViewableArea();
+	highestW = gva2[0];
+	highestH = gva2[1];
+	highestDiffW = (screen.width - highestW);
+	highestDiffH = (screen.height - highestH);
+	// capture final w/h
+	remakeWindow(500,500);
+	setTimeout(findWindowFramingArea,100);
+}
+// finds true windowFraming area and document.innerSize
+function findWindowFramingArea() {
+	var gva3 = getViewableArea();
+	calculatedAreaW = gva3[0];calculatedAreaH = gva3[1];
+	// if document.innerSize is lower than what requested for window size [then our resizing worked]
+	if (calculatedAreaW < 500 || calculatedAreaH < 500) { calculatedAreaDiffW = (500 - calculatedAreaW); calculatedAreaDiffH = (500 - calculatedAreaH); }
+	// if isn't set the common params...
+	else { 
+		calculatedAreaDiffW = 20;
+		calculatedAreaDiffH = 20;
+	}
+	windowFramingW = calculatedAreaDiffW;
+	windowFramingH = calculatedAreaDiffH;
+
+//	document.getElementById("out").innerHTML='HIGHEST POSSIBLE INNER.DOCUMENT W: '+highestW+' H: '+highestH+' <br>FULLDIFF W: '+highestDiffW+' H: '+highestDiffH+
+//	'<br><br>CA W: '+calculatedAreaW+' H: '+calculatedAreaH+'<br>CADIFF W: '+windowFramingW+' H: '+windowFramingH+'';
+
+// SCROLLBAR SIZE: MSIE = 20px, ALL OTHERS 12px
+// FORCE SCROLLBAR: MSIE = nothing special, while ALL OTHERS overflowX or overflowY is needed
+
+//	alert('dW: '+dW+' dH: '+dH);
+//	alert('dW: '+dW+' dH: '+dH);
+
+//	vpW = Number(dW + TotalBorderPad + windowFramingW);	
+//	vpH = Number(dH + TotalBorderPad + windowFramingH + TotalHeightTBMenus);
+
+
+
+	var msieAppName = 'Microsoft Internet Explorer';
+	var elUserAgent = ''+navigator.userAgent+'';
+
+	var removeWscroll = 0;
+	var removeHscroll = 0;
+	var scrollH = 0;
+	var scrollW = 0;
+	// common sized scrollbar (12px)
+	elScroll = 17;
+
+	// top 10px/bottom 10px menu offset [closed position] +2 for frame border top1px bot1px
+	dH = dH;
+	// left/right menu triggers +2 for frame border left1px right1px
+	dW = dW;
+	
+	//-- remove 40, dont pop new windows that are overlapped by any OperatingSystem taskbar: left|top|right|bottom
+	highestW = highestW - 40;
+	highestH = highestH - 40;
+
+	wW = Number(TotalBorderPad + TotalWidthTBMenus + dW);
+	wH = Number(TotalBorderPad + TotalHeightTBMenus + dH);
+	if (wW >= highestW) {
+		// only firefox needs to be told to scroll, everyone else does this automatically
+		if (elUserAgent.indexOf('Firefox') != -1) { document.getElementById("PreviewScreen").style.overflowX = 'scroll'; }
+		scrollH = elScroll;
+	}
+	if (wH >= highestH) {
+		// only firefox needs to be told to scroll, everyone else does this automatically
+		if (elUserAgent.indexOf('Firefox') != -1) { document.getElementById("PreviewScreen").style.overflowY = 'scroll'; }
+		scrollW = elScroll;
+	}
+	if (wW >= highestW) {
+		wW = highestW;
+		dW = Number(wW - TotalBorderPad - TotalWidthTBMenus);
+		// no forced scroll bars for msie or chrome
+	}
+	if (wH >= highestH) {
+		wH = highestH;
+		dH = Number(wH - TotalBorderPad - TotalHeightTBMenus);
+	}
+
+	dW = dW + scrollW;
+	dH = dH + scrollH;
+
+	//- everyone except for msie is lacking 2px on W and H of final window size, clean it up
+	var addLength = 0;
+	if (!(navigator.appName == msieAppName)) { addLength = 2; }
+
+	nW = Number(wW + windowFramingW + scrollW + addLength);
+	nH = Number(wH + windowFramingH + scrollH + addLength);
+//	alert(Number(dH) + ' ' + windowFramingH);
+//	alert('highestW: '+highestW+' highestH: '+highestH);
+	
+
+	// for bottom and top bars
+
+
+
+
+
+	//alert('nW: '+nW+' H: '+nH+' dW: '+dW+' dH: '+dH+' wfW: '+windowFramingW+' wfH: '+windowFramingH+'');
+	//alert('highestW: '+highestW+' highestH: '+highestH+' wW: '+wW+' wH: '+wH+'');
+	// document.getElementById("HeaderInfo").innerHTML = ' hW: '+highestW+' hH: '+highestH +
+	' dW+TBP=wW ['+dW+'+'+TotalBorderPad+'='+wW+'] '+
+	' dH+TBP=wH ['+dH+'+'+TotalBorderPad+'='+wH+']';
+	remakeWindow(''+nW+'',''+nH+'');
+
+
+	// top/bottom menu widths [add 2 back in]
+	document.getElementById("ActiveMenuDataTop").style.width = '' + (dW+2) + 'px';
+	document.getElementById("ActiveMenuDataBot").style.width = '' + (dW+2) + 'px';
+	$(".ActiveMenuHBar1").animate({width:'' + (dW+6) + 'px'}, {duration:400});
+	// was supposed to be with 8px, hence 6/8/10, but since we remade the look we remove this line's stretch by 2px to make the right and left double-border meet top and bottom border cleanly
+	$(".ActiveMenuHBar2").animate({width:'' + (dW+6) + 'px'}, {duration:400});
+	$(".ActiveMenuHBar3").animate({width:'' + (dW+10) + 'px'}, {duration:400});
+
+	$(".ActiveMenuHLine").animate({width:'' + (dW+4) + 'px'}, {duration:400});
+
+	document.getElementById("PreviewScreen").style.width = '' + dW + 'px';
+	document.getElementById("PreviewScreen").style.height = '' + dH + 'px';
+	document.getElementById("PreviewScreen").style.clip = 'rect(0px,'+dW+'px,'+dH+'px,0px)';
+	document.getElementById("ActivePreviewScreen").style.width = '' + dW + 'px';
+	document.getElementById("ActivePreviewScreen").style.height = '' + dH + 'px';
+	document.getElementById("ActivePreviewScreen").style.clip = 'rect(0px,'+dW+'px,'+dH+'px,0px)';
+}
+
+function defaultWindowCheck() {
+	//- new way, process through checkWindow [same process as flash/sized content]
+	checkWindow(0,0,screen.width,screen.height);
+}
+
+
+
+
+
+
+	function letsDrawDocument() {
+		redrawDocument();
+	}
+	
+	
+
+	
+	
+	
+	
+	
+// JOINED HERE - this part on was set after hlS(hideLoadscreen) script in OG setup
+
+
+
+	var ogFRAMEheight = '';
+	var lastShown = '';
+	var isShowing = 0;
+	var isHiding = 0;
+	var showMenu = function(cualMenu) {
+		if (isShowing == 0 && isHiding == 0) {
+			if (lastShown != cualMenu) {
+				hideMenu(lastShown,lastRetractedSize);
+				if (document.getElementById(""+cualMenu+"")) {
+					lastRetractedSize = retractedSize;
+					if (cualMenu.indexOf("Top") != -1) { retractedSize = RHeightTopMenu; }
+					else { retractedSize = RHeightBottomMenu; }
+				}
+				cmc = parseFloat($("#"+cualMenu+"").css("height"));
+				if (cmc == retractedSize) {
+					$("#"+cualMenu+"").stop().animate({height:""+expandedSize+"px"}, {duration:400, complete:function(){
+						isShowing = 1;
+					}});
+					lastShown = cualMenu;
+
+					if (ogFRAMEheight == '') { 
+						FRAMEheight = parseFloat($("#PreviewScreen").css("height"));
+						ogFRAMEheight = FRAMEheight;
+					}else { FRAMEheight = ogFRAMEheight; }
+
+					// <expandedSize> for shown and <retractedSize> for hidden/hiding
+
+					nfh = parseFloat(FRAMEheight - (expandedSize - retractedSize)) +"px";
+					$("#ActivePreviewScreen").stop().animate({height:nfh}, {duration:400, complete:function(){
+						$("#PreviewScreen").css({height: nfh});
+						isShowing = 0;
+					}});
+					//document.getElementById("HeaderInfo").innerHTML = '1 ' + ogFRAMEheight + ' ' + nfh + '::';
+
+					$("#ActiveMenuFootAd").show('slow');
+				}
+			}
+		}
+
+	};
+	var hideMenu = function(ls,lrs) {
+		if (isShowing == 0 && isHiding == 0) {
+			if (ls != '') {
+				// <lastRetractedSize> for last shown
+				$("#"+ls+"").stop().animate({height:""+lrs+"px"}, {duration:400});
+				//  reset frame back to original sizing
+				lastShown = '';
+			}
+			if (ogFRAMEheight != '') {
+				nfh = ogFRAMEheight +"px";
+				isHiding = 1;
+				$("#ActivePreviewScreen").stop().animate({height:nfh}, {duration:400, complete:function(){
+					$("#PreviewScreen").css({height: nfh});
+					isHiding = 0;
+				}});
+			}
+			$("#ActiveMenuFootAd").hide('slow');
+		}
+	};
+	var hideMenus = function() {
+	//alert(ogFRAMEheight);
+		if (isShowing == 0 && isHiding == 0) {
+			if (ogFRAMEheight != '' && lastShown != '') {
+				isHiding = 1;
+				cPSFRAMEheight = parseFloat($("#PreviewScreen").css("height"));
+				cAPSFRAMEheight = parseFloat($("#ActivePreviewScreen").css("height"));
+				cAMTheight = parseFloat($("#ActiveMenuDataTop").css("height"));
+				cAMBheight = parseFloat($("#ActiveMenuDataBot").css("height"));
+				if (cAPSFRAMEheight != ogFRAMEheight || cAPSFRAMEheight != ogFRAMEheight || cAMTheight != RHeightTopMenu || cAMBheight != RHeightBottomMenu) {
+					nfh = ogFRAMEheight +"px";
+					if (cAPSFRAMEheight != ogFRAMEheight) {
+						isHiding = 1;
+						$("#ActivePreviewScreen").stop().animate({height:nfh}, {duration:400, complete:function(){
+							isHiding = 0;
+						}});
+						// snap into place opposed to waiting till viewport has expanded
+						$("#PreviewScreen").css({height: nfh});
+					}
+					if (cAMTheight != RHeightTopMenu) {
+						isHiding = 1;
+						$("#ActiveMenuDataTop").stop().animate({height:""+RHeightTopMenu+"px"}, {duration:400, complete:function(){
+							isHiding = 0;
+						}});
+					}
+					if (cAMBheight != RHeightBottomMenu) { 
+						isHiding = 1;
+						$("#ActiveMenuDataBot").stop().animate({height:""+RHeightBottomMenu+"px"}, {duration:400, complete:function(){
+							isHiding = 0;
+						}}); 
+					}
+				}
+				$("#ActiveMenuFootAd").hide('slow');
+				ogFRAMEheight = '';
+				lastShown = '';
+				isHiding = 0;
+			}
+		}
+
+
+//			$("#PreviewScreen").css({height: nfh});
+//			$("#ActivePreviewScreen").css({height: nfh});
+//		$("#"+lastShown+"").stop().animate({height:"15px"}, {duration:400});
+		//  reset frame back to original sizing
+//		if (ogFRAMEheight != 0) {
+//			nfh = ogFRAMEheight +"px";
+//			$("#ActivePreviewScreen").stop().animate({height:nfh}, {duration:400});
+//			$("#PreviewScreen").css({height: nfh});
+//			$("#ActivePreviewScreen").css({height: nfh});
+//			document.getElementById("HeaderInfo").innerHTML = '3 ' + ogFRAMEheight + ' ' + document.getElementById("PreviewScreen").style.height + ' ' + document.getElementById("ActivePreviewScreen").style.height + '';
+//		}
+//		if (ogFRAMEwidth != 0) {
+//			nfw = ogFRAMEwidth +"px";
+//			$("#ActivePreviewScreen").stop().animate({height:nfw}, {duration:400});
+//		}
+//		lastShown = '';
+	};

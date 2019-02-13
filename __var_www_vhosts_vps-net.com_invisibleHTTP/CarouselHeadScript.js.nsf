@@ -1,0 +1,337 @@
+
+/* OBFUSCATION: of the following lines, obfuscatables contain ( = ) and (// ) */
+/*<OBF>*/
+// thisPageCount = YUi
+// nextPageCount = yAHoo
+// nextCallCount = uSeR
+// loadInitialItems = iNTeRFacE
+// makeRequest = lIbRarY
+// searchStr = EFFeCtiVE
+// loadNextItems = AdVaNcED
+// alreadyCached = CuStOM
+// loadPrevItems = iNtErACtIVe
+// handlePrevButtonState = eXpeRT
+// enabling = pRoFEsSiOnAl
+// leftImage = iNTeRNeT
+// handleAniComplete = wEbSiTE
+// rightImage = deSiGn
+// showButtons = dEVeLoPMenT
+// pageLoad = dEvElOPeR
+// countTinner = tEmPlAtES
+// handleSuccess = sCRiPtINg
+// numResults = aRcHItECtuRe
+// callbackResponse = eNGiNEErIng
+// theTrip = aRcHiTECTuRe
+// fixBuggyWidths = dOcUmEnT
+// fmtTripInnerHTML = obJECt
+// elWidth = mOdEL
+// elHeight = sEo
+// tripInnerHTML = fRaMEwOrK
+// handleFailure = pLAtFoRM
+// sUrl = ViRAL
+// maxWordLen = mArKeTInG
+// maxLen = cOMMuNICaTiOn
+// loopCnt = tEcHNiCaL
+// strSlice = TeCHnoloGy
+// spaceBreak = weB2
+// lenOfWord = gUi
+// searchTrips = rEvErSE
+// selBrowse = coMPatiBiLiTy
+// numero = sCrIPtS
+// jumpIn = mOBiLE
+// elINWidth = eComMeRce
+// elINHeight = SeARCh
+// inWidth = sMArTPhoNe
+// inHeight = CMs
+// embedFlashUrl = pRoPaGaTioN
+// carouselWidth = SeCuRiTY
+/*</OBF>*/
+
+
+
+var totalResults = 0;
+var thisPageCount = 0;
+var nextPageCount = 0;
+var nextCallCount = 0;
+var loadInitialItems = function(type, args) {
+	var start = args[0];
+	var last = args[1];
+	makeRequest(this, '/opencanvas-interactive-website-design/cleanMyTemplates.php', searchStr, start, (last-start+1) * 2);
+};
+var loadNextItems = function(type, args) {	
+	var start = args[0];
+	var last = args[1];
+	var alreadyCached = args[2];
+	if(!alreadyCached) {
+		makeRequest(this, '/opencanvas-interactive-website-design/cleanMyTemplates.php', searchStr, start, (last-start+1) * 2);
+	}
+	thisPageCount = start + Number('%%SHOW%%') - 1;
+};
+var loadPrevItems = function(type, args) {
+	var start = args[0];
+	var last = args[1]; 
+	var alreadyCached = args[2];
+	if(!alreadyCached) {
+		makeRequest(this, '/opencanvas-interactive-website-design/cleanMyTemplates.php', searchStr, start, (last-start+1) * 2);
+	}
+	thisPageCount = start - Number('%%SHOW%%') - 1;
+};
+var handlePrevButtonState = function(type, args) {
+	var enabling = args[0];
+	var leftImage = args[1];
+	if(enabling) {
+		leftImage.src = "/website_design_template_images/left-enabled.png";	
+	} else {
+		leftImage.src = "/website_design_template_images/left-disabled.png";	
+	}
+};
+var handleAniComplete = function(type, args) {
+	var enabling = args[0];
+	var leftImage = args[1];
+//	carousel._enableNext();
+	if (totalResults <= thisPageCount) {
+//		carousel._disableNext();
+		//alert('should be the last page:' + totalResults + ' ' + thisPageCount);
+	}
+};
+var handleNextButtonState = function(type, args) {
+	var enabling = args[0];
+	var rightImage = args[1];
+	if(enabling) {
+		rightImage.src = "/website_design_template_images/right-enabled.png";	
+	} else {
+		rightImage.src = "/website_design_template_images/right-disabled.png";	
+	}
+};
+var showButtons = function(type, args) {
+	YAHOO.util.Dom.setStyle("next-arrow", "visibility", "visible");
+	YAHOO.util.Dom.setStyle("prev-arrow", "visibility", "visible");
+};
+var carousel;
+var searchStr = "1";
+
+var pageLoad = function()
+{
+	carousel = new YAHOO.extension.Carousel("dhtml-carousel", 
+		{
+			numVisible: %%SHOW%%,
+			animationSpeed: 0.9,
+			animationMethod: YAHOO.util.Easing.elasticBoth,
+			scrollInc: %%SCROLL%%,
+			loadInitHandler: loadInitialItems,
+			prevElement: "prev-arrow",
+			nextElement: "next-arrow",
+			loadNextHandler: loadNextItems,
+			loadPrevHandler: loadPrevItems,
+			animationCompleteHandler: handleAniComplete,
+			prevButtonStateHandler: handlePrevButtonState,
+			nextButtonStateHandler: handleNextButtonState
+		}
+	);
+	if ('%%ISDD%%' == '1') { loadCanvasSlots(); loadtime = 0; }
+};
+
+// countTinner counts total dynamically loaded items [so we can make new DD instances]
+var countTinner = 0;
+var handleSuccess = function(callbackResponse)
+{
+	var start = callbackResponse.argument[0];
+	var numResults = callbackResponse.argument[1];
+	var carousel = callbackResponse.argument[2];
+
+	if(callbackResponse.responseText !== undefined) {
+		var theTrip = eval( '(' + callbackResponse.responseText + ')' );
+		totalResults = theTrip.ResultSet.totalResultsAvailable;
+		
+		//-->total parsed including items on this on this page [this call]
+		//thisPageCount = start + Number('%%SHOW%%')-1; 
+		//-->total parsed including items on this next page [this call]
+		nextPageCount = start + Number('%%SHOW%%') + Number('%%SHOW%%') - 1; 
+		//--> start number for [next call]
+		nextCallCount = Number(start + numResults); 
+
+		// alert(totalResults + ' :: ' + start + ' :: ' + numResults + ' :: ' + thisPageCount + ' :: ' + nextPageCount + ' :: ' + nextCallCount);
+
+		// clear the list on every load, less memory consumption
+		DraggableTemplates = new Array(); countTinner = 0;
+		for(var i=0; i< theTrip.ResultSet.totalResultsReturned; i++) {
+			var result = theTrip.ResultSet.Result[i];
+			carousel.addItem(start+i, fmtTripInnerHTML(result, countTinner));
+			countTinner++;
+		}
+		if ('%%ISDD%%' == '1') { refreshDD(); }
+		showButtons();
+		fixBuggyWidths();
+	 }
+	 //alert(totalResults + ' ' + nextPageCount + ' ' + thisPageCount);
+};
+var fmtTripInnerHTML = function(result, countTinner) {
+	elWidth = parseFloat(result.Screenshot.Width) + 265;
+	elHeight = parseFloat(result.Screenshot.Height);
+	//128 = width of 'loading' bgackground image
+
+	var theRanker = '';
+	if ('%%THEACT%%' == '1') { theRanker = '<div class="activityLink" onMouseOver="javascript:currStar = \''+ result.Rank +'\';currID = '+ result.id +';" style="padding-left:15px;padding-right:15px;padding-top:7px;padding-bottom:7px;overflow:hidden;"><center><a href="javascript:;" style="border:0px;width:64px;height:13px;clip:rect(0px,64px,13px,0px);overflow:hidden;"><img src="/website_design_template_images/website_design_starRate_whiteBG_'+result.Rank+'star.gif" height="13" width="64" border="0" name="StarRates_'+result.id+'" id="StarRates_'+result.id+'" onMouseover="javascript:setDefaultStar(\''+ result.Rank +'\','+ result.id +');" onMouseOut="javascript:setCurrentStar(\''+ result.Rank +'\','+result.id+');" usemap="#StarRates" style="cursor:pointer;border:0px;"/></a></center></div><br\>'; }
+	
+	var tripInnerHTML =
+		// WITH OVERLIB   '<div onClick="' + result.tipo + '" style="cursor:pointer;" onmouseover="return overlib(\'<div class=loadx style=background-position:'+((elWidth - 265)/2 - (128/2))+'px '+(elHeight/2 - elHeight/2 - elHeight/2)+'px;width:'+result.Screenshot.Width+'px;height:'+result.Screenshot.Height+'px;><img src='+result.Screenshot.Url+' width='+result.Screenshot.Width+' height='+result.Screenshot.Height+' border=0></div>\', WIDTH, '+result.Screenshot.Width+', HEIGHT, '+result.Screenshot.Height+', RIGHT, OFFSETY, '+(elHeight/2 - elHeight/2 - elHeight/2)+', DELAY, 1000);" onmouseout="return nd();"><div id="'+result.id+'" class="template"><img src="' +
+		'<div onClick="' + result.tipo + '" style="cursor:pointer;"><div id="'+result.id+'" class="template"><img src="' +
+		result.Thumb.Url +
+		'" width="145" height="133"\/></div></div>' +
+		'<div style="%%S1%% background:url(/web_design_imagery/carouselImageShadow.png) no-repeat 1px 0;"><div onClick="javascript:templateModal('+result.id+');" class="templateID"><font style="color:#000000;">OCv</font>'+OCvVER+''+result.id+'</div></div>'+
+		'<div class="templateIDtitle">Design ID</font></div>'+
+		'<div class="templateTYPE">'+result.Title+'</font></div>'+
+		'%%IS1%%'+
+		'%%IS2%%'+
+		'<center>'+
+		'<div class="miniLINE"></div>'+
+		'<div><table cellpadding="0" cellspacing="0" border="0" class="nobord"><tr><td colspan="2" class="nobord" align="center"><div class="buyIT"><input type="button" class="templateButton" value="%%ACTION1NAME%%" onClick="%%ACTION1%%"></div></td></tr></table></div>'+
+		theRanker+
+		'<div class="miniLINE"></div>'+
+		'<div class="templateCATEGORY">Category: '+result.Category+'</div></center>'+
+		'%%IS3%%';
+
+		if ('%%ISDD%%' == '1') { DraggableTemplates[countTinner] = result.id; }
+
+	//add to the constant [bucket cannot be overwritten by fresh data if already config'd at canvas level]
+	if (!activeTemplates[result.id]) {
+		activeTemplates[result.id] = canvasObject(result.id, result.Price, result.Buyout, result.pToggle, result.Rank, result.tipo, result.Screenshot.Url, result.Screenshot.Width, result.Screenshot.Height, result.Thumb.Url, result.Category, result.Comments);
+	}
+	return tripInnerHTML;
+};
+
+var handleFailure = function(o) {
+	var result = o.status + " " + o.statusText;
+	/*alert("Transaction failed.  The error is:" + result);*/
+};
+var makeRequest = function(carousel, url, query, start, numResults) {
+	var params = '?query=' + query +
+							'&start=' + start +
+							'&results=' + numResults;
+	
+	var callback = {
+		success: handleSuccess,
+		failure: handleFailure,
+		argument: [start, numResults, carousel]
+	};
+	
+	var sUrl = url + params; 
+	YAHOO.util.Connect.asyncRequest("GET", sUrl, callback, null);
+};
+var trunc = function(str, maxLen, maxWordLen) {
+	str = str.replace("<b>", "");
+	str = str.replace("<\/b>", "");
+	str = str.replace("<B>", "");
+	str = str.replace("<\/B>", "");
+	
+	if(str.length > maxLen) {
+		str = str.substring(0,maxLen) + "...";
+	}
+	var start = 0;
+	var loopCnt = 0;
+	var strSlice = str;
+	do  {
+		var spaceBreak = strSlice.indexOf(' ');
+		var lenOfWord = spaceBreak;
+		if(lenOfWord == -1) { lenOfWord = strSlice.length; }
+		if (lenOfWord > maxWordLen) { str = str.substring(0, maxWordLen); }
+		start = spaceBreak+1;
+		strSlice = strSlice.substring(start);
+		spaceBreak = strSlice.indexOf(' ');
+	} while(spaceBreak != -1);
+	
+	
+	return str;
+};
+var lastTrip = '';
+var searchTrips = function(e) {
+	searchStr = YAHOO.util.Dom.get("search-string").value;
+	newTrip = searchStr;
+	if (lastTrip == '' || lastTrip != newTrip) {
+		lastTrip = newTrip;
+		// reset stars
+		currID = 0; currStar = 0; defStar = 0; var starChart = new Array();
+		// reload the carousel
+		carousel.reload();
+	}
+};
+
+// overwrite default rateMe function
+var rateMe = function(whoStars) {
+	var sUrl = 'quickRate.htm?rateTemplate=' + currID + '&setRate=' + whoStars + '';
+	var callback = {
+		success: function(o) {
+			alert(o.responseText);
+		},
+ 			failure: handleFailure
+	};
+	var transaction = YAHOO.util.Connect.asyncRequest("GET", sUrl, callback, null);
+	resetStars();
+};
+
+// CATEGORY: remove
+var loadCategory = function (cat, numero){
+	var selBrowse = document.getElementById("search-string");
+	for (var y=0;y<selBrowse.options.length;y++) {
+		if (selBrowse.options[y].value == cat) {
+			selBrowse.selectedIndex = y;
+			break;
+		}
+	}
+	nd();
+	YAHOO.util.Dom.get("search-button").blur();
+	YAHOO.util.Dom.get("search-button").focus();
+};
+var runFlash = function(numero) {
+	var gva = getViewableArea();
+	currWidth = gva[0];currHeight = gva[1];
+	// if end-user has set to always window.open
+	if ('%%MYPOPFLASH%%' == '1') {
+		var jumpIn = previewTemplate(numero);
+	}
+	// test for size compatibility for ajax load
+	else {
+		var sUrl = '/opencanvas-interactive-website-design/website_design_previewer.htm?t=' + cualOCv + '' + numero + '&dimension=1';
+		var callback = {
+			success: function(o) {
+				var sizzle = o.responseText.split(",");
+				// fight oversizing
+				var inWidth = Number(sizzle[0]);
+				var inHeight = Number(sizzle[1]);
+				// pop window, size is to large for ajax load [only if ajaxflash hasn't been forced to always display by end-user]
+				if ('%%MYAJAXFLASH%%' == '0' && (Number(inWidth + 50) > currWidth || Number(inHeight + 40) > currHeight)) {
+					var jumpIn = previewTemplate(numero);
+				}
+				// display using flashBox
+				else {
+					elINWidth = (inWidth - 5);
+					elINHeight = (inHeight - 10);
+					var embedFlashUrl = '/opencanvas-interactive-website-design/website_design_previewer.htm?t=' + cualOCv + '' + numero + '&height='+elINHeight+'&width='+elINWidth+'&isIFRAME=1&TB_iframe=true';
+					//tb_show('','' + embedFlashUrl + '');
+					openFlashBox('' + embedFlashUrl + '',elINWidth,elINHeight);
+				}
+			},
+			failure: handleFailure
+		};
+		var transaction = YAHOO.util.Connect.asyncRequest("GET", sUrl, callback, null);
+	}
+};
+// common template previewer
+var previewTemplate = function(numero) {
+	var sUrl = '/opencanvas-interactive-website-design/website_design_previewer.htm?t=' + cualOCv + '' + numero + '';
+	//var sUrl = 'runTester.htm';
+	popWindow(sUrl,'pt',500,500,'');
+};
+YAHOO.util.Event.addListener(window, 'load', pageLoad);
+YAHOO.util.Event.addListener("search-button", 'click', searchTrips);
+YAHOO.util.Event.addListener("search-button", 'focus', searchTrips);
+YAHOO.util.Event.addListener("search-string", 'keyup', searchTrips);
+
+// safari and chrome width fix
+var fixBuggyWidths = function() {
+	var carouselWidth = document.getElementById("dhtml-carousel").style.width;
+	carouselWidth = Number(carouselWidth.replace('px',''));
+	if (carouselWidth != "%%CWIDTH%%") {
+		document.getElementById("dhtml-carousel").style.width = '%%CWIDTH%%'+'px';
+	}
+}

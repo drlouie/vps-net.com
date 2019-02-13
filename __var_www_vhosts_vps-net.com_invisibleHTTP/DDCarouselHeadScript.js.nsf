@@ -1,0 +1,1124 @@
+
+/* OBFUSCATION: of the following lines, obfuscatables contain ( = ) and (// ) */
+/*<OBF>*/
+// OpenCanvasIconTemplate = jQuErY
+// OpenCanvasInfoTemplate = yUi
+// Trashables = dHTmL
+// ELcurrODDid = JAvaScRiPt
+// activeContext = cRoSsBroWsEr
+// myOuterHTML = crOsS_BrOwSER
+// canvasContextObject = aJaX
+// dragEl = aSynChroNouS
+// clickEl = eXtEnSiBlE
+// thisID = mArKUp
+// theSP = LaNgUAgE
+// currMP = aND
+// currSP = xMl
+// nEX = clIeNt_sIdE
+// nEY = iNtErACtiVe
+// targets = xMlHttPrEqUEsT
+// misTargets = oBjEcT
+// targetEl = OrIEntEd
+// originalStyles = sCrIptIng
+// myID = wEB
+// trashContentChildren = aPpLiCaTiOn
+// myODD = jSoN
+// cualCan1 = cAsCaDiNG
+// clearCanvasPresentationSlot = sTYlE
+// cualCan2 = sHeEtS
+// MYouterHTML2 = dYnAmiCallY
+// TEMPTemplate1 = iFRaME
+// MYouterHTML3 = xMlHtTp
+// tOHc3 = aCTiVeX
+// meinID = w3C
+// tCC2 = DOm
+// fCC2 = xSLt
+// userTally = nOtAtIoN
+// locoCAN = dOcUmEnt_obJeCt_MoDel
+// locoFAV = sAmE_oRiGiN_PoLiCy
+// cualCan = fRaMeWOrk
+// MYouterHTML4 = rIcH
+// elELL = mOBiLe
+// miELL = tEcHnOloGy
+// tOHc = pRoGrAmmInG
+// tOH = cOmPlEx
+// isInCanvas = aPpS
+// isInCan = iNTerFaCe
+// firstEmptyCan = dOmAInS
+// secondEmptyCan = MeThODs
+// currODDid2 = fUnCtIOnaLItY
+// currODDid = cOdInG
+// visiCanvas = dEsIGn
+// OpenCanvasOutput = tERmiNaL
+// OpenCanvasIcon = DyNaMiC_hTmL
+// OCICON = cUsToMIzEd
+// OCIC = cRoSSPlATfoRm
+// OpenCanvasInfo = crOsS_pLaTfOrM
+// OCINFO = sEARcH
+// OCIN = eNGiNE
+// verbalCountTemplate2 = cAlLbAcK
+// countRUNS = eXpERtS
+// setDisplayCounters = cRoSS_dOMaIn
+// meinCanvas = dEbUG
+// meinFavorites = eRrOr_fReE
+// meinTrash = cOMplIAnT
+// verbalCounter = seCUrE
+// verbalCountTemplate2 = CoUMpUTeR
+// lUrl = xHTmL
+// canvasLoader = drAg_AnD_DroP
+// theTrip = UsER
+// result = iNtERfACe
+// locoTRA = gUI
+// elHeight = iNtErActIve
+// myOCIconT = iNTerFACeS
+// thycanl = inTeRaCTiViTY
+// myPrice = uRi
+// defaultPrice = UrL
+// myOCInfoT = aRcHiTeCTuRe
+// thycan = cOnTeXt_MenU
+// OpenCanvasContext = dRaGgAbLE
+/*</OBF>*/
+
+
+var loadtime = 1;
+
+// CANVAS SLOT TEMPLATES
+// --> WITH OVERLIB var OpenCanvasIconTemplate = '<div id="OpenCanvasDesign_X" onmouseover="return overlib(\'<img src=SCREENSRC width=SCREENW height=SCREENH border=0>\', WIDTH, SCREENW, HEIGHT, SCREENH, LEFT, OFFSETX, 20, OFFSETY, 0, DELAY, 1000);" onmouseout="return nd();" onclick="CLICKACT"><div id="OpenCanvasMedia_X"><img style="cursor:pointer;" src="THUMBSRC" width="36" height="32"></div></div>';
+var OpenCanvasIconTemplate = '<div id="OpenCanvasDesign_X" onclick="CLICKACT"><div id="OpenCanvasMedia_X"><img style="cursor:pointer;" src="THUMBSRC" width="36" height="32"></div></div>';
+var OpenCanvasInfoTemplate = '%%OCIT%%';
+var cualOCv = 'OCv%%ELOCV%%';
+var OCvVER = '%%ELOCV%%';
+var CanvasContains = new Array();
+var DraggableTemplates = new Array();
+var Trashables = new Array();
+var currODDid='';
+var activeTemplates = [];
+var activeContext = [];
+
+//################################################################
+//#   Program:    Drag-and-drop Carousel                         #
+//#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+//#   Copyright:  (c) 2009 Luis G. Rodriguez                     #
+//#   Licensing:  MIT License                                    #
+//################################################################################################################
+//# You should have received a copy of the GNU General Public License along with this program; if not, write to: #
+//# the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.            #
+//################################################################################################################
+
+var myOuterHTML = function(incoming) {
+	var VPSouterHTML, vpsnet= document.createElement("div");
+	vpsnet.appendChild(incoming.cloneNode(true)).removeAttribute("style");
+	return vpsnet.innerHTML;
+};
+
+
+var canvasObject = function(id, price, buyout, pricetoggle, rank, clickaction, screensrc, screenw, screenh, thumbsrc, category, comments) {
+	return activeTemplates[id] = {
+		id: id,
+		price: price,
+		buyout: buyout,
+		pricetoggle: pricetoggle,
+		rank: rank,
+		clickaction: clickaction,
+		screensrc: screensrc,
+		screenw: screenw,
+		screenh: screenh,
+		thumbsrc: thumbsrc,
+		category: category,
+		comments: comments
+	}
+};
+
+var canvasContextObject = function(id, slot) {
+	return activeContext[0] = {
+		id: id,
+		slot: slot
+	}
+};
+
+(function() {
+
+YAHOO.widget.OpenCanvas_Templates = function(id, sGroup, config) {
+	YAHOO.widget.OpenCanvas_Templates.superclass.constructor.apply(this, arguments);
+	this.initPlayer(id, sGroup, config);
+};
+
+YAHOO.extend(YAHOO.widget.OpenCanvas_Templates, YAHOO.util.DDProxy, {
+	TYPE: "OpenCanvas_Templates",
+	initPlayer: function(id, sGroup, config) {
+		if (!id) { return; }
+		var el = this.getDragEl();
+		YAHOO.util.Dom.setStyle(el, "borderColor", "transparent");
+		YAHOO.util.Dom.setStyle(el, "opacity", 0.76);
+		this.isTarget = false;
+		this.originalStyles = [];
+		this.type = YAHOO.widget.OpenCanvas_Templates.TYPE;
+		this.slot = '';
+		this.startPos = YAHOO.util.Dom.getXY( this.getEl() );
+		YAHOO.log(id + " startpos: " + this.startPos, "info", "widget");
+	},
+	startDrag: function(x, y) {
+		nd();
+		YAHOO.log(this.id + " startDrag", "info", "widget");
+		var Dom = YAHOO.util.Dom;
+		var dragEl = this.getDragEl();
+		var clickEl = this.getEl();
+		dragEl.innerHTML = clickEl.innerHTML;
+		dragEl.className = clickEl.className;
+		Dom.setStyle(dragEl, "color",  Dom.getStyle(clickEl, "color"));
+		Dom.setStyle(dragEl, "backgroundColor", Dom.getStyle(clickEl, "backgroundColor"));
+
+		// set the dragged icon to specific size [MUST DEBUG MSIE ISSUE BOTTOM RIGHT HAND CORNER AT DRAG XXXXXXXX DEFEATED! ]
+		// and based on its position after the resize place it at the bot-right corner of mousePointers' current XY position
+		var thisID = this.id;
+		// ONLY FOR CAROUSEL DRAGS
+		if (!(thisID.indexOf("openCanvasImage") != -1)) {
+			Dom.setStyle(dragEl.firstChild,'width','36px');
+			Dom.setStyle(dragEl.firstChild,'height','32px');
+			theSP = ''+YAHOO.util.Dom.getXY( dragEl )+'';
+			currMP = x + ',' + y;
+			var currSP = theSP.split(",");
+			nEX = parseFloat(currSP[0]);
+			nEY = parseFloat(currSP[1]);
+			if (parseFloat(currSP[0]) < parseFloat(x)) { nEX = parseFloat(x) - parseFloat(currSP[0]) - 18; }
+			else if (parseFloat(x) < parseFloat(currSP[0])) { nEX = parseFloat(currSP[0]) - parseFloat(x) - 18; }
+			if (parseFloat(currSP[1]) < parseFloat(y)) { nEY = parseFloat(y) - parseFloat(currSP[1]) - 16; }
+			else if (parseFloat(y) < parseFloat(currSP[1])) { nEY = parseFloat(currSP[1]) - parseFloat(y) - 16; }
+
+			if (nEX != parseFloat(currSP[0]) || nEY != parseFloat(currSP[1])) {
+				Dom.setStyle(dragEl.firstChild,'position','absolute');
+				if (nEX != parseFloat(currSP[0])) { 
+					// defeat MSIE bug, push for all [remove next line to see BUG in action]
+					if (nEX > 105) { nEX = 105; }
+					Dom.setStyle(dragEl.firstChild,'left',nEX+'px'); 
+				}
+				if (nEY != parseFloat(currSP[1])) { 
+					// defeat MSIE bug, push for all [remove next line to see BUG in action]
+					if (nEY > 100) { nEY = 100; }
+					Dom.setStyle(dragEl.firstChild,'top',nEY+'px'); 
+				}
+			}
+			//document.getElementById("output").innerHTML = currMP + ' ::::: ' + currSP + ' :::: ' + nEX+','+nEY;
+		}
+		
+
+		Dom.setStyle(clickEl, "opacity", 0.1);
+		var targets = YAHOO.util.DDM.getRelated(this, true);
+		var misTargets = '';
+		YAHOO.log(targets.length + " targets", "info", "widget");
+		for (var i=0; i<targets.length; i++) {
+			var targetEl = this.getTargetDomRef(targets[i]);
+			misTargets = misTargets + ' ' + targetEl.id;
+			if (!this.originalStyles[targetEl.id]) {
+				this.originalStyles[targetEl.id] = targetEl.className;
+			}
+		}
+
+		var myID = ''+this.id+'';
+		if (myID.indexOf("openCanvasImage") != -1) {
+			// is missing target: canvas
+			if (!(misTargets.indexOf("t1") != -1)) {
+//				alert("item: " +this.parent+ " has no slots, but has: "+ misTargets);
+				this.addToGroup("canvasslot");
+			}
+			// is missing target: trash
+			if (!(misTargets.indexOf("trash") != -1)) {
+//				alert("item: " +this.parent+ " has no trash, but has: "+ misTargets);
+				if (!(misTargets.indexOf("canvas") != -1)) {
+					this.addToGroup("trashslot");
+				}
+				else {
+					this.removeFromGroup("trashslot");
+				}
+			}
+		}
+			if (!(misTargets.indexOf("favorites") != -1)) {
+				this.addToGroup("favoriteslot");
+			}
+			if (!(misTargets.indexOf("canvas") != -1)) {
+				if (!(misTargets.indexOf("trash") != -1)) {
+					this.addToGroup("canvaseses");
+				}
+				else {
+					this.removeFromGroup("canvaseses");
+				}
+			}
+
+	},
+	getTargetDomRef: function(oDD) {if (oDD.template) {return oDD.template.getEl();} else {return oDD.getEl();}},
+	endDrag: function(e) {nd();YAHOO.util.Dom.setStyle(this.getEl(), "opacity", 1);this.resetTargets();refreshDD();},
+	resetTargets: function() {var targets = YAHOO.util.DDM.getRelated(this, true);for (var i=0; i<targets.length; i++) {var targetEl = this.getTargetDomRef(targets[i]);var oldStyle = this.originalStyles[targetEl.id];if (oldStyle) {targetEl.className = oldStyle;}}},
+
+	onDragDrop: function(e, id) {
+		nd();
+		var oDD;
+		var Dom = YAHOO.util.Dom;
+		var trashContentChildren='';
+		if ("string" == typeof id) { oDD = YAHOO.util.DDM.getDDById(id); } 
+		else { oDD = YAHOO.util.DDM.getBestMatch(id); }
+		var el = this.getEl();
+        // was here in the past to allow DD items in trash, no longer needed, look at older revisions for context
+		if (oDD.template && id != 'trash' && id != 'favorites' && id != 'canvas') { }
+		else {
+			///////------ ONLY MSIE GOES THROUGH HERE????? [MAYBE CAUSE ONLY MSIE READS NULLIFIED objects as NOT NULL]
+			///////------ NON-MSIE: IGNORE THIS PROCESS [WHICH KILLS THEIR ABILITY TO MOVE/REPLACE TEMPLATE IF IT ALREADY EXISTS IN CANVAS]
+			///////------ BEST TO KEEP THIS AS IS FOR NOW, OH WELL NON-MSIE, YOU CANT RE-PLACE A TEMPLATE THAT ALREADY EXISTS IN YOUR CANVAS
+				var myODD;
+				// carousel to canvas actions only
+				if (oDD.getEl().id != 'trash' && oDD.getEl().id != 'favorites' && oDD.getEl().id != 'canvas') { 
+					var cualCan1 = 0;
+					if (oDD.id == 't2') { cualCan1=1;}else if (oDD.id == 't3') { cualCan1=2; }else if (oDD.id == 't4') { cualCan1=3; }else if (oDD.id == 't5') { cualCan1=4; }
+					clearCanvasPresentationSlot(cualCan1);
+					myODD = el;
+					//template we are [adding] to a slot ALREADY exists in another slot, remove data from other slot [clear it]
+					if (myODD) {
+						var cualCan2 = 0;
+						if (oDD.id == 't2') { cualCan2=1;}else if (oDD.id == 't3') { cualCan2=2; }else if (oDD.id == 't4') { cualCan2=3; }else if (oDD.id == 't5') { cualCan2=4; }
+						var MYouterHTML2 = myOuterHTML(myODD);
+					}
+
+				}
+
+		}
+
+		oDD = this;
+		this.resetTargets();
+
+		TEMPTemplate1 = el.cloneNode(true);
+		TEMPTemplate1.removeAttribute("style");
+		TT1inner = TEMPTemplate1.innerHTML;
+
+			var MYouterHTML3 = myOuterHTML(el);
+			tOHc3 = MYouterHTML3.toLowerCase();
+
+		// item id [dragged from carousel]
+		var meinID = this.id;
+		var m3 = '';
+		
+		var tCC2 = TrashContains.join(" ");
+		var fCC2 = FavoriteContains.join(" ");
+
+		// item id [dragged from opencanvas]
+		if (tOHc3.indexOf("opencanvasdesign_")!= -1) {
+			m3 = ''+tOHc3.match(/opencanvasdesign_?[0-9]{0,10}/)+'';
+			m3 = m3.replace('opencanvasdesign_', '');
+			meinID = m3;
+		}
+		//dropping an item into the trash
+		if (id == 'trash') {
+			// APPEND TRASHED ITEM TO TRASH
+			// keep track of whats been thrown into trash [for review by user :P] [TRASH: can even tell us where this item was on the canvas when it was deleted]
+			// check to see if template being trashed already exists in our trashed list
+			// if this template doesn't already exist in the trash, add it
+			if (!(tCC2.indexOf(""+m3+"") != -1) && m3 != '') {
+				TrashContains.push(m3);
+				userTally('trash', TrashContains);
+			}
+			// DELETE TRASHED ITEM FROM CANVAS
+			// find templateID by testing for OpenCanvasDesign_ first then location the ID
+			if (MYouterHTML3.indexOf("OpenCanvasDesign_") != -1 && m3 != '') {
+				var locoCAN = CanvasContains;
+				for (var i=0; i<locoCAN.length; i++) {
+					if (locoCAN[i] == m3)	{
+						clearCanvasPresentationSlot(i);
+						userTally('canvas', CanvasContains);
+					}
+				}
+			}
+			// DELETE TRASHED ITEM FROM FAVORITES
+			if (fCC2.indexOf(""+m3+"") != -1 && m3 != '') {
+				var locoFAV = FavoriteContains;
+				for (var i=0; i<locoFAV.length; i++) {
+					if (locoFAV[i] == m3)	{
+						FavoriteContains.splice(i, 1);
+						userTally('favorites', FavoriteContains);
+					}
+				}
+			}
+		}
+
+		//adding an item into favorites
+		if (id == 'favorites') {
+			// APPEND ITEM TO FAV
+			// keep track of whats been added to favorites [for review by user :P]
+			// check to see if template being placed into favorites already exists in our favorites list
+			// if this template doesn't already exist in favorites, add it [from canvas]
+			if (!(fCC2.indexOf(""+m3+"") != -1) && m3 != '') {
+				FavoriteContains.push(m3);
+				userTally('favorites', FavoriteContains);
+			}
+			// if this template doesn't already exist in favorites, add it [from carousel]
+			if (tOHc3.indexOf("opencanvasdesign_") == -1 && fCC2.indexOf(this.id) == -1 && this.id.indexOf("openCanvasImage") == -1) {
+				FavoriteContains.push(this.id);
+				userTally('favorites', FavoriteContains);
+				m3 = this.id;
+			}
+
+			// REMOVE favorite ITEM FROM TRASH
+			if (tCC2.indexOf(""+m3+"") != -1 && m3 != '') {
+				var locoTRA = TrashContains;
+				for (var i=0; i<locoTRA.length; i++) {
+					if (locoTRA[i] == m3)	{
+						TrashContains.splice(i, 1);
+						userTally('trash', TrashContains);
+						//delete TrashContains[i];
+					}
+				}
+			}
+		}
+
+		// all others including canvas
+		if (id != 'trash' && id != 'favorites') {
+			var cualCan = 0; 
+			if (id == 't2') { cualCan=1; }
+			else if (id == 't3') { cualCan=2; }
+			else if (id == 't4') { cualCan=3; }
+			else if (id == 't5') { cualCan=4; }
+
+			var MYouterHTML4 = myOuterHTML(el);
+			// !!!SWAPPING OR MOVING!!! FROM AND TO INCANVAS SLOT [TO: EMPTY OR INUSE] [SWAPS AND MOVES]
+			// MUST FIX AND FINAL... DONE DONE DONE!
+			elELL = el.parentNode;
+			miELL = elELL.cloneNode(true);
+			var tOH = ""+myOuterHTML(miELL)+"";
+			var myM0 = '';
+			tOHc = tOH.toLowerCase();
+			tOHc = tOHc.replace( /"/g, '' );
+			if (id == 'canvas') {
+					// if this item id is already somewhere on canvas, find where and clear slot
+					var locoCAN = CanvasContains;
+					var isInCanvas = 0;
+					var isInCan = '';
+					var firstEmptyCan = -1;
+					var secondEmptyCan = '';
+					for (var i=0; i<locoCAN.length; i++) {
+						if (locoCAN[i] == '') {
+							if (firstEmptyCan == -1) { firstEmptyCan = i; }
+							else if (secondEmptyCan == '') { secondEmptyCan = i; }
+						}
+						if (locoCAN[i] == this.id) { isInCanvas++; isInCan = i; }
+					}
+					// if already exists in canvas and the first empty is in higher position in the canvas
+					if (isInCanvas != 0) { 
+						if (firstEmptyCan < isInCan) { 
+							clearCanvasPresentationSlot(isInCan);
+							firstEmptyCan = isInCan;
+						}
+						else {
+							firstEmptyCan = -1;
+						}
+					}
+					if (firstEmptyCan != -1) {
+						addToCanvasPresentation(firstEmptyCan,this.id);
+					}
+					isInCanvas = 0;isInCan = '';firstEmptyCan = -1;
+					userTally('canvas', CanvasContains);
+					// add to CanvasPresentation Layer Container: Custom Proxy [overlapping target slots]
+					//addToCanvasPresentation(cualCan,this.id);
+			}
+			else {
+				// only if the canvasSlot we are dragging to already has an item in it [DONT CHANGE THIS ANYMORE!!!!]
+				// currODDid empty unless dropping an item into a spot where template resides
+				if (currODDid != this.id && !(tOHc.indexOf("class=template") != -1)) {
+					//cualCan = canvas slot number [0-4] this item is going into
+					// get innerHTML from cualCan to see if it has an item in it
+					// miELL.firstChild.id = OpenCanvasImage[1-5] the slot id from which we are dragging
+						var m = tOH.match(/\bo(\w*)e?(1|2|3|4|5)\b/i);
+						myM0 = m[0].toLowerCase();
+						// dragging a template from CanvasSlot to INUSE CanvasSlot
+						if (currODDid != '') {
+							myM0 = myM0.replace('opencanvasimage', '');
+							// myMO was dragged's slot index [0-4]
+							myM0 = Number(myM0-1);
+							ELcurrODDid = currODDid;
+							if (tOHc.indexOf("opencanvasdesign_") != -1) {
+								var m2 = ''+tOHc.match(/opencanvasdesign_?[0-9]{0,10}/)+'';
+								m2 = m2.replace('opencanvasdesign_', '');
+								clearCanvasPresentationSlot(cualCan);
+								addToCanvasPresentation(cualCan,m2);
+							}
+							clearCanvasPresentationSlot(myM0);
+							addToCanvasPresentation(myM0,ELcurrODDid);
+						}
+							// dragging a template from CanvasSlot to EMPTY CanvasSlot
+						else {
+							myM0 = myM0.replace('opencanvasimage', '');
+							// myMO was dragged's slot index [0-4]
+								myM0 = Number(myM0-1);
+							if (tOHc.indexOf("opencanvasdesign_") != -1) {
+								var m2 = ''+tOHc.match(/opencanvasdesign_?[0-9]{0,10}/)+'';
+								m2 = m2.replace('opencanvasdesign_', '');
+								clearCanvasPresentationSlot(cualCan);
+								addToCanvasPresentation(cualCan,m2);
+							}
+							// clear out the old slot
+							clearCanvasPresentationSlot(myM0);
+							userTally('canvas', CanvasContains);
+						}
+				}	
+				else {
+					// if this item id is already somewhere on canvas, find where and clear slot
+					var locoCAN = CanvasContains;
+					for (var i=0; i<locoCAN.length; i++) {
+						if (locoCAN[i] == this.id)	{
+							clearCanvasPresentationSlot(i);
+						}
+					}
+					// add to CanvasPresentation Layer Container: Custom Proxy [overlapping target slots]
+					addToCanvasPresentation(cualCan,this.id);
+					userTally('canvas', CanvasContains);
+				}
+			}
+		}
+		bbb = TrashContains;
+		bbf = FavoriteContains;
+		ccc = CanvasContains;
+//		var TrashContains = bbb.split("\n");
+//		var FavoriteContains = bbf.split("\n");
+		var visiCanvas = Dom.get("topcanvas").innerHTML;
+		var OpenCanvasOutput = document.getElementById("output");
+//		OpenCanvasOutput.innerHTML = 'Trash:\n\n'+bbb+'\n\n\n\nNewCC:\n\n'+ccc+'\n\n\n\nFavorites:\n\n'+bbf+'';
+		//alert('Trash:\n\n'+bbb+'\n\n\n\nNewCC:\n\n'+ccc+'\n\n\n\nFavorites:\n\n'+bbf+'');
+
+		
+
+		trashContentChildren='';
+		currODDid='';
+	},
+
+	swap: function(el1, el2) {
+		var Dom = YAHOO.util.Dom;
+		var pos1 = Dom.getXY(el1);
+		var pos2 = Dom.getXY(el2);
+		Dom.setXY(el1, pos2);
+		Dom.setXY(el2, pos1);
+	},
+
+	onDragOver: function(e, id) {
+		nd();
+		var Dom = YAHOO.util.Dom;
+		// setting CFT icons
+		if (id == 'trash' || id == 'favorites' || id == 'canvas') { 
+			if (Dom.get(id).className == "CFTiconsOn") {
+				Dom.get(id).className = "CFTiconsOnOver";
+				Dom.setStyle(id, 'background', '#FFFFFF url(/web_design_imagery/cft-'+id+'-over.gif) no-repeat 0 0');
+			}
+			else {
+				Dom.get(id).className = "CFTicons";
+				Dom.setStyle(id, 'background', '#FFFFFF url(/web_design_imagery/cft-'+id+'-off.gif) no-repeat 0 0');
+			}
+		}
+		else {
+			Dom.get(id).className = "targetOver";
+		}
+	},
+
+	onDragOut: function(e, id) {
+		nd();
+		var Dom = YAHOO.util.Dom;
+		// setting CFT icons
+		if (id == 'trash' || id == 'favorites' || id == 'canvas') {
+			if (Dom.get(id).className == "CFTiconsOnOver") {
+				Dom.get(id).className = "CFTiconsOn";
+				Dom.setStyle(id, 'background', '#FFFFFF url(/web_design_imagery/cft-'+id+'-on.gif) no-repeat 0 0');
+			}
+			else {
+				Dom.get(id).className = "CFTicons";
+				Dom.setStyle(id, 'background', '#FFFFFF url(/web_design_imagery/cft-'+id+'-off.gif) no-repeat 0 0');
+			}
+		}
+		else {
+			Dom.get(id).className = "slot";
+		}
+	},
+
+	onDrag: function(e, id) {
+		nd();
+		var Dom = YAHOO.util.Dom;
+
+		//alert(this.id)
+		
+		var targets = YAHOO.util.DDM.getRelated(this, true);
+		var misTargets = '';
+		YAHOO.log(targets.length + " targets", "info", "widget");
+		var losT = ''+targets+'';
+		for (var i=0; i<targets.length; i++) {
+			var targetEl = this.getTargetDomRef(targets[i]);
+			misTargets = misTargets + ' ' + targetEl.id;
+			if (!this.originalStyles[targetEl.id]) {
+				this.originalStyles[targetEl.id] = targetEl.className;
+			}
+			
+			// swapping styles for CFT hotbar
+			if (targetEl.id == 'favorites') {
+				targetEl.className = "CFTiconsOn";
+				Dom.setStyle(targetEl, 'background', '#FFFFFF url(/web_design_imagery/cft-'+targetEl.id+'-on.gif) no-repeat 0 0');
+			}
+			// swapping styles for CFT hotbar
+			else if (targetEl.id == 'trash') {
+				if (!(losT.indexOf("canvas") != -1)) {
+					targetEl.className = "CFTiconsOn";
+					Dom.setStyle(targetEl, 'background', '#FFFFFF url(/web_design_imagery/cft-'+targetEl.id+'-on.gif) no-repeat 0 0');
+				}
+				else {
+					targetEl.className = "CFTicons";
+					Dom.setStyle(targetEl, 'background', '#FFFFFF url(/web_design_imagery/cft-'+targetEl.id+'-off.gif) no-repeat 0 0');				
+				}
+			}
+			// swapping styles for CFT hotbar
+			else if (targetEl.id == 'canvas') {
+				if (!(losT.indexOf("trash") != -1)) {
+					targetEl.className = "CFTiconsOn";
+					Dom.setStyle(targetEl, 'background', '#FFFFFF url(/web_design_imagery/cft-'+targetEl.id+'-on.gif) no-repeat 0 0');
+				}
+				else {
+					targetEl.className = "CFTicons";
+					Dom.setStyle(targetEl, 'background', '#FFFFFF url(/web_design_imagery/cft-'+targetEl.id+'-off.gif) no-repeat 0 0');				
+				}
+			}
+			// swapping style on canvas slots
+			else { targetEl.className = "target"; }
+		}
+		toggleCFTPanel('visible');
+
+	}
+
+});
+
+})();
+
+/*CanvasPresentation Layer Container: Custom Proxy [overlapping target slots]*/
+var imMoving = 0;
+var addToCanvasPresentation = function(esteCan, elseID) {
+//	alert(esteCan + ' ' + elseID);
+	// CanvasPresentation Layer: Custom Proxy [overlapping target slots]
+	// get the templateIDbyReadingDivID
+	//-- any failures here reflect invalid TEMPLATE DIV formating
+	Trashables[esteCan+1] = '';
+
+	if (activeTemplates[elseID].pricetoggle == 1 && whichUnique == elseID) {
+		imMoving = 1;
+	}
+	else if (activeTemplates[elseID].pricetoggle == 1 && canvasPriceToggled == 0) {
+		//do the math, mark as unique
+		uniquePrice = activeTemplates[elseID].buyout;
+		if (isNaN(uniquePrice)) { uniquePrice = uniquePrice.replace(',',''); }
+		setCanvasPrice(whichCanvasSelected);
+		canvasPriceToggled = 1;
+		whichUnique = elseID;
+	}
+	
+
+		// REMOVE canvased ITEM FROM TRASH
+		var tCC2 = TrashContains.join(" ");
+		if (tCC2.indexOf(elseID) != -1 && elseID != '') {
+			var locoTRA = TrashContains;
+			for (var i=0; i<locoTRA.length; i++) {
+				if (locoTRA[i] == elseID) {
+					TrashContains.splice(i, 1);
+					userTally('trash', TrashContains);
+				}
+			}
+		}
+
+		//customize canvas icon image [add template to slot]
+		var OpenCanvasIcon = document.getElementById("openCanvasImage"+(esteCan+1)+"");
+		OCIC = OCICON(elseID);
+		OpenCanvasIcon.innerHTML = OCIC;
+
+		//customize canvas information template [add template to slot]
+		var OpenCanvasInfo = document.getElementById("openCanvasInfo"+(esteCan+1)+"");
+		OpenCanvasInfo.className = "Open-Canvas-Slot-Back-InuseOff";
+		OCIN = OCINFO(elseID,esteCan);
+		OpenCanvasInfo.innerHTML = OCIN;
+		// add to trashables group
+		Trashables[esteCan+1] = "openCanvasImage"+(esteCan+1)+"";
+		CanvasContains[esteCan] = ''+elseID+'';
+
+		// keeps display counters in check
+		tempID = '';MYOHT2 = '';
+};
+
+var verbalCountTemplate = '<center><table cellpadding="0" cellspacing="0" border="0" class="nobord"><tr><td><span id="FavoritesHas" onClick="if(FavoriteContains.length > 0) { loadCategory(\'favorites\',0); }" onMouseOver="javascript:CFTPanelSelectIcon=\'favorites\';toggleCFTPanel(\'visible\');" onMouseOut="javascript:CFTPanelSelectIcon=\'favorites\';toggleCFTPanel(\'hidden\');"><b>%%FAV%%</b> designs in <font class="showgunFAV">favorites</font></span></td><td><b>&nbsp;&nbsp;&middot;&nbsp;&nbsp;</b></td><td><span id="TrashHas" onClick="if(TrashContains.length > 0) { loadCategory(\'trash\',0); }" onMouseOver="javascript:CFTPanelSelectIcon=\'trash\';toggleCFTPanel(\'visible\');" onMouseOut="javascript:CFTPanelSelectIcon=\'trash\';toggleCFTPanel(\'hidden\');"><nowrap><b>%%TRA%%</b> designs have been <font class="showgunTRA">deleted</font></span></td></tr></table></center>';
+var lastTC = 0;
+var lastFC = 0;
+var lastCC = 0;
+var countRUNS = 0;
+// also acts as a server-side rally point, all lists are updated in user's VCART [always replacing old list with new list]
+var setDisplayCounters = function() {
+	var countCC = 0; var countTC = 0; var countFC = 0;
+	// find amount of items for each target group [trash, canvas, fav]
+	var meinCanvas = document.getElementById("canvas");
+	var meinFavorites = document.getElementById("favorites");
+	var meinTrash = document.getElementById("trash");
+	var verbalCounter = document.getElementById("Open-Canvas-Container-Contents");
+
+	for (var i=0; i<CanvasContains.length; i++) { if (parseFloat(CanvasContains[i]) > 100) { countCC++; } }
+	for (var i=0; i<TrashContains.length; i++) { if (parseFloat(TrashContains[i]) > 100) { countTC++; } }
+	for (var i=0; i<FavoriteContains.length; i++) { if (parseFloat(FavoriteContains[i]) > 100) { countFC++; } }
+	//OpenCanvasOutput.innerHTML = 'Trash:\n\n'+bbb+'\n\n\n\nNewCC:\n\n'+ccc+'\n\n\n\nFavorites:\n\n'+bbf+'';
+
+	meinCanvas.innerHTML = '<div style="padding-top:28px;padding-right:2px;">'+countCC+'</div>';
+	meinTrash.innerHTML = '<div style="padding-top:28px;padding-right:2px;">'+countTC+'</div>';
+	meinFavorites.innerHTML = '<div style="padding-top:28px;padding-right:2px;">'+countFC+'</div>';
+
+	verbalCountTemplate2 = verbalCountTemplate;
+	verbalCountTemplate2 = verbalCountTemplate2.replace('%%FAV%%', ''+countFC+'');
+	verbalCountTemplate2 = verbalCountTemplate2.replace('%%TRA%%', ''+countTC+'');
+	if (countTC == 1) { verbalCountTemplate2 = verbalCountTemplate2.replace('designs have been', 'design has been'); }
+	if (countFC == 1) { verbalCountTemplate2 = verbalCountTemplate2.replace('designs in', 'design in'); }
+
+	verbalCounter.innerHTML = verbalCountTemplate2;
+
+	countRUNS++;
+
+//	alert(countCC + ' ' + lastCC + ' ' + inCanvas.length);
+	// never send request to save a list if we are currently loading document [list saved is list being loaded to begin with]
+	if (loadtime == 0 && (!(countFC == lastFC) || !(countTC == lastTC))) {
+//		alert(countRUNS);
+		// only save items that have changed, only TRASH AND FAVORITES have verbal counters, only these need fading function
+		if (!(countFC == lastFC)) {
+			divBlink('FavoritesHas',2);
+		}
+		// only save items that have changed, only TRASH AND FAVORITES have verbal counters, only these need fading function
+		if (!(countTC == lastTC)) {
+			divBlink('TrashHas',2);
+		}
+	}
+	//alert(countRUNS);
+	lastTC = countTC;
+	lastFC = countFC;
+	lastCC = countCC;
+};
+var divBlink = function(quien,timesBlink) {
+	// only one run on MSIE no matter what how many asked for [only for DCPM]
+	if(jQuery.browser.msie && quien.indexOf("DCPM") != -1) { $('#'+quien+'').css({background:"url(/web_design_imagery/canvasPromptMSIE.gif) no-repeat 0 0"}).fadeOut("fast").fadeIn("slow",function(){ $(this).css({background:"url(/web_design_imagery/canvasPrompt3.png) no-repeat 0 0"})}); }
+	for (var i=0; i<timesBlink; i++) {
+		if(!jQuery.browser.msie) {
+			$('#'+quien+'').fadeOut("fast");
+			$('#'+quien+'').fadeIn("slow");
+		}
+	}
+	//if (jQuery.browser.msie && oldBG) { $('#'+quien+'').css('background',""+oldBG+""); }
+};
+
+var userTally = function(bucket,templates) {
+	var lUrl = '/opencanvas-interactive-website-design/saveMyCanvas.htm?'+bucket+'='+templates+'&v='+OCvVER+'';
+	var callback = {
+		cache:false,
+		success: function(o) {
+			if(o.responseText !== undefined) {
+				// only if empty does it kick back the alert, meaning 'canvas has been reset'
+				if (bucket == 'empty') {
+					if (o.responseText.indexOf("success") != -1) {
+						FavoriteContains = new Array();
+						TrashContains = new Array();
+						CanvasContains = new Array();
+						refreshDD();
+					}
+					alert(o.responseText);
+					parent.location.href=parent.location;
+				}
+			}
+		},
+		failure: function(o) {}
+	};
+	var transaction = YAHOO.util.Connect.asyncRequest("GET", lUrl, callback, null);
+};
+
+var resetMyCanvas = function (who) {
+	var locoCAN = CanvasContains;
+	var wasempty = 1;
+	for (var i=0; i<locoCAN.length; i++) { if (locoCAN[i] != '') { wasempty = 0; } }
+	if (wasempty == 0) {
+		who.disabled = true;
+		var vps=confirm("Do you really want to reset your OpenCanvas? This action can't be undone.");
+		if (vps==true) { userTally('empty', 1); }
+		who.disabled = false;
+	}
+};
+var saveMyCanvas = function (quien) {
+	var locoCAN = CanvasContains;
+	var wasempty = 1;
+	for (var i=0; i<locoCAN.length; i++) { if (locoCAN[i] != '') { wasempty = 0; } }
+	if (wasempty == 0) {
+		var lUri = '/customer-communication-panel.htm?question=1&t=OCv'+OCvVER+'11111&v='+OCvVER+'';
+		quien.rel = lUri;
+		runFancyFrame(quien);
+	}
+};
+var submitMyCanvas = function (quien) {
+	var locoCAN = CanvasContains;
+	var wasempty = 1;
+	for (var i=0; i<locoCAN.length; i++) { if (locoCAN[i] != '') { wasempty = 0; } }
+	if (wasempty == 0) {
+		var lUri = '/customer-communication-panel.htm?question=1&t=OCv'+OCvVER+'22222&v='+OCvVER+'';
+		quien.rel = lUri;
+		runFancyFrame(quien);
+	}
+};
+
+
+var loadCanvasSlots = function() {
+	var loadCAN = inCanvas;
+	for (var i=0; i<loadCAN.length; i++) {
+		clearCanvasPresentationSlot(i);
+		if (loadCAN[i]) {
+			itemID = ""+loadCAN[i]+"";
+			canvasLoader(i,itemID);
+		}
+	}
+	//$('#Open-Canvas-Container-Contents').fadeIn("slow");
+};
+
+var canvasLoader = function(cid,id) {
+	var lUrl = '/opencanvas-interactive-website-design/findMyTemplates.php?query=' + id + '';
+	var callback = {
+		success: function(o) {
+			if(o.responseText !== undefined) {
+				var theTrip = eval( '(' + o.responseText + ')' );
+				totalResults = theTrip.ResultSet.totalResultsAvailable;
+				for(var i=0; i< theTrip.ResultSet.totalResultsReturned; i++) {
+					var result = theTrip.ResultSet.Result[i];
+					// add to active templates (activeTemplates[id] not available fast enough to push at parent script level, so am pushing canvases here instead)
+					// THIS KILLED THE PERSISTENCE OF JS ISSUE ACROSS RELOADS [seems like activeTemplates is persistent even after close and open of browser :( ]
+					activeTemplates[id] = canvasObject(id, result.Price, result.Buyout, result.pToggle, result.Rank, result.tipo, result.Screenshot.Url, result.Screenshot.Width, result.Screenshot.Height, result.Thumb.Url, result.Category, result.Comments);
+					// add to active templates
+					addToCanvasPresentation(cid,id);
+				}
+				refreshDD();
+			}
+		}
+	};
+	var transaction = YAHOO.util.Connect.asyncRequest("GET", lUrl, callback, null);
+};
+
+var addToFavorites = function(idee) {
+	var myAC = parseFloat(idee);
+	if (myAC > 0) {
+		var m3 = idee;
+		var tCC2 = TrashContains.join(" ");
+		var fCC2 = FavoriteContains.join(" ");
+		// add to favorites if not there
+		if (!(fCC2.indexOf(""+m3+"") != -1) && m3 != '') {
+			FavoriteContains.push(m3);
+			refreshDD();
+			userTally('favorites', FavoriteContains);
+		}
+		// remove from trash if there
+		if (tCC2.indexOf(""+m3+"") != -1 && m3 != '') {
+			var locoTRA = TrashContains;
+			for (var i=0; i<locoTRA.length; i++) {
+				if (locoTRA[i] == m3)	{
+					TrashContains.splice(i, 1);
+					refreshDD();
+					userTally('trash', TrashContains);
+				}
+			}
+		}
+	}
+};
+
+var removeFromCanvas = function(idee) {
+	var myAC = parseFloat(idee);
+	if (myAC > 0) {
+		var m3 = idee;
+		var tCC2 = TrashContains.join(" ");
+		var fCC2 = FavoriteContains.join(" ");
+
+		// add to trash if not there
+		if (!(tCC2.indexOf(""+m3+"") != -1) && m3 != '') {
+			TrashContains.push(m3);
+			refreshDD();
+			userTally('trash', TrashContains);
+		}
+
+		// if exists in canvas remove it from its current slot
+		var locoCAN = CanvasContains;
+		for (var i=0; i<locoCAN.length; i++) {
+			if (locoCAN[i] == m3)	{
+				clearCanvasPresentationSlot(i);
+				refreshDD();
+				userTally('canvas', CanvasContains);
+			}
+		}
+
+		// remove from fav if there
+		if (fCC2.indexOf(""+m3+"") != -1 && m3 != '') {
+			var locoFAV = FavoriteContains;
+			for (var i=0; i<locoFAV.length; i++) {
+				if (locoFAV[i] == m3)	{
+					FavoriteContains.splice(i, 1);
+					refreshDD();
+					userTally('favorites', FavoriteContains);
+				}
+			}
+		}
+
+	}
+};
+
+var appendToCanvas = function(esteID) {
+	// if this item id is already somewhere on canvas, find where and clear slot
+	var locoCAN = CanvasContains;
+	var isInCanvas = 0;
+	var isInCan = '';
+	var firstEmptyCan = -1;
+	var secondEmptyCan = '';
+	for (var i=0; i<locoCAN.length; i++) {
+		if (locoCAN[i] == '') {
+			if (firstEmptyCan == -1) { firstEmptyCan = i; }
+			else if (secondEmptyCan == '') { secondEmptyCan = i; }
+		}
+		if (locoCAN[i] == esteID) { isInCanvas++; isInCan = i; }
+	}
+	// if already exists in canvas and the first empty is in higher position in the canvas
+	if (isInCanvas != 0) { 
+		if (firstEmptyCan < isInCan) { 
+			clearCanvasPresentationSlot(isInCan);
+			firstEmptyCan = isInCan;
+		}
+		else {
+			firstEmptyCan = -1;
+		}
+	}
+	if (firstEmptyCan != -1) {
+		addToCanvasPresentation(firstEmptyCan,esteID);
+	}
+	refreshDD();
+	userTally('canvas', CanvasContains);
+	isInCanvas = 0;isInCan = '';firstEmptyCan = -1;
+};
+
+
+var OCICON = function (idee) {
+
+	elHeight = parseFloat(activeTemplates[idee].screenh);
+	var myOCIconT = OpenCanvasIconTemplate;
+	myOCIconT = myOCIconT.replace(/OpenCanvasDesign_X/g, 'OpenCanvasDesign_'+idee);
+	myOCIconT = myOCIconT.replace(/SCREENSRC/g, activeTemplates[idee].screensrc);
+	myOCIconT = myOCIconT.replace(/SCREENW/g, activeTemplates[idee].screenw);
+	myOCIconT = myOCIconT.replace(/SCREENH/g, activeTemplates[idee].screenh);
+	myOCIconT = myOCIconT.replace(/CLICKACT/g, activeTemplates[idee].clickaction);
+	myOCIconT = myOCIconT.replace(/OpenCanvasMedia_X/g, 'OpenCanvasMedia_'+idee);
+	myOCIconT = myOCIconT.replace(/THUMBSRC/g, activeTemplates[idee].thumbsrc);
+	myOCIconT = myOCIconT.replace('cursor:pointer;', 'cursor:move;');
+	myOCIconT = myOCIconT.replace('OFFSETY, 0,', 'OFFSETY, '+(elHeight/2 - elHeight/2 - elHeight/2)+',');
+	return myOCIconT;
+};
+
+var OCINFO = function (idee,thycan) {
+	thycanl = thycan++;
+	var myOCInfoT = OpenCanvasInfoTemplate;
+	myPrice = "0.00";
+	defaultPrice = myPrice;
+	// [2013] only one item can be slated as unique, if one already slated, force common
+	if (activeTemplates[idee].pricetoggle == 0 || (canvasPriceToggled == 1 && idee != whichUnique)) {
+		myPrice = activeTemplates[idee].price;
+		myOCInfoT = myOCInfoT.replace(/color:#D9D9D9;/g, '');
+		myOCInfoT = myOCInfoT.replace(/Template_disabled/g, 'Template_common_off');
+	}
+	// [2013] only one item can be slated as unique [only flag item that is unique]
+	else if (canvasPriceToggled == 0 || idee == whichUnique) {
+		myPrice = activeTemplates[idee].buyout;
+
+		//do the math, mark as unique
+		uniquePrice = activeTemplates[idee].buyout;
+		if (isNaN(uniquePrice)) { uniquePrice = uniquePrice.replace(',',''); }
+		setCanvasPrice(whichCanvasSelected);
+		canvasPriceToggled = 1;
+		whichUnique = idee;
+
+		myOCInfoT = myOCInfoT.replace('color:#D9D9D9;', '');
+		myOCInfoT = myOCInfoT.replace('color:#D9D9D9;font-weight:normal;', 'color:#0071A6;font-weight:normal;');
+		myOCInfoT = myOCInfoT.replace(/Template_disabled/g, 'Template_unique_off');
+	}
+	if (activeTemplates[idee].comments == 0) { myOCInfoT = myOCInfoT.replace(/Comments_disabled/g, 'Comments_add_off'); }
+	else { myOCInfoT = myOCInfoT.replace(/Comments_disabled/g, 'Comments_view_off'); }
+	myOCInfoT = myOCInfoT.replace(defaultPrice, myPrice);
+	myOCInfoT = myOCInfoT.replace(/template X/g, cualOCv+''+idee);
+	myOCInfoT = myOCInfoT.replace(/XID/g, idee);
+	myOCInfoT = myOCInfoT.replace(/Template-Image-X/g, 'Template-Image-'+idee);
+	myOCInfoT = myOCInfoT.replace(/Template-Comments-Toggle-X/g, 'Template-Comments-Toggle-'+idee);
+	myOCInfoT = myOCInfoT.replace(/Template-ID-X/g, 'Template-ID-'+idee);
+	myOCInfoT = myOCInfoT.replace(/Template-Price-X/g, 'Template-Price-'+idee);
+	myOCInfoT = myOCInfoT.replace(/-Disabled/g, '');
+	myOCInfoT = myOCInfoT.replace(/CLICKACTD/g, 'templateModal('+idee+');');
+	var OpenCanvasContext = YAHOO.util.Dom.get("CContextTemplate").innerHTML;
+	// new way
+
+
+	OpenCanvasContext = OpenCanvasContext.replace('addToFavorites();', 'addToFavorites('+idee+');');
+	OpenCanvasContext = OpenCanvasContext.replace('forwardFriend();', 'forwardFriend(this,'+idee+');');
+	OpenCanvasContext = OpenCanvasContext.replace('canvasQuestion();', 'canvasQuestion(this,'+idee+');');
+	OpenCanvasContext = OpenCanvasContext.replace('removeFromCanvas();', 'removeFromCanvas('+idee+');');
+	myOCInfoT = myOCInfoT.replace('<img src="/web_design_imagery/spacer.gif" width="13" height="13" border="0">', OpenCanvasContext);
+
+	// old way
+	//  myOCInfoT = myOCInfoT.replace(/MOREOPTIONS/g, 'onClick="javascript:runCanvasContext(this,'+idee+', '+thycanl+');"');
+	//	myOCInfoT = myOCInfoT.replace(/Options_disabled/g, 'Options_off');
+	//	myOCInfoT = myOCInfoT.replace(/MOREOPTIONS/g, 'onClick="javascript:activeContext[0] = canvasContextObject('+idee+', '+thycanl+');return apy_popup(0, 1000, event);"');
+	//	myOCInfoT = myOCInfoT.replace(/CLICKACT/g, 'templateModal(this,'+idee+');');
+	return myOCInfoT;
+};
+
+var clearCanvasPresentationSlot = function(elCan) {
+	var OpenCanvasIcon = document.getElementById("openCanvasImage"+(elCan+1)+"");
+
+	var coddd = 0;
+	////// START track swap
+	currODDid = '';
+	cODD = OpenCanvasIcon.innerHTML;
+	currODDid2 = cODD;
+	currODDid2 = currODDid2.replace( /"/g, '' );
+	currODDid2 = currODDid2.toLowerCase();
+	currODDid2 = currODDid2.replace('opencanvasdesign_', 'OpenCanvasDesign_');
+	currODDid2 = currODDid2.replace(/CLICKACT/g, '');
+	if (currODDid2.indexOf("OpenCanvasDesign_") != -1) { 
+		var currODDid2 = currODDid2.split(" ");
+		for (var s=0; s<currODDid2.length; s++) {
+			// if this element contains what we are looking for [if swapping in canvasslots - first item to come through is the template residing in the slot we are dragging unto]
+			if (coddd == 0 && currODDid2[s].indexOf("id=") != -1 && currODDid2[s].indexOf("OpenCanvasDesign_") != -1 && !(currODDid2[s].indexOf("openCanvasImage") != -1)) {
+				currODDid2[s] = currODDid2[s].replace('id=OpenCanvasDesign_', '');
+				currODDid=currODDid2[s];
+
+				if (whichUnique == currODDid && imMoving == 0) {
+					//do the math, mark as unique
+					uniquePrice = 0.00;
+					setCanvasPrice(whichCanvasSelected);
+					canvasPriceToggled = 0;
+					whichUnique = 0;
+				}
+				else {
+					imMoving = 0;
+				}
+
+				coddd++;
+			}
+		}
+	}
+	////// END track swap
+	coddd = 0;
+
+	OpenCanvasIcon.innerHTML='';
+
+
+	var OpenCanvasInfo = document.getElementById("openCanvasInfo"+(elCan+1)+"");
+	var myOCInfoT = OpenCanvasInfoTemplate;
+	myOCInfoT = myOCInfoT.replace(/template X/g, 'template '+(elCan+1)+'');
+//	myOCInfoT = myOCInfoT.replace(/CLICKACT/g, '');
+	myOCInfoT = myOCInfoT.replace(/CLICKACTD/g, '');
+	myOCInfoT = myOCInfoT.replace(/XID/g, 'this');
+	OpenCanvasInfo.className = "Open-Canvas-Slot-Back-Disabled";
+	OpenCanvasInfo.innerHTML = myOCInfoT;
+
+	// remove from trashables group
+	Trashables[elCan+1] = '';
+	CanvasContains[elCan] = '';
+};
+
+var refreshDD = function() {
+
+	///////////////
+	// DD START ///
+	///////////////
+	var canvies = [], tempies = [], trashbin = [], favorites = [], canvases = [], trashies = [];
+	Event = YAHOO.util.Event, DDM = YAHOO.util.DDM;
+
+    // OpenCanvas slots	
+	canvies[0] = new YAHOO.util.DDTarget("t1", "canvasslot");
+	canvies[1] = new YAHOO.util.DDTarget("t2", "canvasslot");
+	canvies[2] = new YAHOO.util.DDTarget("t3", "canvasslot");
+	canvies[3] = new YAHOO.util.DDTarget("t4", "canvasslot");
+	canvies[4] = new YAHOO.util.DDTarget("t5", "canvasslot");
+
+	trashbin[0] = new YAHOO.util.DDTarget("trash", "trashslot");
+
+	favorites[0] = new YAHOO.util.DDTarget("favorites", "favoriteslot");
+
+	canvases[0] = new YAHOO.util.DDTarget("canvas", "canvaseses");
+
+	//add templates to DD as they become available
+	for (var i=0; i<Trashables.length; i++) {
+		if (Trashables[i] && (Trashables[i] != 0)) {
+			var currTrashies = ""+trashies+"";
+			var currTempies = ""+tempies+"";
+			if (!(currTrashies.indexOf(""+Trashables[i]+"") != -1)) { 
+				trashies[i] = new YAHOO.widget.OpenCanvas_Templates(""+Trashables[i]+"", "trashslot"); 
+			}
+//			if (!(currTempies.indexOf(""+Trashables[i]+"") != -1)) {
+//				DraggableTemplates[(DraggableTemplates.length)] = ""+Trashables[i]+"";
+//				alert(DraggableTemplates);
+//			}
+		}
+	}
+
+	//add templates to DD as they become available
+	for (var i=0; i<DraggableTemplates.length; i++) {
+		tempies[i] = new YAHOO.widget.OpenCanvas_Templates(DraggableTemplates[i], "canvasslot");
+	}
+
+	// hide the buckets
+    //YAHOO.util.Dom.setStyle("DDBuckets", "visibility", "hidden");
+	toggleCFTPanel('hidden');
+	
+	YAHOO.util.Dom.get('trash').className = "CFTicons";
+	YAHOO.util.Dom.setStyle('trash', 'background', '#FFFFFF url(/web_design_imagery/cft-trash-off.gif) no-repeat 0 0');
+	YAHOO.util.Dom.get('favorites').className = "CFTicons";
+	YAHOO.util.Dom.setStyle('favorites', 'background', '#FFFFFF url(/web_design_imagery/cft-favorites-off.gif) no-repeat 0 0');
+	YAHOO.util.Dom.get('canvas').className = "CFTicons";
+	YAHOO.util.Dom.setStyle('canvas', 'background', '#FFFFFF url(/web_design_imagery/cft-canvas-off.gif) no-repeat 0 0');
+
+	// keeps display counters in check
+	setDisplayCounters();
+
+	DDM.mode = 0;
+
+};
+
+// toggles our CFTPanel [canvas toolbar] READY FOR MSIE BUGGY FADE {commented out}
+var CFTPanel = 'off';
+var CFTPanelTransit1 = 0;
+var CFTPanelTransit2 = 0;
+var CFTPanelSelectIcon = 0;
+var oldCN = '';
+var oldBG = '';
+var toggleCFTPanel = function(swatch) {
+	var Dom = YAHOO.util.Dom;
+
+	// only for calls coming from VERBALIZED counter line
+	if (CFTPanelSelectIcon != 0) {
+		myid = CFTPanelSelectIcon;
+		if (oldCN == '') { oldCN = Dom.get(myid).className; }
+		if (oldBG == '') { oldBG = Dom.getStyle(myid, "background"); }
+		Dom.get(myid).className = "CFTiconsOnOver";
+		Dom.setStyle(myid, 'background', '#FFFFFF url(/web_design_imagery/cft-'+myid+'-on.gif) no-repeat 0 0');
+	}
+
+	if (swatch == 'visible') {
+		if (CFTPanel == 'off' && CFTPanelTransit1 == 0) {
+			CFTPanelTransit1 = 1;
+			//$("#DDBuckets").css({opacity: 'show', visibility: "visible"}).stop().animate({opacity: 100}, {duration:5000, complete:tpf(1)});
+			YAHOO.util.Dom.setStyle("DDBuckets", "visibility", "visible");
+			tpf(1);
+		}
+	}
+	else {
+		// only for calls coming from VERBALIZED counter line
+		if (CFTPanelSelectIcon != 0) {
+			myid = CFTPanelSelectIcon;
+			if (oldCN != '') { Dom.get(myid).className = ''+oldCN+''; oldCN = ''; }
+			if (oldBG != '') { Dom.setStyle(myid, 'background', oldBG); oldBG = ''; }
+			CFTPanelSelectIcon = 0;
+		}
+		if (CFTPanel == 'on' && CFTPanelTransit2 == 0) {
+			CFTPanelTransit2 = 1;
+			//$("#DDBuckets").css({opacity: 100, visibility: "hidden"}).stop().animate({opacity: 0}, {duration:5000, complete:tpf(0)});
+			YAHOO.util.Dom.setStyle("DDBuckets", "visibility", "hidden");
+			tpf(0);
+		}
+	}
+
+};
+// keeps tabs on the state of the toggler [dont repeat animations]
+function tpf(cua){if(cua==1){CFTPanel='on';CFTPanelTransit1=0;}else{CFTPanel='off';CFTPanelTransit2=0;}}

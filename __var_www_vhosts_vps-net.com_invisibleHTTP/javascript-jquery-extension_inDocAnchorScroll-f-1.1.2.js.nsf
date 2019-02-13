@@ -1,0 +1,117 @@
+
+/* OBFUSCATION: of the following lines, obfuscatables contain ( = ) and (// ) */
+/* OVERCOMEDOUBLEFORWARD = if you dont kill double-forward-slashes the obfuscator removes the line of code with double-forward-slashes, processing it as a comment */
+/*<OBF>*/
+// titleHspace = fEEdS
+// historyHspace = SeaRCh_eNGinE
+// OVERCOMEDOUBLEFORWARD = /
+/*</OBF>*/
+
+//################################################################
+//#   Program:    Smooth InDocument Anchor Scroll                #
+//#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+//#   Copyright:  (c) 2009 Luis G. Rodriguez                     #
+//#   Licensing:  MIT License                                    #
+//################################################################################################################
+//# You should have received a copy of the GNU General Public License along with this program; if not, write to: #
+//# the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.            #
+//################################################################################################################
+
+// wikiboard title object
+if (!(!parent.document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = parent.document.getElementById("WikiBoardBarTitle");
+	mwbh = parent.document.getElementById("WikiBoardBarHistory");
+	fbsl = parent.document.getElementById("WikiPeeksSlider");
+	wbct = parent.document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = parent.document.getElementById("Wiki-Peeks-Content-Search");
+}
+else if (!(!document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = document.getElementById("WikiBoardBarTitle");
+	mwbh = document.getElementById("WikiBoardBarHistory");
+	fbsl = document.getElementById("WikiPeeksSlider");
+	wbct = document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = document.getElementById("Wiki-Peeks-Content-Search");
+}
+// only if we exist in a framed document from our controlling parent
+if (mwbt!=0) {
+	pEeKS = new Array();
+	wIKi = [];
+
+	//-- count slides only for INTERNAL wikibars
+	if (innerOne == 1) {
+		if (!(!document.getElementById("WikiPeeksHeader"))) {
+			document.getElementById("WikiPeeksHeader").style.visibility='visible';
+			document.getElementById("WikiPeeksHeader").style.display='block';
+		}
+		if (!(!document.getElementById("WikiPeeksFooter"))) {
+			document.getElementById("WikiPeeksFooter").style.visibility='visible';
+			document.getElementById("WikiPeeksFooter").style.display='block';
+		}
+	}
+	
+	if (!(!whichFancySlide)) { whichFancySlide(0); }
+	mwbt.innerHTML = logo+'<span title="Source '+source+': '+bpath+'">'+myTitle+'</span>';
+
+	var inAnchors = countAnchors;
+	if (inAnchors > 0) { addAnchors(); }
+	else { mwbh.innerHTML = titleLink; }
+
+	if (!(!whichFancyToggle)) { whichFancyToggle(1); }
+	// lower font size until our pieces fit in our wikibar control panel
+	if (!(!mwbt.clientWidth) && !(!mwbh.clientWidth)) {
+		// adHspace is static at 300p
+		var adHspace = 300;
+		var titleHspace = '';
+		var historyHspace = '';
+		var totalW = '';
+		var fullW = '';
+		getBarSizing();
+		var fs = 14;
+		// creep the font size down until it fits
+		do {
+			fs = fs - 1;
+			$(mwbt).css({'font-size' : fs+'px'});
+			$(mwbh).css({'font-size' : fs+'px'});
+
+			// repop the anchors to remake the list
+			if (inAnchors > 0) { addAnchors(); }
+
+			getBarSizing();
+		} 
+		while(((totalW + adHspace) > fullW) && fs > 9);
+	}
+	// after its content generation slide it into view
+	if (!(!whichFancySlide)) { whichFancySlide(1); }
+
+
+
+
+
+	// REQUEST OPTIONS: st = search || asin = product listing
+	// REQUEST OPTIONS: $ms can be SEARCH TERM/KEYS or ProductID/ASIN
+	// pass layer to display the ad)
+	// REQUEST OPTIONS: pass imageSize as js variable, used to test against while remaking (resizing) amazon image calls (imageSize still needed in query string)
+	// pass super queryString ready for http)
+	
+	// make search string based on query string
+	var currDocLoc = ''+document.location+'';
+	if (currDocLoc.indexOf('?st=') != -1) {
+		// adseek 1  [document analysis]
+		adseek1 = mostRelevantKeys; 
+		adseekr = adseek1.replace(/ /g,'');
+		if (adseekr == '') {
+			// adseek 2 [document query string]
+			//------------- NEXT LINE GETS CUT DURING OBFUSCATION [since it has double forward-slash in it], MUST REINSERT MANUALLY
+			//------------- NEXT LINE GETS CUT DURING OBFUSCATION [since it has double forward-slash in it], MUST REINSERT MANUALLY
+			//------------- NEXT LINE GETS CUT DURING OBFUSCATION [since it has double forward-slash in it], MUST REINSERT MANUALLY
+			myString=(''+msour+'').split('?st=')[0].replace(/\OVERCOMEDOUBLEFORWARD/g, ' ').replace(/-/g, ' ').replace(/_/g, ' ').replace(/,/g, ' ').replace('#',' ');
+			if (myString.indexOf('.') != -1) { myString = myString.split('.')[0]; }
+			adseek1 = myString;
+			if (adseek1 == ' TR ') { adseek1 = 'world-wide-web consortium'; }
+		}
+	}
+	//28 = height bottom bar area
+	if (!(!adseek1)) {
+		if (!(!whichAdvertiser)) { whichAdvertiser(this,'st',adseek1,'WikiBoardBarAd','',28,'&msit=l&msits=28&dpt=Books&max=4'); }
+	}
+}

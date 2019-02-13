@@ -1,0 +1,645 @@
+
+/* OBFUSCATION: of the following lines, obfuscatables contain ( = ) and (// ) */
+/*<OBF>*/
+// WikiPeeksLibraryReference = wiki_PEEKS
+// activeReferences = WikIpEeKs
+// savedReferences = wIkIpEdIA
+// adMarkup = aDvErTISinG
+// isReferenceable = rEfErEnce
+// activeAdvertisements = aDvErTiSInG
+// advertisementObject = sEaRch_EnGiNe
+// lockerObject = oPtiMizAtIoN
+// adMarker = meThOdOloGiEs
+// referenceSave = riCh_cOnTeNt
+// referenceObject = dElIveRy
+// toggleWikiPeekLibrary = Wiki_Peeks_Library
+// initiateReference = ISBN_Book_Reference
+// showAdvertisement = We_Support_Wikipedia
+// WikiPeeksHeader = Add_Wikipedia_To_Your_Website
+// showTheAd = InFoRmAtIoNaL
+// getAdMarkup = WeBsITeS
+// closeBubble = kEyWOrd_PhraSeS
+// showReference = taRgEted_kEyWoRDs
+// storeSelect = jQueRy_pLuGiN
+// CurrencyFormatted = cROsS_pLaTfORm
+/*</OBF>*/
+
+//################################################################
+//#   Program:    Wikipeeks                                      #
+//#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+//#   Copyright:  (c) 2009 Luis G. Rodriguez                     #
+//#   Licensing:  MIT License                                    #
+//################################################################################################################
+//# You should have received a copy of the GNU General Public License along with this program; if not, write to: #
+//# the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.            #
+//################################################################################################################
+
+var activeReferences = [];
+var savedReferences = [];
+var adMarkup = [];
+var isReferenceable = [];
+var activeAdvertisements = [];
+var advertisementObject = function(id, content, shown) {
+	return activeAdvertisements[id] = {
+		id: id,
+		content: content,
+		shown: shown
+	}
+};
+var lockerObject = function(id, locked) {
+	return isReferenceable[id] = {
+		id: id,
+		locked: locked
+	}
+};
+
+var adMarker = function(id, markup) {
+	return adMarkup[id] = {
+		id: id,
+		markup: markup
+	}
+};
+
+var referenceSave = function(id, authors, publishers, departments, title, store, price) {
+	return savedReferences[id] = {
+		id: id,
+		authors: authors,
+		publishers: publishers,
+		departments: departments, 
+		title: title,
+		store: store,
+		price: price
+	}
+};
+
+var referenceObject = function(id, screensrc, screenw, screenh, atok, thumbsrc, thumbw, thumbh, authors, publishers, notes, title, awards, libraries, stores, actstate, menustate) {
+	return activeReferences[id] = {
+		id: id,
+		atok: atok,
+		screensrc: screensrc,
+		screenw: screenw,
+		screenh: screenh,
+		thumbsrc: thumbsrc,
+		thumbw: thumbw,
+		thumbh: thumbh,
+		authors: authors,
+		publishers: publishers,
+		notes: notes, 
+		title: title,
+		awards: awards,
+		libraries: libraries,
+		stores: stores,
+		actstate: actstate,
+		menustate: menustate
+	}
+};
+
+var toggleWikiPeekLibrary = function(acual,miID,quien) {
+	// if this ISBN popup already exists [mouse over/off show/hide switch] ad is up or reference is up
+	if ( acual && ( acual.HasBubblePopup() ) && ( ( activeAdvertisements[miID] && ( activeAdvertisements[miID].shown == 1 || activeAdvertisements[miID].shown == 2) ) ) ) {
+		// if popup is currently shown, hide it
+		if (acual.IsBubblePopupOpen()) { unStick(miID); closeBubble(miID); }
+		// if popup is currently closed, open it [mouse over on link switch 
+		// since mouseover timer only works for 1st bubble show instances, we must set a timeout for recursive calls
+		//else {acual.ShowBubblePopup(); acual.FreezeBubblePopup(); }
+	}
+	else {
+		if (acual.HasBubblePopup()) { acual.RemoveBubblePopup(); }
+		acual.CreateBubblePopup( BPoptionsReference ).each( function() {
+			// for by-passing advertisement, we set VPS-Book-Reference-Number-ID for use by referencer function
+			acual.SetBubblePopupInnerHtml('<div style="line-height:12px;text-align:left;padding:10px;"><div id="VPS-Book-Reference-Number-'+miID+'"><center>'+loadImage+'</center></div></div>',0);
+		});
+	}
+	// unlocked and already loaded, good to go
+	if (activeReferences[miID] && (activeReferences[miID].atok && (activeReferences[miID].atok == 1))) { showReference(miID,quien,0); }
+	else {
+		// not referenceable means is still locked due to showing advertisement
+		if (isReferenceable[miID] && (isReferenceable[miID].locked && (isReferenceable[miID].locked == 0) )) { 
+			// no actor so we pass last item as 0
+			var runref = initiateReference(miID,acual.attr( 'href' ),quien,0); 
+		}
+		else { showAdvertisement(miID,quien); }
+	}
+};
+
+$(document).ready(function(){
+	// if bad ISBN text, fix it at loadtime
+	$(".WikiPeeksReferences").each( function() {
+		var miID = ''+$(this).html()+'';
+		acual = $(this);
+		miID2 = miID.replace(/[^a-zA-Z0-9- ]+/g,'');
+		miID2 = miID2.replace(/ISBN/g,'ISBN ');
+		miID2 = miID2.replace('  ',' ');
+		if (miID != miID2) { $(this).html(''+miID2+''); }
+	});
+	var myWikiPeekLibrary = '';
+	$(".WikiPeeksReferences").focus(function(e){
+		// focus used to serve up books for duplicate ISBN entries in DOC
+		var miID = ''+$(this).html()+'';
+		miID2 = miID.replace(/[^a-zA-Z0-9]+/g,'');
+		miID = miID2;
+		acual = $("#"+miID+"");
+		if (miID.length >= 10) {
+			toggleWikiPeekLibrary(acual,miID,this);
+		}
+	}).hover(function(e){
+		$(this).css('text-decoration','underline');
+		var miID = ''+$(this).html()+'';
+		miID2 = miID.replace(/[^a-zA-Z0-9]+/g,'');
+		miID = miID2;
+		acual = $(this);
+		if (miID.length >= 10 && !(myWikiPeekLibrary.indexOf('ISBN'+miID+'') != -1)) {
+			myWikiPeekLibrary = myWikiPeekLibrary + 'ISBN'+miID+'';
+			$(this).attr('id',miID);
+			toggleWikiPeekLibrary(acual,miID,this);
+		}
+		// is dupe, already have this ISBN id in doc, use it to toggle this ISBN reference
+		else if (miID.length >= 10) {
+			$("#"+miID+"").focus();
+		}
+	},function() {
+		$(this).css('text-decoration','none');
+		// -- clear any popup timers
+		if (!(!poptimer)) { clearTimeout(poptimer); }
+		// -- if popup is currently open, close it
+		if (acual && (acual.HasBubblePopup())) {
+			if (acual.IsBubblePopupOpen()) { 
+				//-- will only work for loader popups, all others are frozen therefore cannot be unshown
+				closeBubble(miID);
+			}
+		}
+	});
+});
+
+
+
+var oglUrl = '';
+var runBookReference = function (quien,action) {
+	var lUrl = ''+$(quien).attr('href')+'';
+	if (oglUrl != '') { oglUrl = lUrl; }
+	lUrl = lUrl.replace('international-standard-book-number-lookup.htm?feed=WikiPeeksBookReference&ad=a&isbn=',action);
+	$(quien).attr('href',''+lUrl+'');
+};
+var initiateReference = function(id,cual,quien,act) {
+	acual = $(quien);
+
+
+	var lUrl = ''+cual+'';
+	//-use same params in URL from WikiPeeksReferences, just change the feed/data requester name
+	lUrl = lUrl.replace('WikiPeeksBookReference','WikiPeeksReferences');
+	///WikiPeeks/international-standard-book-number-lookup.htm?feed=WikiPeeksReferences&ad=a&isbn=0738540412
+	var callback = {
+		success: function(o) {
+			var vpsnetcom = YAHOO.util.Dom.get("VPS-Book-Reference-Number-"+id+"");
+			if (!(!vpsnetcom)) {
+				if(o.responseText !== undefined) { 
+					var theTrip = eval( '(' + o.responseText + ')' );
+					totalResults = theTrip.ResultSet.totalResultsAvailable;
+					for(var i=0; i< theTrip.ResultSet.totalResultsReturned; i++) {
+						var result = theTrip.ResultSet.Result[i];
+						// atok = 1 here, by-pass loading of advert [spot 5 in push, spot 2 in save]
+						// act is passed in by actor[requester]
+						activeReferences[id] = referenceObject(id, result.s.Url, result.s.Width, result.s.Height, 1, result.t.Url, result.t.Width, result.t.Height, result.a, result.p, result.n, result.ti, result.aw, result.l, result.st, act, '');
+					}
+					showReference(id,quien,act);
+				}
+				else { vps_net_com.innerHTML = ''; }
+			}
+		}
+	};
+	var transaction = YAHOO.util.Connect.asyncRequest("GET", lUrl, callback, null);
+};
+
+var showAdvertisement = function(id,quien) {
+	//-- seen advert if already loaded in object
+	if (activeAdvertisements[id]) {
+		showTheAd(id,quien,1);
+	}
+	//-- never seen this, make it
+	else {
+		qID = id;
+		//--clean 'er up for clean query
+		qID = qID.replace(":",'');qID = qID.replace(" ",'');
+		//-use same params in URL from WikiPeeksReferences, change the url and the feed/data requester name
+		var lUrl = ''+$(quien).attr('href')+'';
+		lUrl = lUrl.replace('international-standard-book-number-lookup','amazon-advertisements');
+		lUrl = lUrl.replace('WikiPeeksBookReference','WikiPeeksISBN');
+		lUrl = lUrl += '&msit=l&msits=500&max=1';
+		//var lUrl = '/amazon-advertisements.htm?isbn='+id+'&feed=WikiPeeksISBN&msit=l&msits=500&max=1';
+		var callback = {
+			cache:false,
+			success: function(o) {
+				if(o.responseText !== undefined) {
+					// html
+					if (o.responseText.indexOf("http") != -1 && o.responseText.indexOf("%%%") != -1) {
+						// feed the results to our recipient
+						activeAdvertisements[id] = advertisementObject(id, o.responseText, 1);
+						showTheAd(id,quien,o.responseText);
+					}
+					else {
+						// no advertisement markup returned
+						showTheAd(id,quien,0);
+					}
+				}
+			},
+			failure: function (o) { showTheAd(id,quien,0); }
+		};
+		var transaction = YAHOO.util.Connect.asyncRequest("GET", lUrl, callback, null);
+	}
+};
+var WikiPeeksHeader = '<div class="WikiPeeksReferenceHeader"><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td valign="top" align="left" nowrap="1"><div style="font-size:12px;">WikiPeeks Library %%WikiPeeksFeedbackTitle%% </div></td><td valign="top" align="right" width="100%"><span class="WikiPeeksAdPreviewInfo"> %%WikiPeeksActions%% </span></td></tr></table></div>';
+var showTheAd = function(id,quien,myrel) {
+	var WikiActions = '';
+	acual = $(quien);
+	// failsafe [0 = no results, from server or locally, either way same]
+	if (myrel == 0) {
+		EWikiFeedbackTitle = ': No results found';
+		EWikiPeeksHeader = WikiPeeksHeader;
+		EWikiPeeksHeader = EWikiPeeksHeader.replace(/ %%WikiPeeksActions%% /g, WikiActions );
+		EWikiPeeksHeader = EWikiPeeksHeader.replace(/ %%WikiPeeksFeedbackTitle%% /g, EWikiFeedbackTitle );
+		EadvertisementMarkup = EWikiPeeksHeader;
+		acual.SetBubblePopupInnerHtml(EadvertisementMarkup,0);
+	}
+	else {
+		//--for tracking individual book advertisement requests/views
+//		var advertShown = 0;
+		// if already parsed advertisment just use same one [time out the show]
+		if (acual.HasBubblePopup() && (activeAdvertisements[id] && (activeAdvertisements[id].shown == 1))) {
+			if (!acual.IsBubblePopupOpen()) { 
+				var _this = acual;
+				poptimer = setTimeout(function() { _this.ShowBubblePopup(); _this.FreezeBubblePopup(); }, 750);
+			}
+		}
+		// else open a new one for new item
+//		else {
+//			advertShown = 1;
+			// save for reuse
+//			alert(activeAdvertisements[id].content);
+			GWikiPeeksHeader = WikiPeeksHeader;
+			var mymarkup = getAdMarkup(id,quien,GWikiPeeksHeader,0);
+			/// now saved to container
+			adMarkup[id] = adMarker(id, mymarkup);
+			acual.SetBubblePopupInnerHtml(mymarkup,0);
+			acual.FreezeBubblePopup();
+//		}
+	}
+};
+
+// use AFS to overcome issue with removing comments meaning we remove anything with double-forward slash //
+var afs = '/';
+var WikiMenuNode = '<span class="WikiActs" id="%%ITEM%%-%%ID%%" onClick="javascript:WikiPeeksLibraryReference(\'%%ID%%\',\'%%QUIEN%%\',\'%%ITEM%%\');"><span class="WikiAct"><span><a>%%INAME%%</a></span></span></span>';
+var WikiActors = '<span id="WikiPeeks-Actions-%%ID%%"><span class="WikiPeeksActions">%%WIKIMENU%%</span><span class="WikiActs"><a href="javascript:closeBubble(\'%%ID%%\');" class="WikiPeeksClose" title="Close \'WikiPeeks Library\'">close &nbsp;X</a></span></span>';
+var DonCom = '';
+var getAdMarkup = function(id,quien,iWikiPeeksHeader,ExtraMark) {
+
+	// if bad ISBN link, fix it 2013
+	var miHREF = ''+quien+'';
+	myHREFstack = miHREF.split('isbn=');
+	var miISBN = ''+myHREFstack[1]+'';
+	var miISBN2 = miISBN.replace(/[^a-zA-Z0-9- ]+/g,'');
+	if (miISBN != miISBN2) { quien = ''+myHREFstack[0]+'isbn='+miISBN2+''; }
+
+	if (activeAdvertisements[id] && (activeAdvertisements[id].content)) {
+		xOffset = 20;
+		yOffset = 0;
+		pWidth = 500;
+		pHeight = 250;
+		DonComHeight = 0;
+
+		infoMarkup = "";
+
+		var imageReduction = 18;
+		var containerReduction = 0;
+		containerReduction = (imageReduction - 4);
+
+		myImageSize = (pHeight - imageReduction);
+		myWrapSize = (pHeight - containerReduction);
+		// resize image from icon to whatever our preview size is [going by height for WikiBoardBar]
+		//read in icon images' rel [is actually the icon image name itself]
+		// rel = $asin%%%$image%%%$department%%%$title%%%$price%%%$madeby%%%$publisher [if avail]%%%$totalpages%%%$currentpage%%%querystring%%%amazonTrackingImageUrl%%%AdURL%%%storeAdvertiser
+		myrel = activeAdvertisements[id].content;
+		var losRel = myrel.split('%%%');
+		var pub = '';
+		var authors = '';
+		var allauthors = '';
+		var misauthors = '';
+		var ptit = '';
+		var pric = '';
+		var isrc = '';
+		var pdpt = '';
+		var myhref = '';
+		var trackingurl = '';
+		var WikiPeeksAdImageOverlay = '';
+
+		if (losRel[11] && (losRel[11].length > 0)) { myhref = losRel[11]; }
+		if (losRel[12] && (losRel[12].length > 0)) { mystore = losRel[12]; }
+		if (losRel[0]) { iasi = losRel[0]; }
+
+		var isgoodimage = 0;
+		if (losRel[1]) {
+			// not empty, passed in as image
+			if (losRel[1].length >= 10 && losRel[1].indexOf("http") != -1) {
+				isrc = losRel[1];
+			}
+			// empty isrc, try to find replacement [harden the optimal sizing]
+			else {
+				//myImageSize = '232" width="167"';
+				myImageSize = 232;
+				isrc = 'http:/'+afs+'www.vps-net.com/web_design_imagery/WikiPeeks/noImage.png';
+			}
+		}
+		if (losRel[2]) {
+			pdpt = losRel[2];
+			if(pdpt == 'Books') {
+				pdpt = 'a hard or digital copy of this book';
+			}
+		}
+		if (losRel[3] && (losRel[3].length > 0)) { adtitle = losRel[3]; ptit = '<div class="WikiPeeksAdPreviewTitle"><a href="'+myhref+'" target="WikiPeeksAds-'+mystore+'" title="'+adtitle+', securely buy '+pdpt+' at '+mystore+', we will then donate a portion of the advertisement commission  to Wikipedia, The Free Encyclopedia">'+adtitle+'</a></div>'; }
+		var advertisementTitle = adtitle+', buy '+pdpt+' securely at '+mystore+', we will then donate a portion of the advertisement commission to Wikipedia, The Free Encyclopedia';
+		if (losRel[4] && (losRel[4].length > 0)) { 
+			pric = '<font class="sub">List Price:</font> <font class="price">'+losRel[4]+'</font>'; 
+		}
+		if (losRel[5] && (losRel[5].length > 0)) {
+			if (losRel[5].indexOf(":::") != -1) {
+				allauthors = losRel[5].split(":::");
+				if (allauthors.length > 1) {
+					for(var i=0; i< allauthors.length; i++) {
+						theiter = ', ';
+						if (i == 0) { theiter = ''; }
+						else if (i+1 == allauthors.length) { theiter = ' and '; }
+						misauthors = misauthors + '' + theiter + '<a title="Search WorldCat for other books by '+ allauthors[i] +'" href="https:/'+afs+'www.worldcat.org/search?q=au%3A%22'+ allauthors[i] +'%22&qt=results_page" target="WikiPeeksAds">'+ allauthors[i] +'</a>';
+					}
+				}
+			}
+			else { misauthors = '<a title="Search WorldCat for other books by '+ losRel[5] +'" href="https:/'+afs+'www.worldcat.org/search?q=au%3A%22'+ losRel[5] +'%22&qt=results_page" target="WikiPeeksAds">'+ losRel[5] +'</a>'; }
+			var myWhoBy = 'Made by';
+			if(losRel[2]=='Books'){myWhoBy='Author';if(allauthors.length>1){myWhoBy=myWhoBy+'s';}}
+			authors = '<div class="WikiPeeksAdPreviewAuthor"><font class="sub">'+myWhoBy+':</font> '+misauthors+'</div>';
+		}
+		if (losRel[6] && (losRel[6].length > 0)) { pub = '<div class="WikiPeeksAdPreviewPublisher"><font class="sub">Published by:</font> '+losRel[6]+'</div>'; }
+		if (losRel[7]) { tpage = losRel[7]; }
+		if (losRel[8]) { cpage = losRel[8]; }
+		if (losRel[9]) { keys = losRel[9]; }
+		if (losRel[10] && (losRel[10].length > 0)) { trackingurl = '<img src="'+losRel[10]+'" width="1" height="1" border="0" alt="'+advertisementTitle+'" style="border:none !important; margin:0px !important;" />'; }
+		// if price available, append trackurl to it
+		if (pric != '') { pric = '<div class="WikiPeeksAdPreviewPrice">'+pric+''+trackingurl+'</div>'; trackingurl = ''; }
+		// else if trackingurl available style it for output
+		else if (trackingurl != '') { trackingurl = '<div class="WikiPeeksAdPreviewPrice">'+trackingurl+'</div>'; }
+
+		infoMarkup = ptit +""+ authors +""+ pub +""+ pric +""+ trackingurl;
+		if (ExtraMark != '0') { infoMarkup = ExtraMark; }
+
+		var divie = '<span class="hzdmV-WikiPeeks"><img src="/web_design_imagery/spacer.gif" height="1" width="1" border="0"></span>';
+		var mystorename = '';
+		if (!(!mystore)) {
+			mystorename = '<a href="'+myhref+'" target="WikiPeeksAds" title="'+advertisementTitle+'">' + mystore + '</a>';
+		}
+		DonCom = 'We proudly support the efforts of <a href="http:/'+afs+'www.wikipedia.org/" class="resource" target="Wikipedia" title="We proudly support Wikipedia, The Free Encyclopedia">Wikipedia, The Free Encyclopedia</a> by donating a portion of the revenue generated by this ' + mystorename + ' advertisement.';
+		DonCom = '<div class="DonateNow" style="position:absolute;bottom:0px;left:0px;">'+DonCom + '</div>'; 
+
+		//save reference for quicker recall, no restack
+		savedReferences[id] = referenceSave(id, authors, pub, pdpt, ptit, mystorename, pric);
+
+		WikiFeedbackTitle = '';
+		// check it out [borrow it]
+
+		var mybuynow = 'Buy Now';
+		var mymoreinfo = 'More Info';
+		if(losRel[2] == 'Books') {
+			mybuynow = 'Buy This Book';
+			mymoreinfo = 'Reference It';
+		}
+		BuyButton = WikiMenuNode;
+		BuyButton = BuyButton.replace(/%%ID%%/g,id);BuyButton = BuyButton.replace(/%%QUIEN%%/g,quien);BuyButton = BuyButton.replace(/%%ITEM%%/g,'Buy');BuyButton = BuyButton.replace(/%%INAME%%/g,mybuynow);
+		SummaryButton = WikiMenuNode;
+		SummaryButton = SummaryButton.replace(/%%ID%%/g,id);SummaryButton = SummaryButton.replace(/%%QUIEN%%/g,quien);SummaryButton = SummaryButton.replace(/%%ITEM%%/g,'Summary');SummaryButton = SummaryButton.replace(/%%INAME%%/g,mymoreinfo);
+
+		// default, always displayed, even before initial reference call, making these available to make the initial reference call
+		DefaultWikiMenu = BuyButton+''+divie+''+SummaryButton;
+
+		LocalWikiActors = WikiActors;
+		LocalWikiActors = LocalWikiActors.replace(/%%ID%%/g,id);
+		LocalWikiActors = LocalWikiActors.replace(/%%WIKIMENU%%/g,DefaultWikiMenu);
+
+		iWikiPeeksHeader = iWikiPeeksHeader.replace(/ %%WikiPeeksActions%% /g,LocalWikiActors);
+		iWikiPeeksHeader = iWikiPeeksHeader.replace(/ %%WikiPeeksFeedbackTitle%% /g,WikiFeedbackTitle);
+		
+		if (mystore == 'Barnes') { mystore = 'Barnes & Noble'; mystorei = 'Barnes-and-Noble'; }
+		else { mystorei = mystore; }
+
+		// if no image
+		overlayMargin = 2;
+		overlayHeight = 55;
+		if (isrc.indexOf("noImage") != -1) { overlayMargin = 3; advertisementTitle = advertisementTitle + '. No image was found for this book.'; }
+		totalOverlayMargin=(overlayMargin + overlayMargin);
+
+		WikiPeeksAdImageOverlay = '<div style="background:url(/web_design_imagery/WikiPeeks/imageOverlay_spanner.png) 0 0 repeat-x;background-position:0 0;background-repeat:repeat-x;position:relative;top:-'+(overlayHeight+overlayMargin)+'px;height:'+overlayHeight+'px;margin-left:'+overlayMargin+'px;margin-right:'+overlayMargin+'px;"><center><a href="'+myhref+'" target="WikiPeeksAds" title="'+advertisementTitle+'"><img src="/web_design_imagery/WikiPeeks/'+mystorei+'_imageOverlay.png" border="0" alt="'+advertisementTitle+'"></a></center></div>';
+
+		// image
+		advertisementMarkup = ''+
+		'<div id="WikiPeeksLibrary-'+id+'" class="WikiPeeksLibrary" onMouseOver="unStick(\''+id+'\')">'+iWikiPeeksHeader+''+
+		'<div class="WikiPeeksAdWrap" style="height:'+myWrapSize+'px">'+
+		'	<table cellpadding="0" cellspacing="0" border="0" height="'+myImageSize+'">'+
+		'		<tr>'+
+		'			<td rowspan="2" valign="top"><div class="VPS-Book-Reference-Image" style="height:'+(myImageSize+totalOverlayMargin)+'px;overflow:hidden;"><a href="'+myhref+'" target="WikiPeeksAds" title="'+advertisementTitle+'"><img src="'+ isrc +'" height="'+myImageSize+'" alt="'+advertisementTitle+'" border="0" class="WikiPeeksAdPreviewImage" /></a>'+WikiPeeksAdImageOverlay+'</div></td>'+
+		'			<td valign="top" width="100%">'+
+		'			<div id="VPS-Book-Reference-Number-'+id+'" class="WikiPeeksAdPreviewInfo" style="height:'+(myImageSize+totalOverlayMargin)+'px;width:100%;position:relative;overflow-x:hidden;overflow-y:auto;">'+ infoMarkup +''+
+		'			'+DonCom+''+
+		'			</div>'+
+		'			</td>'+
+		'		</tr>'+
+		'	</table>'+
+		'</div>'+
+		'</div>';
+		return advertisementMarkup;
+	}
+};
+
+
+
+
+//-- only from buttons hence [onclick="javascript:WikiPeeksLibraryReference('08058508999780805850895','http://www.vps-net.com/WikiPeeks/international-standard-book-number-lookup.htm?feed=WikiPeeksBookReference&ad=a&isbn=0-8058-5089-9,_9780805850895','Buy');"]
+var WikiPeeksLibraryReference = function(id,quien,act) {
+
+	acual = $(quien);
+	mystickie = $("#"+id+"");
+	myactions = $("#WikiPeeks-Actions-"+id+"");
+	myactor = $("#"+act+"-"+id+"");
+	myactoranchor = $("#"+act+"-"+id+" a");
+	myviewer = $("#VPS-Book-Reference-Number-"+id+"");
+
+	mycurrentview = ''+myviewer.html()+'';
+	mycurrentactions = ''+myactions.html()+'';
+	myactholder = ''+myactor.html()+'';
+	myactorinner = ''+myactoranchor.html()+'';
+
+	isNowLoading = 1;
+	// test item for load state
+	if (mycurrentview.indexOf("loadCircle") != -1) { 
+		// loading state
+		// myviewer.html( loadImage + '1' ); 
+	}
+	else { isNowLoading = 0; }
+
+	// if we're not currently loading anything for this reference
+	if (isNowLoading == 0) {
+		// set loadimage for main view layer
+		myviewer.html( '<div style="padding-left:15px;padding-top:15px;">'+loadImage+'</div>' );
+		// if reference exists as well as aToken and aToken is 1+
+		if (activeReferences[id] && (activeReferences[id].atok && (activeReferences[id].atok == 1))) {
+			showReference(id,quien,act);
+			activeReferences[id].actstate = act;
+			
+			// remake menu [menustate denotes which view we are in along with, of course, state f the menu]
+			activeReferences[id].menustate = act;
+
+		}
+		// else request a reference for object
+		// associate this call with lockerObject to track its progress [progress tracked in this manner as to not invalidate activeReferences state, keep it null]
+		else {
+			activeAdvertisements[id].shown = 2;
+			isReferenceable[id] = lockerObject(id, 1);
+			var runref = initiateReference(id,mystickie.attr( 'href' ),quien,act);
+		}
+	}
+};
+
+// SetBubblePopupInnerHtml(content,save[0|1])
+var unStick = function(id) { mystickie = $("#"+id+""); if (mystickie.HasBubblePopup() && mystickie.IsBubblePopupOpen()) { mystickie.UnfreezeBubblePopup(); } };
+var closeBubble = function(id) { 
+	mystickie = $("#"+id+""); 
+	if (mystickie.HasBubblePopup()) { 
+		mystickie.HideBubblePopup();
+		// no need to clear the layer, not being saved, dynamic population
+		//mystickie.SetBubblePopupInnerHtml('<center>Copyright &copy; Virtual Private Servers and Networks</center>',0);
+		//var _that = mystickie;
+		//var hidepop = setTimeout(function() { _that.HideBubblePopup(); }, 1500);
+	}
+};
+var runAdvertisement = function(quien) {
+	document.forms[quien].submit();
+};
+// target same as id = new window per product, target diff = same window all products
+var BiblioForm = '<div style="display:none;"><form name="cj-biblio" action="http:/'+afs+'www.anrdoezrs.net/interactive" method="post" target="cj-biblio"><input type="hidden" name="author" /><input type="hidden" name="title" /><input type="hidden" name="keyisbn" /><input type="submit" value="Search" /><input type="hidden" name="stage" value="1" /><input type="hidden" name="aid" value="10520851" /><input type="hidden" name="pid" value="3747342" /><input type="hidden" name="url" value="http:/'+afs+'www.biblio.com/search.php" /></form></div>';
+var WikiPeeksDonateBox = 'background:none;border:none;position:relative;font-size:9px;color:#000000;top:5px;left:0px;';
+var showReference = function(id,quien,act) {
+	if (activeReferences[id] && activeAdvertisements[id]) {
+		acual = $(quien);
+		if (act != '0') { myactor = $("#"+act+"-"+id+""); }
+		if (acual.HasBubblePopup()) {
+			if (!acual.IsBubblePopupOpen()) { 
+				var _this = acual;
+				var mymarkup = adMarkup[id].markup;
+				poptimer = setTimeout(function() { 
+					_this.ShowBubblePopup(); 
+					_this.FreezeBubblePopup();
+					_this.SetBubblePopupInnerHtml(mymarkup,0);
+					//if (act != '0') { myactor.html( act ); }
+				}, 750);
+			}
+		}
+		else {
+			myrefspot = $("#VPS-Book-Reference-Number-"+id+"");
+			allFields = ''+ activeReferences[id].id +' '+ activeReferences[id].screensrc +' '+ activeReferences[id].screenw +' '+ activeReferences[id].screenh +' '+ activeReferences[id].atok +' '+ activeReferences[id].thumbsrc +' '+ activeReferences[id].thumbw +' '+ activeReferences[id].thumbh +' '+ activeReferences[id].authors +' '+ activeReferences[id].publishers +' '+ activeReferences[id].notes +' '+ activeReferences[id].title +' '+ activeReferences[id].awards +' '+ activeReferences[id].libraries +' '+ activeReferences[id].stores +' '+ activeReferences[id].actstate +' '+ activeReferences[id].menustate +' ';
+			//id, screensrc, screenw, screenh, atok, thumbsrc, thumbw, thumbh, authors, publishers, notes, title, awards, libraries, stores, actstate, menustate
+			var vauthors = '';
+			var vprice = '';
+			var vpublishers = '';
+			var vtitle = '';
+			var vnotes = '';
+			var vawards = '';
+			if (savedReferences[id].authors && (savedReferences[id].authors.length > 0)) { vauthors = savedReferences[id].authors; }
+			if (savedReferences[id].price && (savedReferences[id].price.length > 0)) { vprice = savedReferences[id].price; }
+			if (savedReferences[id].publishers && (savedReferences[id].publishers.length > 0)) { vpublishers = savedReferences[id].publishers; }
+			if (savedReferences[id].title && (savedReferences[id].title.length > 0)) { vtitle = savedReferences[id].title; }
+			if (activeReferences[id].notes && (activeReferences[id].notes.length > 0)) { vnotes = '<div class="WikiPeeksAdPreviewNotes">'+ activeReferences[id].notes +'</div>'; }
+			if (activeReferences[id].awards && (activeReferences[id].awards.length > 0)) { vawards = '<div class="WikiPeeksAdPreviewNotes">'+ activeReferences[id].awards +'</div>'; }
+			
+			if (act == 'Summary') {
+				parseBack = vtitle +''+ vauthors +''+ vpublishers +''+ vnotes +'<div class="WikiPeekLibrary">'+ activeReferences[id].libraries+'</div>';
+			}
+			else {
+				var allstores = '';
+				if (activeReferences[id].stores.indexOf("|nEt|") && activeReferences[id].stores.indexOf("|vPs|")) {
+					var mystack = activeReferences[id].stores;
+					mystores = mystack.split("|vPs|");
+					for(var i=0;i<mystores.length;i++){
+						var mitienda = mystores[i];
+						mitiendainfo = mitienda.split("|nEt|");
+						miprecio = CurrencyFormatted(mitiendainfo[1]);
+
+						var miIDENTI = id;
+						miIDENTI = miIDENTI.replace('ISBN','');
+						var miForma = '';
+						
+						// target set = new window per product, NO target set = same window all products
+						var midomicilio = 'href="'+mitiendainfo[3]+'" target="amazon'+miIDENTI+'"';
+						if (mitiendainfo[2] == 'Biblio') {
+							miForma = ''+BiblioForm+'';
+							miForma = miForma.replace(/cj-biblio/g,'cjbiblio'+miIDENTI+'');
+							miForma = miForma.replace('name="keyisbn"','name="keyisbn" value="'+miIDENTI+'"');
+							midomicilio = 'onclick="runAdvertisement(\'cjbiblio'+miIDENTI+'\');"';
+						}
+
+						// impressionIMAGE = mitiendainfo[4]
+						estatienda = '<div class="WikiPeeksStoreActions"><span class="WikiStoreActs WikiStoreActs-'+id+'"><span class="WikiStoreAct" id="WikiStoreAct-'+id+'-'+i+'" onClick="storeSelect(\'WikiStoreAct-'+id+'-'+i+'\',\''+id+'\');"><span><a '+midomicilio+' target="'+mitiendainfo[2]+'"><font class="sub">'+mitiendainfo[0]+':</font><font class="price"> $'+miprecio+' </font><font class="advertiser">('+mitiendainfo[2]+')</font></a></span></span></span>'+miForma+''+mitiendainfo[4]+'</div>';
+						allstores = allstores + '' + estatienda;
+					}
+					miDonCom = '<div class="DonateNow" style="'+WikiPeeksDonateBox+'">With your click, and subsequent purchase, we are joinly supporting the efforts of <a href="http:/'+afs+'www.wikipedia.org/" class="resource" target="Wikipedia" title="We proudly support Wikipedia, The Free Encyclopedia">Wikipedia, The Free Encyclopedia</a>, considering we donate a portion of the revenue generated by these book advertisements.</div>'; 
+					
+					// if undefined clear it, they already have use of main ad
+					if(allstores.indexOf("undefined") != -1) { allstores = ''; }
+					else {
+						allstores = '<div class="WikiPeekStore" style="padding-top:10px;"><b>Your Price:</b><div class="WikiPeeksStorePrice" style="padding-top:0;">'+allstores+'</div>'+miDonCom+'</div>';
+						vprice = vprice.replace(/<font/g,'<font style="text-decoration:line-through;"');
+					}
+				}
+				parseBack = vtitle + '' + vprice + '' + allstores;
+			}
+
+			myrefspot.html(parseBack);
+
+			if (act == 'Summary') {
+				$('#VPS-Book-Reference-Number-'+id+' .CheckItOutLibraries').click(function(){
+					thisAvailable = $(this).html();
+					// only if haven't done it yet
+					if (!(thisAvailable.indexOf("www.worldcat.org") != -1)) {
+						myisbn = id;
+						myisbn = myisbn.replace('ISBN','ISBN ');
+						$(this).html('<span style="font-style:italic;font-weight:normal;"><a href="https:/'+afs+'www.worldcat.org/search?q='+myisbn+'" target="WikiPeeksLibrarySeeker" style="font-weight:bold;" class="WorldCat" title="WorldCat: The World&rsquo;s Largest Network of Library Content and Services">Search WorldCat for this book</a>, or try contacting any of the libraries listed below, which are known to carry it:</span>');
+					}
+					$('#VPS-Book-Reference-Number-'+id+' .CheckItOutLibrary').each(function(){
+						$(this).hide().css('display','list-item').show('slow');
+						thisLibrary = $(this).html();
+						// only if haven't done it yet
+						if (!(thisLibrary.indexOf("www.worldcat.org") != -1)) {
+							$(this).html('<a href="https:/'+afs+'www.worldcat.org/search?q='+thisLibrary+'" target="WikiPeeksLibrarySeeker">'+thisLibrary+'</a>');
+						}
+					});
+				});
+			}
+			//alert(allFields);
+			//if (act != '0') { myactor.html( act ); }
+		}
+	}
+};
+
+
+var storeSelect = function (cual,acual) {
+	$(".WikiStoreActs-"+acual+" span").attr('class','WikiStoreAct');
+	$("#"+cual+"").attr('class','WikiStoreAct selected');
+};
+var CurrencyFormatted = function (amount) {
+	var i = parseFloat(amount);
+	if(isNaN(i)) { i = 0.00; }
+	var minus = '';
+	if(i < 0) { minus = '-'; }
+	i = Math.abs(i);
+	i = parseInt((i + .005) * 100);
+	i = i / 100;
+	s = new String(i);
+	if(s.indexOf('.') < 0) { s += '.00'; }
+	if(s.indexOf('.') == (s.length - 2)) { s += '0'; }
+	s = minus + s;
+	return s;
+};

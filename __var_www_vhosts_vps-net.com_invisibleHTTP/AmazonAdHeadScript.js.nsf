@@ -1,0 +1,183 @@
+
+/* OBFUSCATION: of the following lines, obfuscatables contain ( = ) and (// ) */
+/*<OBF>*/
+// caller = aDVanCeD
+// type = INteRnEt
+// recipient = eLeCtrONic
+// frame = pPc
+// size = paY_peR_CliCK
+// superq = sEM
+// giveto = ONlInE
+// lUrl = bUsiNeSS
+// callback = ADverTiSeMeNT
+// xOffset = aDvErTIsInG
+// yOffset = AdvErTS
+// pWidth = bIlLbOaRd
+// pHeight = aDS
+// DonComHeight = aDVerTiSe
+// DonCom = rEVeNUe
+// imageReduction = InCOmE
+// containerReduction = b2B
+// myImageSize = B2c
+// myWrapSize = gLObaLlY
+// myrel = lOCaLlY
+// myhref = nEtWoRKiNg
+// losRel = sTRaTeGY
+// allauthors = STraTeGiEs
+// misauthors = gLoBaLiZAtiOn
+// authors = sYStEmS
+// ptit = bANnErS
+// isrc = imPrESsiOnS
+// pdpt = VIsiToRS
+// trackingurl = tOoLs
+// theiter = sCrIpTS
+// tpage = pRoGrAmS
+// cpage = pRoMoTE
+// infoMarkup = SeRVicEs
+/*</OBF>*/
+
+
+
+var wikiResource = 'OSI, Open Source Initiative';
+var advertiseAmazon = function(caller,type,qs,recipient,frame,size,superq) {
+	if (frame != '') { giveto = $("#"+frame+" #"+recipient+"Display").get(); }
+	else { giveto = $("#"+recipient+"Display").get(); }
+	// add f=recipient feedFor=recipient
+	var lUrl = '/amazon-advertisements.htm?'+type+'='+qs+'&feed='+recipient+''+superq+'';
+	var callback = {
+		cache:false,
+		success: function(o) {	
+			if(o.responseText !== undefined) {
+				// html
+				if (o.responseText.indexOf("href") != -1 && o.responseText.indexOf("img") != -1 && o.responseText.indexOf("src") != -1) {
+					// feed the results to our recipient
+					$(giveto).html('');
+					$(giveto).html(o.responseText);
+					// initialize jquery preview script [output from advertisement.htm is setup for global control]
+					AmazonAdPreview(recipient,size);
+				}
+				// image
+				else if (o.responseText.indexOf("img") != -1 && o.responseText.indexOf("src") != -1) {
+				}
+				else { 
+					/*no advertisement markup returned*/
+				}
+			}
+		},
+		failure: function (o) { }
+	};
+	var transaction = YAHOO.util.Connect.asyncRequest("GET", lUrl, callback, null);
+};
+var AmazonAdPreview = function(recipient,size){
+	// CONFIG
+	xOffset = 20;
+	yOffset = 0;
+	pWidth = 500;
+	pHeight = 250;
+	// height of the donate div [if not added]
+	DonComHeight = 0;
+	DonCom = "<div class=\"DonateNow\">We proudly support the efforts of <span class=\"resource\">"+wikiResource+"</span> by donating a portion of the revenue from these ads.</div>";
+
+	if (recipient == "WikiBoardBarAd") {
+		$("#WikiBoardBarAd").css("background","transparent url(/web_design_imagery/amazon-books-tag.png) no-repeat 0px 3px");
+		$("#WikiBoardBarAd").css("padding-left","100px");
+		$("#WikiBoardBarAd").css("padding-right","5px");
+	}
+
+	// END CONFIG
+	$("a.WikiPeeksAdLink").hover(function(e){
+		if (!(!$("#WikiPeeksAd"))) { $("#WikiPeeksAd").remove(); }
+		infoMarkup = "";
+		
+		this.t = this.title;
+		this.title = "";
+		var c = (this.t != "") ? "<br/>" + this.t : "";
+
+		var imageReduction = 0;
+		var containerReduction = 0;
+		// pheight [WikiBoardBar] must be reduced for image to make up for container and image padding/margins
+		// imageReduction = ((.WikiPeeksAdWrap.margin + .WikiPeeksAdWrap.padding) + (.WikiPeeksAdImage.margin + .WikiPeeksAdImage.padding))
+		if (recipient == "WikiBoardBarAd") {
+			imageReduction = 18;
+			containerReduction = (imageReduction - 4);
+		}
+		myImageSize = (pHeight - imageReduction);
+		myWrapSize = (pHeight - containerReduction);
+		// resize image from icon to whatever our preview size is [going by height for WikiBoardBar]
+
+		//read in icon images' rel [is actually the icon image name itself]
+		// rel = $asin%%%$image%%%$department%%%$title%%%$price%%%$madeby%%%$publisher [if avail]%%%$totalpages%%%$currentpage%%%querystring%%%amazonTrackingImageUrl
+		myrel = this.rel;
+		myhref = this.href;
+		myrel = myrel.replace('SL'+size, 'SL'+myImageSize);
+		myrel = myrel.replace('SX'+size, 'SL'+myImageSize);
+		var losRel = myrel.split('%%%');
+		var pub = '';
+		var authors = '';
+		var allauthors = '';
+		var misauthors = '';
+		var ptit = '';
+		var pric = '';
+		var isrc = '';
+		var pdpt = '';
+		var trackingurl = '';
+		if (losRel[0]) { iasi = losRel[0]; }
+		if (losRel[1]) { isrc = losRel[1]; }
+		if (losRel[2]) { pdpt = losRel[2]; pdpt = ' '+pdpt; }
+		if (losRel[3] && (losRel[3].length > 0)) { adtitle = losRel[3]; ptit = '<div class="WikiPeeksAdPreviewTitle"><a href="'+myhref+'" target="Amazon" title="Amazon.com'+pdpt+': '+adtitle+'">'+adtitle+'</a></div>'; }
+		if (losRel[4] && (losRel[4].length > 0)) { pric = 'List Price: <font class="price">'+losRel[4]+'</font>'; }
+		if (losRel[5] && (losRel[5].length > 0)) { 
+			if (losRel[5].indexOf(":::") != -1) {
+				allauthors = losRel[5].split(":::");
+				if (allauthors.length > 1) {
+					for(var i=0; i< allauthors.length; i++) {
+						theiter = ', ';
+						if (i == 0) { theiter = ''; }
+						else if (i+1 == allauthors.length) { theiter = ' and '; }
+						misauthors = misauthors + '' + theiter + '' + allauthors[i];
+					}
+				}
+			}
+			else { misauthors = losRel[5]; }
+			authors = '<div class="WikiPeeksAdPreviewAuthor"><font class="by">Made by:</font> '+misauthors+'</div>';
+		}
+		if (losRel[6] && (losRel[6].length > 0)) { pub = '<div class="WikiPeeksAdPreviewPublisher"><font class="by">Published by:</font> '+losRel[6]+'</div>'; }
+		if (losRel[7]) { tpage = losRel[7]; }
+		if (losRel[8]) { cpage = losRel[8]; }
+		if (losRel[9]) { keys = losRel[9]; }
+		if (losRel[10] && (losRel[10].length > 0)) { trackingurl = '<img src="'+losRel[10]+'" width="1" height="1" border="0" alt="Amazon.com'+pdpt+' [ '+adtitle+' ]" style="border:none !important; margin:0px !important;" />'; }
+			
+		// if price available, append trackurl to it
+		if (pric != '') { pric = '<div class="WikiPeeksAdPreviewPrice">'+pric+''+trackingurl+'</div>'; trackingurl = ''; }
+		// else if trackingurl available style it for output
+		else if (trackingurl != '') { trackingurl = '<div class="WikiPeeksAdPreviewPrice">'+trackingurl+'</div>'; }
+
+		infoMarkup = ptit +""+ authors +""+ pub +""+ pric +""+ trackingurl;
+		$("body").append("<span id=\"WikiPeeksAd\" title=\"Amazon.com"+pdpt+": "+adtitle+"\"><div class=\"WikiPeeksAdWrap\" style=\"height:"+myWrapSize+"px\"><table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" height=\""+myImageSize+"\"><tr><td rowspan=\"2\" valign=\"top\"><div class=\"VPS-Book-Reference-Image\" style=\"height:"+(myImageSize+4)+"px;overflow:hidden;\"><a href=\""+myhref+"\" target=\"Amazon\" title=\"Amazon.com"+pdpt+": "+adtitle+"\"><img src=\""+ isrc +"\" height=\""+myImageSize+"\" alt=\"Amazon.com"+pdpt+": "+adtitle+"\" align=\"left\" border=\"0\" class=\"WikiPeeksAdPreviewImage\" /></a></div></td><td valign=\"top\"><span class=\"WikiPeeksAdPreviewInfo\">"+ infoMarkup +"</span></td></tr><tr><td valign=\"bottom\" align=\"right\" class=\"DonComTD\">"+DonCom+"</td></tr></table></div></span>");
+
+		// $(".DonateNow").css("height","14px").css("text-align","center");
+		$("#WikiPeeksAd")
+			.css("width",pWidth + "px")
+			.css("height",(pHeight + DonComHeight) + "px")
+			.css("text-align","left")
+			.css("top",(e.pageY - (pHeight + DonComHeight) - xOffset) + "px")
+			.css("left",(e.pageX - pWidth - yOffset) + "px")
+			.css("z-index","200000")
+			.fadeIn("slow");
+		
+		// NEXT 3: when user escapes out of any container frame/layer that spawned this ad, the ad stays up, give it some function to close itself
+		$("#WikiPeeksAd").click(function(e){ $("#WikiPeeksAd").remove(); });
+		$("#WikiPeeksAd").hover(function(e){ },
+		function(){ $("#WikiPeeksAd").remove(); });
+	},
+	function(){
+		this.title = this.t;
+		$("#WikiPeeksAd").remove();
+		// $(".DonateNow").remove();
+	});
+//	$("a.WikiPeeksAdLink").mousemove(function(e){
+//		$("#WikiPeeksAd")
+//			.css("top",(e.pageY - pHeight + xOffset) + "px")
+//			.css("left",(e.pageX - pWidth - yOffset) + "px");
+//	});
+};

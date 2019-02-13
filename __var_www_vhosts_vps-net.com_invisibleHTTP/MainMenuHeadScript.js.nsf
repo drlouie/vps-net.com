@@ -1,0 +1,183 @@
+
+/* OBFUSCATION: of the following lines, obfuscatables contain ( = ) and (// ) */
+/*<OBF>*/
+// bodyBGWidth = bUlLeTiN_bOaRd
+// backieX = cRoSs_BrOWsER
+// placeTheBackground = bLoGs
+// currWidth = CrOsS_pLaTfOrM
+// currHeight = sEcUrE
+// setMainMenuFocus = eXpErT
+// mysrc = SeArCh
+// elToggler = oPtImIzAtIoN
+// cualToggler = ViRaL
+// elArrow = MaRkETiNg
+// cualArrow = eNgInE
+/*</OBF>*/
+
+//################################################################
+//#   Program:    vps-net.com's Main Menu Head (vs Foot) Script  #
+//#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+//#   Copyright:  (c) 2009 Luis G. Rodriguez                     #
+//#   Licensing:  MIT License                                    #
+//################################################################################################################
+//# You should have received a copy of the GNU General Public License along with this program; if not, write to: #
+//# the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.            #
+//################################################################################################################
+
+		/*START JQUERY: wavy menu mouseover*/
+		$(function(){
+			$('#web-design-scripts a')
+				.css( {backgroundPosition: "-20px 35px"} )
+				/*added from testdd1.html*/
+				.mouseover(function(){
+					$(this).stop().animate({backgroundPosition:"(-20px 94px)"}, {duration:500});
+				})
+				.mouseout(function(){
+					$(this).stop().animate({backgroundPosition:"(40px 35px)"}, {duration:200, complete:function(){
+						$(this).css({backgroundPosition: "-20px 35px"});
+					}})
+				})
+				/*added from testdd1.html*/
+		});
+		/*END JQUERY: wavy menu mouseover*/
+
+		var bodyBGWidth = 0;
+		var backieX = 0;
+		/*START JQUERY: body background positioner*/
+		$(document).ready(function(){
+			placeTheBackground();
+		});
+		$(window).resize(function() {
+			placeTheBackground();
+			gva = getViewableArea();
+		});
+		var placeTheBackground = function() {
+			//reset our default vars
+			bodyBGWidth = 1024;
+			backieX = 0;
+			//get doc viewableArea
+			var gva = getViewableArea();
+			currWidth = gva[0];currHeight = gva[1];
+			// offset half the difference to center on the page
+			if (currWidth > bodyBGWidth) {
+				backieX = ((currWidth - bodyBGWidth) / 2);
+				if (isNaN(backieX) || backieX < 0) { backieX = 0; }
+			}
+			// offset half the difference negatively on the page, to center visible portion of image
+			// remove the other half of the offset from bodyBGWidth to stop bleed/scrollbar
+			else if (currWidth < bodyBGWidth) {
+				backieX = ((bodyBGWidth - currWidth) / 2);
+				if (isNaN(backieX) || backieX < 1) { backieX = 1; }
+				bodyBGWidth = (bodyBGWidth - backieX);
+				backieX = ((backieX - backieX) - backieX);
+			}
+			// kill anomalies
+			if (isNaN(backieX)) { backieX = 0; }
+			// if our screen size is smaller than our smallest possible doc width, harden the background size and the left placement
+			if (bodyBGWidth < 980){
+				bodyBGWidth = 980;
+				backieX = 0;
+			}
+			// set the properties
+			$('#vps-net-interface').css({'visibility' : 'visible', 'left' : ''+backieX+'px', 'width' : bodyBGWidth+'px','clip': 'rect(0px,'+bodyBGWidth+'px,800px,0px)'});
+			// $('#vps-net-interface').attr("title", "element title"); 
+		};
+		/*END JQUERY: body background positioner*/
+
+
+		/*START JS: Dynamic MainMenuItem Focus*/
+		var setMainMenuFocus = 0;
+		/*END JS: Dynamic MainMenuItem Focus*/
+		
+		/*START JS: SubMainMenuItem Arrows*/
+		var mysrc = '';
+		var mouseTheArrow = function(cualToggler,cualArrow) {
+			var elToggler = cualToggler;
+			var elArrow = document.getElementById(''+cualArrow+'');
+			if (!(!elArrow.src)) {
+				mysrc = elArrow.src;
+				if (mysrc.indexOf("active") != -1) {
+					elToggler.style.color = '#266899';
+				}
+				else {
+					elToggler.style.color = '#000000';	
+				}
+				if (mysrc.indexOf("spacer") != -1 && mysrc.indexOf("active") == -1) {
+					elArrow.src = '/web_design_imagery/user_interface_sub_menuarrow-over.gif';
+					elToggler.style.color = '#CC0000';
+				}
+			}
+		};
+		var resetTheArrow = function(cualToggler,cualArrow) {
+			var elToggler = cualToggler;
+			var elArrow = document.getElementById(''+cualArrow+'');
+			if (!(!elArrow.src)) {
+				mysrc = elArrow.src;
+				if (mysrc.indexOf("active") == -1) {
+					elArrow.src = '/web_design_imagery/spacer.gif';
+					elToggler.style.color = '#000000';
+				}
+			}
+		};
+		/*END JS: SubMainMenuItem Arrows*/
+	/*START JS: HeadMenuItem Slider*/
+
+$(document).ready(function() {
+
+	$("#gui-register-a-domain").hover(function(){
+		$("#gui-register-a-domain").animate({ width: "134px" }, {queue: false});
+		$("#gui-register-a-domain-text").animate({ width: "113px" }, {queue: false});
+		$("#gui-design-your-website").animate({ width: "21px" }, {queue: false});
+		$("#gui-design-your-website-text").animate({ width: "0px" }, {queue: false});
+		}, function() {
+		$("#gui-register-a-domain").animate({ width: "21px" }, {queue: false});
+		$("#gui-register-a-domain-text").animate({ width: "0px" }, {queue: false});
+		$("#gui-design-your-website").animate({ width: "111px" }, {queue: false});
+		$("#gui-design-your-website-text").animate({ width: "90px" }, {queue: false});
+	});
+	
+	$("#gui-ask-an-expert").hover(function(){
+		$("#gui-ask-an-expert").animate({ width: "130px" }, {queue: false});
+		$("#gui-ask-an-expert-text").animate({ width: "109px" }, {queue: false});
+		$("#gui-design-your-website").animate({ width: "21px" }, {queue: false});
+		$("#gui-design-your-website-text").animate({ width: "0px" }, {queue: false});
+		}, function() {
+		$("#gui-ask-an-expert").animate({ width: "21px" }, {queue: false});
+		$("#gui-ask-an-expert-text").animate({ width: "0px" }, {queue: false});
+		$("#gui-design-your-website").animate({ width: "111px" }, {queue: false});
+		$("#gui-design-your-website-text").animate({ width: "90px" }, {queue: false});
+	});
+	
+	$("#gui-your-shopping-cart").hover(function(){
+		$("#gui-your-shopping-cart").animate({ width: "102px" }, {queue: false});
+		$("#gui-your-shopping-cart-text").animate({ width: "81px" }, {queue: false});
+		$("#gui-design-your-website").animate({ width: "21px" }, {queue: false});
+		$("#gui-design-your-website-text").animate({ width: "0px" }, {queue: false});
+		}, function() {
+		$("#gui-your-shopping-cart").animate({ width: "21px" }, {queue: false});
+		$("#gui-your-shopping-cart-text").animate({ width: "0px" }, {queue: false});
+		$("#gui-design-your-website").animate({ width: "111px" }, {queue: false});
+		$("#gui-design-your-website-text").animate({ width: "90px" }, {queue: false});
+	});
+	
+	$("#gui-currency-and-language").hover(function(){
+		$("#gui-currency-and-language").animate({ width: "58px" }, {queue: false});
+		$("#gui-currency-and-language-text").animate({ width: "37px" }, {queue: false});
+		$("#gui-design-your-website-text").animate({ width: "0px" }, {queue: false});
+		$("#gui-design-your-website").animate({ width: "21px" }, {queue: false});
+		}, function() {
+		$("#gui-currency-and-language").animate({ width: "21px" }, {queue: false});
+		$("#gui-currency-and-language-text").animate({ width: "0px" }, {queue: false});
+		$("#gui-design-your-website-text").animate({ width: "90px" }, {queue: false});
+		$("#gui-design-your-website").animate({ width: "111px" }, {queue: false});
+	});
+	
+	$("#W3C-Compliant div").hover(function(){
+		$(this).css("background", "url(/web_design_imagery/web-design-service-list-bg-silver.png) repeat -30px 30px"); 
+		$(this).stop().animate({backgroundPosition:"(-40px 94px)"}, {duration:500});
+		}, function() {
+		$(this).stop().animate({backgroundPosition:"( -30px 30px)"}, {duration:500});
+		return false;
+	});
+
+});
