@@ -188,7 +188,7 @@ if (&GetCookies('XN')) {
 	if (length($XUsername) >= 6 && length($XUsername) <= 12) {
 
 		use DBI;
-		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","gr00bertub3r") or die "No data access: <b>VPS-NET</b>\n"; 
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MYSQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
 		$dbh->{RaiseError} = 1;
 		my $sth = $dbh->prepare("SELECT UserID, Email, Password, AccountSince, IP FROM Users WHERE GUID = '$XIN'");
 		$sth->execute or die "Unable to execute query\n";
@@ -282,7 +282,7 @@ if (&GetCookies('IN')) {
 	}
 
 	use DBI;
-	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","gr00bertub3r") or die "No data access: <b>VPS-NET</b>\n"; 
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MYSQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
 	$dbh->{RaiseError} = 1;
 	my $sth = $dbh->prepare("SELECT UserID, Email, FirstName, LastName, ProfessionalTitle, IP, History FROM Users WHERE GUID = '$ISIN'");
 	$sth->execute or die "Unable to execute query\n";
