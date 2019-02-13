@@ -1,0 +1,587 @@
+#!/usr/bin/perl -w
+
+################################################################
+#   Program:    Website Account Log In Functionality           #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$invHTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/invisibleHTTP/';
+}
+else {
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$invHTTPRoot = '/var/www/vps-net.com/invisibleHTTP/';
+}
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+require($HTTPRoot."q.nsp");
+
+$ECkey = 'chuiechuie'; ##-> set cookie key for IMVER [only for eyeCaptcha functions]
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+#print "Cache-Control: must-revalidate\n\n";
+
+## --> CRYPTOLOGY
+use Crypt::Tea_JS;
+
+#$SSLPORT = 443;
+
+##-- ssl trigger
+if ($ENV{'SERVER_PORT'} ne 443) { 
+#	print "Content-type: text/html\n\n"; 
+#	print qq~
+#	<script>
+#		currURL = document.location.href;
+#		safeURL = currURL.replace("http","https");
+#		document.location.href = safeURL;
+#	</script>
+#	~;
+#	exit;
+}
+
+$loadscript = "onLoad=\"document.login.uNaim.select();document.login.uNaim.focus();\"";
+
+$PageTitle = "Account Login";
+$FeedbackMessage = 'Please log into your Virtual Private account:<br><br>';
+$OGFM = $FeedbackMessage;
+$submitTitle = "Log In";
+
+#-- 370 262
+$backgroundHeight = '262';
+
+##-- 
+##-- defeat warnings [Use of uninitialized value]
+##-- 
+$CaptchaFailed = 0;
+$fancyControl = "";
+$llt = "";
+##-- 
+##-- defeat warnings [used only once: possible typo]
+##-- 
+$noDateParse = $noDateParse;
+$ECkey = $ECkey;
+$xentrado = $xentrado;
+$days = $days;
+$CookiePassed = $CookiePassed;
+$Cookie_Exp_Date = $Cookie_Exp_Date;
+$months = $months;
+$UserPassed = $UserPassed;
+##-- 
+##-- done defeating
+##-- 
+
+##-- kill login(failure) tracking cookie
+if ($FORM{'ktc'} && ($FORM{'ktc'} eq "1")) {
+	## make it expire one year ago at midnight :) [NOW]
+	my $ahora = today();
+	my $CCD = $ahora - 365;
+	## set proper expiration datetime stamp (Sat, 31-Dec-2011 23:59:59 GMT)
+	$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+	# Print headers with only one \n 
+	print "Cache-Control: must-revalidate\n";
+		&SetCookies('LT','');
+	print "\n";
+	print "1";
+	exit;
+}
+
+if ($FORM{"Challenger"}) {
+	if ($FORM{"Challenge"} && (length($FORM{"Challenge"}) == 6)) {
+		##-- length($FORM{"Challenge"}) == 6
+		require($HTTPRoot."gesichtDeEsel.nsp");
+		if ($UserPassed == 1 && $CookiePassed == 1) {
+			$CaptchaFailed = 0;
+		}
+		else {
+			$CaptchaFailed = 1;
+		}
+	}
+	else {
+		##-- too short or long
+		if ($FORM{"Challenge"} && (length($FORM{"Challenge"}) <= 5 || length($FORM{"Challenge"}) >= 7)) {
+			$CaptchaFailed = 8;
+		}
+		##-- is required
+		else {
+			$CaptchaFailed = 9;
+		}
+	}
+}
+
+
+###-- already logged in (checked by cookiesnif.nsp)
+if ($ISIN ne "") {
+	$PageTitle = "Already Logged In";
+	$FeedbackMessage = 'You are already logged into your Virtual Private account.<br><br>';
+	$submitTitle = "Go to Home Page";
+
+	#-print "Cache-Control: must-revalidate\n\n";
+	##--> is logged already
+	#-print qq~<script language="javascript" type="text/javascript">alert('You are already logged in!');</script>~;
+	##--> push to startsrceen
+	#-print qq~<script language="javascript" type="text/javascript">parent.location.href = ''+parent.location.href+'';</script>~;
+	$loadscript = "onLoad=\"if (!(!parent.runFancyFancy)) { parent.\$.fancybox.close(); parent.location.href = '/'; } else { document.location.href = '/'; }\"";
+}
+
+##--account is pending [email address not verified yet, let them know, give option to re-send if their cookie is good, otherwise option to create new account]
+##-- p is username which must be used to verify user cookie
+elsif ($FORM{'p'} && (length($FORM{'p'}) >= 6 && length($FORM{'p'}) <= 12)) {
+	$badtry = 1;
+	$resultado = "";
+	$withEm = '.';
+	$moreOptions = '<br><br>Having trouble activating or accessing your account? No problem, customer support can assist in recovering user accounts associated with consumer profiles. The other option is to <a href="javascript:if(!(!parent.runFancyFancy)){parent.runFancyFancy(\'/new-virtual-private-account.htm\',\'Virtual Private\',640,480);}else{document.location.href=\'/new-virtual-private-account.htm\';}" title="Click to create a new account.">create a new account</a> using a different username and email address.';
+	##-- out XN cookie was valid [inluding same as requester IP]
+	if ($xentrado == 1) {
+		$lXEmail = $XEmail;
+		$lXEmail =~ s/\[at\]/@/g;
+		$withEm = ": <b>$lXEmail</b>";
+		$moreOptions = '<br><br>Did not receive the account activation message? No problem, we can easily <a href="javascript:if(!(!parent.runFancyFancy)){parent.runFancyFancy(\'/new-virtual-private-account.htm?p='.$XUsername.'\',\'Virtual Private\',580,260);}else{document.location.href=\'/new-virtual-private-account.htm?p='.$XUsername.'\';}" title="Click to have us re-send you the account activation message to: '.$lXEmail.'"><b>re-send it</b></a> to you!';
+	}
+	$FeedbackMessage = "<div style=\"text-align:left;line-height:18px;padding-left:25px;padding-right:25px;\">Your account is currently disabled. Your account will be enabled when you verify your email address".$withEm."".$moreOptions."</div>";
+	$ACCOUNTDISABLED = 1;
+	$loadscript = "";
+}
+
+##-- failed login attempt: regurgitation of user input from last login attempt is done using LT cookie to gain (cookiesnif.nsp) (done this way to be able to dynamically resize fancybox)
+##-- KILL LT Cookie
+elsif ($ISLT ne "" && $resultado ne "") {
+	$PageTitle = "Bad Account Login Attempt";
+	$submitTitle = "Log In";
+	$FeedbackMessage = '<b style="color:#AF041C">*</b>Incorrect username and/or password, please try again: <br><br>';
+
+	##-- this regurg $RECAPTCHA is attained from COOKIE at cookiesnif.nsp
+	if ($RECAPTCHA == 1) {
+		$FeedbackMessage = '<b style="color:#AF041C">*</b>Challenge code was incorrect, please try again: <br><br>';
+	}
+	elsif ($RECAPTCHA == 8) {
+		$FeedbackMessage = '<b style="color:#AF041C">*</b>Challenge code is 6 characters in length, try again: <br><br>';
+	}
+	elsif ($RECAPTCHA == 9) {
+		$FeedbackMessage = '<b style="color:#AF041C">*</b>Challenge code is required, please try again: <br><br>';
+	}
+		
+	##-- TESTING COOKIE - W CAPTCHA REGURG
+	##-- '.$CFAIL. ' - ' .$CHAL. ' - ' .$CHALC1.' - ' .$CHALC2.'
+
+	$badtry = 1;
+	$ISLT = "";
+	$resultado = "";
+	$loadscript = "onLoad=\"ktc();document.login.uNaim.select();document.login.uNaim.focus();\"";
+}
+## If attemping to login (user form)
+elsif ($unaim && $pdub) {
+	## Define Variables
+	$Username = "$unaim";
+	$Password = "$pdub";
+	### QUERY DB
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n";
+	$dbh->{RaiseError} = 1;
+	my $sth = $dbh->prepare("SELECT Email, Password, LastLogin, AccountStatus FROM Users WHERE Username = '$Username'");
+	$sth->execute or die "Unable to execute query\n";
+		my $row = $sth->fetchrow_arrayref;
+		$Email = $row->[0];
+		$Pass = $row->[1];
+		$LastLog = $row->[2];
+		$AS = $row->[3];
+	$sth->finish;
+
+	$sth = $dbh->prepare("SELECT MD5('$Password')");
+	$sth->execute or die "Unable to execute query\n"; 
+	my $row2 = $sth->fetchrow_arrayref;
+	my $elCrypto = $row2->[0];
+	$sth->finish;
+
+	##--slice enc
+	$elCrypto = substr($elCrypto, 2);
+	
+	##-- password passed is same as password stored and account is active
+	if (($Pass && ($Pass eq $elCrypto)) && $CaptchaFailed == 0) {
+		if ($AS eq "AcTiVe") {
+			##days since last login if available
+			$diff = "?";
+			if ($LastLog && ($LastLog =~ "-" && $LastLog =~ ":")) {
+				($lld, $llt) = split(/ /,$LastLog);
+				$diff = date($today) - date($lld);
+			}
+
+	  		$IP = "$ENV{'REMOTE_ADDR'}";
+			$dateCap = $datetime;
+
+			###---->> turn IP into numeric value
+			use Net::IPAddress::Minimal ('invert_ip');
+			my $input_string = $IP;
+			my $numericIP = invert_ip( $input_string );
+			if ($numericIP =~ m/[^0-9]/) { print "Cache-Control: must-revalidate\n\n"; print "<script>alert('Error 3250: IP Address disparity. Fix your IP address issues before attempting to revisit this website. Thank you.'); parent.location.href='/';</script>"; exit; }
+
+			##-- some salty substitutions
+			$numericIP =~ s/0/N/gi; $numericIP =~ s/1/E/gi; $numericIP =~ s/2/T/gi; $numericIP =~ s/3/W/gi; $numericIP =~ s/4/O/gi; $numericIP =~ s/5/R/gi; $numericIP =~ s/6/K/gi; $numericIP =~ s/7/S/gi; $numericIP =~ s/8/P/gi; $numericIP =~ s/9/V/gi;
+
+			$Email =~ s/@/[at]/g;
+			$ascii_HASH = $Email . '@' . $numericIP;
+		
+			$sth = $dbh->prepare("SELECT MD5('$ascii_HASH')");
+			$sth->execute or die "Unable to execute query\n"; 
+			my $row3 = $sth->fetchrow_arrayref;
+			my $rencrem = $row3->[0];
+			$sth->finish;
+	
+			# Print headers with only one \n 
+			print "Cache-Control: must-revalidate\n";
+				&SetCookies('IN',$rencrem);
+			print "\n";
+		
+			## UPDATE LAST LOG INFO FOR USER ACCOUNT
+			$sth = $dbh->prepare("UPDATE LOW_PRIORITY Users 
+									 SET LastLogin='$datetime',
+									 IP='$IP',
+									 GUID='$rencrem'
+									 WHERE Username='$Username'");
+			$sth->execute or die "Unable to execute query\n";
+			$sth->finish; 
+		
+			$headerPrinted = 1;
+	
+			##-- next line for reference of good call ONLY
+			##--$loadscript = "onLoad=\"if (!(!parent.runFancyFancy)) { parent.\$.fancybox.close(); parent.location.href = '/'; } else { document.location.href = '/'; }\"";
+
+			if (!(!$FORM{'redirect'})) {
+				$fancyControl = "document.location.href='$FORM{'redirect'}';";
+			}
+			else {
+				$fancyControl = "if(!(!parent.runFancyFancy)){parent.\$.fancybox.close();parent.location.href=''+parent.location.href+'';}else{document.location.href='/index.htm';}";
+			}
+
+			#-$fancyControl = "parent.\$.fancybox.close();parent.location.href = ''+parent.location.href+''";
+			$loadscript = '';
+		}
+		##-- inactive account [various reasons]
+		elsif($AS eq "PeNdInG") {
+
+
+			##-- XN [PeNdInG - quasi log]
+			##-- since we're saving an XN variation, it will not work for IN validation in any shape or form, and until user logs in and regenerates the IN based GUID, all IN based GUID function calls are disabled (emails with GUID or what not are all disabled until user logs in and recreates and in-turn saves the IN based GUID)
+			##-- XN GUIDs only allow for XN functions (gets cleared everytime a function requiring XN access gets utilized OR after user successfully logs in and creates and saves an IN based GUID, which means IN based GUID has replaced the XN based GUID, making any relative XN function calls obsolete)
+
+	  		$IP = "$ENV{'REMOTE_ADDR'}";
+			$dateCap = $datetime;
+
+			###---->> turn IP into numeric value
+			use Net::IPAddress::Minimal ('invert_ip');
+			my $Xinput_string = $IP;
+			my $XnumericIP = invert_ip( $Xinput_string );
+			if ($XnumericIP =~ m/[^0-9]/) { print "Cache-Control: must-revalidate\n\n"; print "<script>alert('Error 3250: IP Address disparity. Fix your IP address issues before attempting to revisit this website. Thank you.'); parent.location.href='/';</script>"; exit; }
+
+			##-- some salty substitutions [SECURecOMs]
+			$XnumericIP =~ s/0/S/gi; $XnumericIP =~ s/1/E/gi; $XnumericIP =~ s/2/C/gi; $XnumericIP =~ s/3/U/gi; $XnumericIP =~ s/4/R/gi; $XnumericIP =~ s/5/e/gi; $XnumericIP =~ s/6/c/gi; $XnumericIP =~ s/7/O/gi; $XnumericIP =~ s/8/M/gi; $XnumericIP =~ s/9/s/gi;
+
+			$XEmail = $Email;
+			$XEmail =~ s/@/[at]/g;
+			$Xascii_HASH = $Username . '@' . $XnumericIP . '@' . $XEmail;
+			$Xascii_HASHR = reverse $Xascii_HASH;
+
+			$sth = $dbh->prepare("SELECT MD5('$Xascii_HASHR')");
+			$sth->execute or die "Unable to execute query\n";
+			my $row4 = $sth->fetchrow_arrayref;
+			my $xrencrem = $row4->[0];
+			$sth->finish;
+	
+			# Print headers with only one \n
+			print "Cache-Control: must-revalidate\n";
+				&SetCookies('XN',$xrencrem);
+			print "\n";
+
+			## UPDATE LAST LOG INFO FOR USER ACCOUNT
+			$sth = $dbh->prepare("UPDATE LOW_PRIORITY Users 
+									 SET GUID='$xrencrem'
+									 WHERE Username='$Username'");
+			$sth->execute or die "Unable to execute query\n";
+			$sth->finish;
+
+			$headerPrinted = 1;
+			$fancyControl = "if(!(!parent.runFancyFancy)){parent.runFancyFancy('/login.htm?p=$Username','Virtual Private',580,200);}else{document.location.href='/login.htm?p=$Username';}";
+			$loadscript = '';
+		}
+	}
+	## login failed (set login(failure) tracking cookie, resize modal window, shove user back into login)
+	else {
+		$PageTitle = "Bad Account Login Attempt";
+		if ($FeedbackMessage ne $OGFM) { $FeedbackMessage = '<b style="color:#AF041C">*</b>Incorrect username and/or password, please try again: <br><br>'; }
+		$submitTitle = "Log In";
+		$badtry = 1;
+
+		###---->> 
+		###---->> SET LOGIN FAIL TRACKING COOKIE
+		###---->> 
+  		$IP = "$ENV{'REMOTE_ADDR'}";
+
+		###---->> turn IP into numeric value
+		use Net::IPAddress::Minimal ('invert_ip');
+		my $input_string = $IP;
+		my $numericIP = invert_ip( $input_string );
+		if ($numericIP =~ m/[^0-9]/) { print "Cache-Control: must-revalidate\n\n"; print "<script>alert('Error 3250: IP Address disparity. Fix your IP address issues before attempting to revisit this website. Thank you.'); parent.location.href='/';</script>"; exit; }
+
+		##-- some salty substitutions [BYDRLOUIEG]
+		$numericIP =~ s/0/B/g; $numericIP =~ s/1/Y/g; $numericIP =~ s/2/D/g; $numericIP =~ s/3/R/g; $numericIP =~ s/4/L/g; $numericIP =~ s/5/O/g; $numericIP =~ s/6/U/g; $numericIP =~ s/7/I/g; $numericIP =~ s/8/E/g; $numericIP =~ s/9/G/g;
+
+		$Username =~ s/@/[at]/g;
+		##-- TESTING COOKIE - W CAPTCHA REGURG
+		#-$log_HASH = $Username . '@' . $numericIP . '@' . int($CaptchaFailed) . '@' . lc($CHcode) . '@' . $Cookies{'IMVER'} . '@' . $Cookies{'VPSFC'};
+		$log_HASH = $Username . '@' . $numericIP . '@' . int($CaptchaFailed);
+		
+		#use Data::UUID;
+  		#$ug = new Data::UUID;
+		#$logdata = $ug->to_string("$log_HASH");
+		#$logdata =~ s/[^a-zA-Z0-9]//g;
+
+		use Crypt::Tea_JS;
+		$llave = $IP;
+		$INLID = &encrypt ($log_HASH, $llave);
+
+
+		# Print headers with only one \n 
+		print "Cache-Control: must-revalidate\n";
+			&SetCookies('LT',$INLID);
+		print "\n";
+
+		$headerPrinted = 1;
+		$fancyControl = "if(!(!parent.runFancyFancy)){parent.runFancyFancy('/login.htm','Virtual Private',580,370);}else{document.location.href='/login.htm';}";
+		$loadscript = '';
+	}
+	$dbh->disconnect;
+}
+
+if (!$headerPrinted) {
+	print "Cache-Control: must-revalidate\n\n";
+}
+
+##-- dyn background image height
+if ($badtry eq '1') {
+	$backgroundHeight = '370';
+}
+$backgroundHeight = 'h'.$backgroundHeight;
+
+
+
+$Password = '';
+
+print qq~
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>$PageTitle</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-library-jquery-1.4.2.min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-jquery-extension_bubblepopup.v2.3.1.min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension-container_core-min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension_connection-min.js"></script>
+<script language="javascript" type="text/javascript" src="/interface_design_templater.php?q=1&p=CHS"></script>
+<script language="javascript" type="text/javascript" src="/interface_design_templater.php?q=1&p=FCHS"></script>
+<script language="Javascript" type="text/javascript">
+<!--
+/*var cFm=function(){if(!(!document.login)){unaim=document.login.uNaim;pdub=document.login.pDub;if(unaim.value==""||unaim.length == 0||unaim.value==" "){alert('Before you can log in you must type in your account username.');unaim.focus();rBc();return false;}else if(pdub.value==""||pdub.value=="0"||pdub.value==" "){alert('Before you can log in you must type in your account password.');pdub.focus();rBc();return false;}else {return true;}}};var rBc=function(){if(!(!document.login.SubmitButton)){document.login.SubmitButton.disabled=0;document.login.SubmitButton.value="$submitTitle";}document.login.CancelButton.disabled=0;document.login.CancelButton.value="Cancel";};var fOb=function(c){var e=c;e.style.background="#FFFFFF";};var bMe=function(c){var e=c;e.style.background="#F7F7F7";};*/
+$fancyControl
+//-->
+</script>
+<style type="text/css">
+	body { background:url(/web_design_imagery/accountModel-background-$backgroundHeight.png); background-position:bottom right; background-attachment: fixed; background-repeat: no-repeat; }
+	.welcomeText { font-size:12px; font-family:verdana,arial,helvetica;color:#000000; line-height:16px; padding-top:30px; }
+	.feedbackMessage { font-size:12px; font-family:verdana,arial,helvetica;color:#000000; line-height:16px; padding-bottom:10px; padding-top:10px; }
+	.commonInput { height:22px; font-size: 10px; font-family:verdana,arial,helvetica; padding: 2px; background-color:#F7F7F7; }
+	.commonInput:focus { background-color:#FFFFFF; }
+</style>
+<link rel="stylesheet" type="text/css" href="/interface_design_templater.php?q=1&p=CHCSS">
+</head>
+<body bgcolor="#FFFFFF" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" onbeforeunload="doUnload();" $loadscript>
+~;
+
+
+if ($fancyControl) { print "</body></html>"; exit; }
+
+print qq~
+
+
+
+<table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr>
+      	<td align="center" width="50%" valign="middle">
+
+
+
+			<!--Start Wrapper1-->
+	  		<table align="center" cellpadding="10" cellspacing="0" border="0">
+				<tr>
+					<td width="100%" align="center" valign="middle">
+
+        				<div class="welcomeText"><b>$PageTitle</b></div>
+						<div class="feedbackMessage">$FeedbackMessage</div>
+~;
+
+if (!(!$FORM{'redirect'})) {
+	$redirect = "<input type=\"hidden\" name=\"redirect\" value=\"$FORM{'redirect'}\">";
+}
+
+
+if ($ISIN eq "" && !$ACCOUNTDISABLED) {
+	if (!$Username) { $Username = ""; }
+print qq~
+<script language="Javascript" type="text/javascript">
+var hasClicked=0;var runClick=function(quien,action){hasClicked=1;quien.value=action;document.login.SubmitButton.disabled=1;document.login.CancelButton.disabled=1;if (action=="Canceling"||action=="Loading") { if(!(!parent.runFancyFancy)){parent.\$.fancybox.close();}else{document.location.href="/";}}else {document.login.submit();}};
+</script>
+<form method="post" name="login" onSubmit="if (hasClicked == 0) { runClick(document.login.SubmitButton,'Processing'); }">
+$redirect
+								<div id="HTMLoCodeRequest">
+									<table width="548" cellpadding="0" cellspacing="0" border="0">
+										<tr>
+											<td align="right" style="padding-bottom:4px;padding-top:8px;padding-right:18px;" class="vFormTitle"><b><font class="commonHelper" title="This form field is required.">*</font> <label for="uNaim" id="label_uNaim">Username</label></b> <a href="javascript:if(!(!parent.runFancyFancy)){parent.runFancyFancy('/forgot-my-username.htm','Virtual Private',580,370);}else{document.location.href='/forgot-my-username.htm';}" title="Forgot your username? Click now to have us remind you what your username is." class="commonHelper">forgot it?</a></td>
+											<td rowspan="2" align="center"><div style="background-image:url('/website_design_template_images/verticalDottie.gif');background-repeat:repeat-y;width:1px;height:40px;overflow:hidden;clip:rect(0px 1px 40px 0px);"></div></td>
+											<td align="left" style="padding-bottom:4px;padding-top:8px;padding-left:18px;" class="vFormTitle"><b><font class="commonHelper" title="This form field is required.">*</font> <label for="pDub" id="label_pDub">Password</label></b> <a href="javascript:if(!(!parent.runFancyFancy)){parent.runFancyFancy('/forgot-my-password.htm','Virtual Private',580,370);}else{document.location.href='/forgot-my-password.htm';}" title="Forgot your password? If you know your username click now to reset your password." class="commonHelper">forgot it?</a></td>
+										</tr>
+										<tr>
+											<td align="right" style="padding-bottom:14px;padding-right:18px;"><input type="text" name="uNaim" id="uNaim" value="$Username" maxlength="12" size="25" tabIndex="1" class="commonInput" style="width:206px;" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);"></td>
+											<td align="left" style="padding-bottom:14px;padding-left:18px;"><input type="password" name="pDub" id="pDub" value="$Password" maxlength="12" size="25" tabIndex="2" class="commonInput" style="width:206px;" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);"></td>
+										</tr>
+~;
+
+##--default tabindex buttons
+$tinBS = 3;$tinBR = 4;
+
+if ($badtry) {
+
+$backgroundHeight = '370';
+##--dynamic tabindex (since captcha)
+$tinC = 3; $tinBS++; $tinBR++;
+
+print qq~
+										<tr>
+											<td colspan="3" align="center"><div style="background-image:url('/website_design_template_images/horizontalDottie.gif');background-repeat:repeat-x;width:400px;height:1px;overflow:hidden;clip:rect(0px 400px 1px 0px);"></div></td></tr>
+										</tr>
+										<tr>
+											<td align="right" valign="top" style="padding-right:14px;padding-top:23px;">
+									
+												<table width="206" cellpadding="0" cellspacing="0" border="0">
+													<tr valign="top">
+														<td align="left"><div id="FreeCaptchaChallenge" onClick="freeCaptcha('click');" onMouseOver="freeCaptcha(1);" onMouseOut="freeCaptcha(0);"><img src="/freeCaptcha/?" width="170" id="cFreeCaptcha" class="cFreeCaptcha" name="cFreeCaptcha" border="0"></div></td>
+														<td align="center">
+														<div style="padding-top:1px;padding-left:1px;padding-right:2px;">
+															<div style="padding:1px;border:1px dashed #D5DFE5;">
+																<div style="padding:4px;border:1px dashed #D5DFE5;margin-bottom:2px;"><div id="FreeCaptchaReChallenge" onClick="freeCaptcha('click');" onMouseOver="freeCaptcha(1);" onMouseOut="freeCaptcha(0);"><img src="/web_design_imagery/rFreeCaptcha_off.gif" width="20" height="20" id="rFreeCaptcha" name="rFreeCaptcha" class="rFreeCaptcha" border="0" valign="right"></div></div>
+																<div style="padding:4px;border:1px dashed #D5DFE5;"><div id="FreeCaptcha-Text-to-Speech" onClick="freeCaptcha('text-to-speech');" onMouseOver="freeCaptcha(3);" onMouseOut="freeCaptcha(2);"><a href="/freeCaptcha/text-to-speech/?" target="FreeCaptchaTTS"><img src="/web_design_imagery/aFreeCaptcha_off.gif" width="20" height="20" id="aFreeCaptcha" name="aFreeCaptcha" class="aFreeCaptcha" border="0" valign="right"></a></div></div>
+															</div>
+														</div>
+														</td>
+													</tr>
+												</table>
+
+											</td>
+											<td align="center"><div style="background-image:url('/website_design_template_images/verticalDottie.gif');background-repeat:repeat-y;width:1px;height:90px;overflow:hidden;clip:rect(0px 1px 90px 0px);"></div></td>
+											<td align="left" valign="top" style="padding-left:14px;padding-top:10px;padding-bottom:16px;">
+												<table width="206" cellpadding="0" cellspacing="0" border="0">
+													<tr><td style="padding-top:10px;padding-bottom:10px;"><div id="FreeCaptchaPromptLabel"><input type="hidden" name="Challenger" value="1"><label for="Challenge" id="label_Challenge" class="FreeCaptchaPromptLabel"><div id="FreeCaptchaPrompt">Type all the characters you see in the challenge code picture to the left.</div></label></div></td></tr>
+													<tr><td align="left"><div id="FreeCaptchaInput"><input tabindex="$tinC" class="commonInput" type="text" maxlength="6" name="Challenge" id="Challenge" value="" style="width:206px;" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);"></div></td></tr>
+													<tr><td style="padding-top:2px;"><div id="FreeCaptchaInfo">Letters are not case-sensitive</div></td></tr>
+												</table>											
+											</td>
+										</tr>
+<script language="javascript" type="text/javascript">
+var ktc = function() {
+	var lUrl = '/login.htm?ktc=1';
+	var callback = {
+		success: function(o) { lUrl = ''; }
+	};
+	var transaction = YAHOO.util.Connect.asyncRequest("GET", lUrl, callback, null);
+};
+</script>
+~;
+}
+
+print qq~
+										<tr>
+											<td colspan="3" align="center"><div style="background-image:url('/website_design_template_images/horizontalDottie.gif');background-repeat:repeat-x;width:400px;height:1px;overflow:hidden;clip:rect(0px 400px 1px 0px);"></div></td></tr>
+										</tr>
+										<tr>
+											<td align="right" style="padding-bottom:4px;padding-top:8px;padding-right:18px;" class="vFormTitle"><input type="submit" name="SubmitButton" tabIndex="$tinBS" value="$submitTitle"></td>
+											<td align="center"><div style="background-image:url('/website_design_template_images/verticalDottie.gif');background-repeat:repeat-y;width:1px;height:20px;overflow:hidden;clip:rect(0px 1px 20px 0px);"></div></td>
+											<td align="left" style="padding-bottom:4px;padding-top:8px;padding-left:18px;" class="vFormTitle"><input type="reset" name="CancelButton" tabIndex="$tinBR" value="Cancel" onClick="javascript:runClick(this,'Canceling');"></td>
+										</tr>
+									</table>
+								</div>
+</form>
+
+~;
+}
+#-- end [if ($ISIN eq "") {]
+
+
+print qq~
+								
+					</td>
+	  			</tr>
+	  		</table>
+			<!--End Wrapper1-->
+
+		</td>
+	</tr>
+</table>
+</body>
+<script language="javascript" type="text/javascript">
+/* wikiboard title object */
+if (!(!parent.document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = parent.document.getElementById("WikiBoardBarTitle");
+	mwbh = parent.document.getElementById("WikiBoardBarHistory");
+	fbsl = parent.document.getElementById("WikiPeeksSlider");
+	wbct = parent.document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = parent.document.getElementById("Wiki-Peeks-Content-Search");
+}
+else if (!(!document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = document.getElementById("WikiBoardBarTitle");
+	mwbh = document.getElementById("WikiBoardBarHistory");
+	fbsl = document.getElementById("WikiPeeksSlider");
+	wbct = document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = document.getElementById("Wiki-Peeks-Content-Search");
+}
+else { mwbt = 0; wbct = 0; }
+var doUnload = function() {
+	if (wbct!=0) {
+		wbct.innerHTML = '<span style="position:relative;top:2px;left:0px;" title="Loading, please wait..."><img src="/web_design_imagery/loadCircle.gif" width="18" height="15" border="0" alt="Loading, please wait..."></span>';
+	}
+};
+// only if we exist in a framed document from our controlling parent
+if (mwbt!=0) {
+	// wikiboard content title [source]
+	wbct.innerHTML = '<span style="font-weight:normal;position:relative;left:-4px;top:0px;">- $PageTitle</span>';
+	// wikiboard content search
+	wbcs.innerHTML = '';
+}
+</script>
+</html>
+~;
+exit;
+

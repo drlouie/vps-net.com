@@ -1,0 +1,617 @@
+#!/usr/bin/perl -w
+
+################################################################
+#   Program:    Website Account Creation and Validation        #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$invHTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/invisibleHTTP/';
+}
+else {
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$invHTTPRoot = '/var/www/vps-net.com/invisibleHTTP/';
+}
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+require($HTTPRoot."q.nsp");
+
+$ECkey = 'chuiechuie'; ##-> set cookie key for IMVER [only for eyeCaptcha functions]
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+##--power functions
+require($HTTPRoot."vfunc.nsp");
+
+use Crypt::Tea_JS;
+use locale;
+
+$loadscript = "onLoad=\"document.newprofile.uNaim.select();document.newprofile.uNaim.focus();\"";
+$PageTitle = "Create An Account";
+$runClick = 'var hasClicked=0;var runClick=function(quien,action){hasClicked=1;quien.value=action;if(!(!document.newprofile.SubmitButton)){document.newprofile.SubmitButton.disabled=1;}document.newprofile.CancelButton.disabled=1;if (action=="Loading") { if(!(!parent.runFancyFancy)){parent.runFancyFancy("/login.htm","Virtual Private",560,260);}else{document.location.href="/login.htm";}}else if (action=="Canceling") { if(!(!parent.runFancyFancy)){parent.$.fancybox.close();}else{document.location.href="/";}}else {document.newprofile.submit();}};';
+$lePrompterTable = "<a name=\"post\"></a><table><tr><td valign=\"top\" align=\"center\" style=\"padding-top:20px;padding-bottom:20px;\"><table width=\"614\" height=\"54\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td width=\"100%\" align=\"center\" style=\"height:50px;\" class=\"elComment\">%%esteContent%%</td></tr></table></td></tr></table>%%ATTN%%";
+
+##-- 
+##-- defeat warnings [Use of uninitialized value]
+##-- 
+$IP = "";
+$badTry = 0;
+$CaptchaFailed = 0;
+$fancyControl = "";
+$onbefore = "doUnload();";
+$zip = "";
+$regurgSwitch = '1';
+$fancyHeight = '220';
+$XPWD = "";
+$shakeUser = "";
+##-- 
+##-- defeat warnings [used only once: possible typo]
+##-- 
+$noDateParse = $noDateParse;
+$ECkey = $ECkey;
+$resendIt = $resendIt;
+$xentrado = $xentrado;
+$days = $days;
+$Cookie_Exp_Date = $Cookie_Exp_Date;
+$months = $months;
+$errorKicker = $errorKicker;
+$lePrompterTable = $lePrompterTable;
+$shakeP = $shakeP;
+$shakeGUID = $shakeGUID;
+##-- 
+##-- done defeating
+##-- 
+
+##--just finised creating account, this is the regurg of that process [tell user: must check and verify email address]
+if ($FORM{'s'} && ($FORM{'s'} eq "1" || $FORM{'s'} eq "-1")) {
+	$myFBM = "You will need to verify your email address for us. You can verify your email address and activate your profile by following the instructions in the email we have just sent you.";
+	if ($FORM{'s'} eq "-1") { $myFBM = "<em>Good news:</em> Your account has been successfully created! The bad news is, you will have to <a href=\"javascript:if(!(!parent.runFancyFancy)){parent.runFancyFancy('/Contact-Website-Design-Internet-Development-Experts/?e=721&r=nvpa','Virtual Private',467,400);}else{document.location.href='/Contact-Website-Design-Internet-Development-Experts/?e=721&r=nvpa';}\" title=\"Click to report any issues, bugs or difficulties you are having with the Virtual Private Servers and Networks account login or activation processes. Thank you.\"><b>contact us</b></a> to have your account activated manually. We do apologize for the inconvenience, but keeping our systems secure and spam-free is of utmost importance."; }
+	$badTry = 0;
+	$RUNFORM = 1;
+	$resultado = "";
+	$PageTitle = "New Account Created (Activation Required)";
+	$FeedbackMessage = "<div style=\"text-align:left;line-height:18px;padding-left:25px;padding-right:25px;padding-bottom:15px;\">$myFBM</div>";
+	$FORMDISABLED = 1;
+	$loadscript = "";
+	$emailSent = 1;
+}
+
+##-- requesting a re-send of account activation message
+##-- account is pending [email address not verified yet]
+##-- p is username which must be used to verify XN cookie [superficial login cookie]
+elsif ($FORM{'p'} && (length($FORM{'p'}) >= 6 && length($FORM{'p'}) <= 12)) {
+	$ReportIt = "<br><br>Having difficulties with our account login or activation processes? Would you care to <a href=\"javascript:if(!(!parent.runFancyFancy)){parent.runFancyFancy('/Contact-Website-Design-Internet-Development-Experts/?s=1e=1322','Virtual Private',467,400);}else{document.location.href='/Contact-Website-Design-Internet-Development-Experts/?e=1322';}\" title=\"Click to report any issues, bugs or difficulties you are having with the Virtual Private Servers and Networks account login or activation processes. Thank you.\">report it?</a> We're greatful for the gesture.";
+	$badTry = 0;
+	$RUNFORM = 1;
+	$resultado = "";
+	$resendIt = '';
+	$PageTitle = "Account Activation Manager";
+	$elMensage = 'Oh no, your session has expired! As a result, we will can not continue processing your request.<br><br>Please attempt to log into our site, doing so will refresh your session, which will give you sufficient access to request the account activation message.'.$ReportIt.'';
+
+	##-- out XN cookie was valid [inluding same as requester IP]
+	##-- session was good
+	if ($xentrado == 1) {
+		$lXEmail = $XEmail;
+		$lXEmail =~ s/\[at\]/@/g;
+		$withEm = "<b>$lXEmail</b>";
+
+		##--RUN verify link shaker
+		$shakeP = $XPWD;
+		$shakeUser = $XEmail;
+		$shakeGUID = $XUsername;
+		$emailShaken = &makeVerifyAccountHashACT;
+
+		##--SEND verify email message
+		$laEME = $lXEmail;
+		my $OGSenderIn = "Virtual Private - Account Management<admin\@vps-net.com>";
+		my $OGRecipientIn = "$XUsername <$laEME>";
+		my $OGsubject = "Account Status (Activation Required)";
+		$myEmailBody = &getEmailHTML(1,2,"Virtual Private - $PageTitle","","$OGsubject","Once you verify your email address, and subsequently <a href=\"http://www.vps-net.com/activate-virtual-private-account.htm?$emailShaken\" class=\"instruct\" target=\"VPS-NET-COM\" title=\"Click to verify your email address and activate your Virtual Private Servers and Networks user account.\">activate your account</a>, you will be able to log into our website.<br><br>* By default, every user account is disabled until the email address associated with it is verified.<br><br><i>* If you didn't request this message to be sent to you, please let us know</i>","Can't see or click the link above? Simply copy and paste this entire URL into your favorite browsers' address bar and hit enter: http://www.vps-net.com/activate-virtual-private-account.htm?$emailShaken");
+		use lib "/usr/local/lib/";
+		use MIME::Lite;
+		my $msg = MIME::Lite->new(
+							From    =>$OGSenderIn,
+		                	To      =>$OGRecipientIn,
+	   	 		        	Subject =>$OGsubject,
+		                	Type    =>'multipart/related'
+	   					);
+	   	$msg->attach(Type => 'text/html',
+	   	Data => $myEmailBody);
+		$msg->send();
+
+		$elMensage = "We've just re-sent you the account activation message.<br><br>Please make sure you check your mailbox at $withEm, find the email message titled: '<i>Virtual Private - Account Activation</i>', then click the '<i>activate your account</i>' link in that message.".$ReportIt."";
+	}
+
+	$FeedbackMessage = "<div style=\"text-align:left;line-height:18px;padding-left:25px;padding-right:25px;\">".$elMensage."</div>";
+	$FORMDISABLED = 1;
+	$loadscript = "";
+}
+
+## already pushed through new attempt [form]
+elsif (($FORM{'uNaim'} && (length($FORM{'uNaim'}) >= 1)) || ($FORM{'em'} && (length($FORM{'em'}) >= 1)) || ($FORM{'pDub'} && (length($FORM{'pDub'}) >= 1)) || ($FORM{'pDub2'} && (length($FORM{'pDub2'}) >= 1)) || ($FORM{'zip'} && (length($FORM{'zip'}) >= 1))) {
+
+	$CaptchaFailed = 9;
+	if ($FORM{'Challenge'}) {
+		##-- cleaner way
+		$CaptchaFailed = &testCaptcha;
+	}
+	#-$CaptchaFailed = 0;
+	##--must submit challenge code to go into this process point
+	if ($CaptchaFailed == 0) {
+
+		## Define Variables
+		$Username = "$FORM{'uNaim'}";
+
+		$UsernameFailed = 1;
+		$UsernameFailed = &checkNewUsername;
+		if ($UsernameFailed == 0) {
+
+			## Define Variables
+			$em = "$FORM{'em'}";
+
+			$EmailFailed = 1;
+			$EmailFailed = &checkNewEmail;
+			if ($EmailFailed == 0) {
+
+				$PD = "$FORM{'pDub'}";
+				$PD2 = "$FORM{'pDub2'}";
+				$CualPasswordField = 'pDub';
+				$PasswordFailed = 1;
+				$PasswordFailed = &checkNewPassword;
+
+				if ($PasswordFailed == 0) {
+
+					$ZipCodeFailed = 0;
+					##-- zip is not required at this point [but if submited, verify it]
+					if ($FORM{'zip'} && (length($FORM{'zip'}) >= 1)) {
+						$zip = "$FORM{'zip'}";
+						$ZipCodeFailed = 1;
+						$ZipCodeFailed = &checkZipCode;
+					}
+
+					$IP = "$ENV{'REMOTE_ADDR'}";
+					$WasBanned = 1;
+					$WasBanned = &checkBan;
+					if ($WasBanned == 0 && $ZipCodeFailed == 0) {
+	
+						$NewUserFailed = 1;
+						$NewUserFailed = &checkNewUserProfile;
+						if ($NewUserFailed == 0) {
+							#$messageStatus = 'VeRiFiEd';
+
+							###-- create the new account
+							$NewAccountFailed = 1;
+							$NewAccountFailed = &createNewAccount('PeNdInG');
+							if ($NewAccountFailed == 0) {
+
+								###--send account activation message
+								#-$FeedbackMessage = 'You will need to verify your email address for us. You can verify your email address and activate your profile by following the instructions in the email we have just sent to: '.$em.'';
+
+								##--SEND verify email message
+								$laEME = $em;
+								my $OGSenderIn = "Virtual Private - Account Management<admin\@vps-net.com>";
+								my $OGRecipientIn = "$Username <$laEME>";
+								my $OGsubject = "New Account Created (Activation Required)";
+								$myEmailBody = &getEmailHTML(2,1,"Virtual Private - $PageTitle","","$OGsubject","Thank you for creating an account at: http://www.vps-net.com/. Once you verify your email address, and subsequently <a href=\"http://www.vps-net.com/activate-virtual-private-account.htm?$emailShakenU\" class=\"instruct\" target=\"VPS-NET-COM\" title=\"Click to verify your email address and activate your Virtual Private Servers and Networks user account.\">activate your account</a>, you will be able to log into our website.<br><br>* By default, every user account is disabled until the email address associated with it is verified.<br><br><i>* If you didn't request an account be created, please let us know</i>","Can't see or click the link above? Simply copy and paste this entire URL into your favorite browsers' address bar and hit enter: http://www.vps-net.com/activate-virtual-private-account.htm?$emailShakenU");
+								use lib "/usr/local/lib/";
+								use MIME::Lite;
+								my $msg = MIME::Lite->new(
+													From    =>$OGSenderIn,
+								                	To      =>$OGRecipientIn,
+							   	 		        	Subject =>$OGsubject,
+								                	Type    =>'multipart/related'
+							   					);
+							   	$msg->attach(Type => 'text/html',
+							   	Data => $myEmailBody);
+								$msg->send();
+							}
+						}
+						else {
+							if ($usernameInUse == 1 || $emailInUse == 1) {
+								if ($usernameInUse == 1) { $loadscript = "onLoad=\"document.newprofile.uNaim.select();document.newprofile.uNaim.focus();\""; }
+								elsif ($emailInUse == 1) { $loadscript = "onLoad=\"document.newprofile.em.select();document.newprofile.em.focus();\""; }
+							}
+						}
+					}
+					##-- was banned OR bad zip [if input more than character in zip field]
+					##-- if banned nothing happens
+					else {
+						##-- only zip code failed issues get relayed to user [defaulting]
+						##-- but if $WasBanned, zip code doesn't matter, who cares if it failed, just add user pre-banned account instead
+						if ($WasBanned == 0) {
+							$badTry = 1;
+							$loadscript = "onLoad=\"document.newprofile.zip.select();document.newprofile.zip.focus();\"";
+						}
+						##-- banned users get added but are banned on create, user will never know, never get an email to activate account either 
+						##-- [activation processes can only change from a user status from InAcTiVe to AcTiVe, anything else is admin or process controlled status]
+						else {
+							###-- check to see if we can create the new [pre-banned] account [go through the motions]
+							###-- user checks are passed backed to error just like non-banned interaction [when successful account is created but pre-banned]
+							###-- user never knows the difference
+							$NewUserFailed = 1;
+							$NewUserFailed = &checkNewUserProfile;
+							if ($NewUserFailed == 0) {
+								$NewAccountFailed = 1;
+								$NewAccountFailed = &createNewAccount('BaNoNcReAtE');
+								if ($NewAccountFailed == 0) {
+									$badTry = 0;
+									$regurgSwitch = '-1';
+									$fancyHeight = '230';
+								}
+							}
+						}
+					}
+				}
+				##-- password failed
+				else { $loadscript = "onLoad=\"document.newprofile.$CualPasswordField.select();document.newprofile.$CualPasswordField.focus();\""; }
+			}
+			##-- email failed
+			else { $loadscript = "onLoad=\"document.newprofile.em.select();document.newprofile.em.focus();\""; }
+		}
+		##-- username failed
+		else { $loadscript = "onLoad=\"document.newprofile.uNaim.select();document.newprofile.uNaim.focus();\""; }
+
+
+
+
+
+
+		##-->> GOOD NEW ACCOUNT SAVED
+		if ($badTry == 0) {
+			$fancyControl = "if (!(!parent.runFancyFancy)) { parent.runFancyFancy('/new-virtual-private-account.htm?s=$regurgSwitch','Virtual Private',580,$fancyHeight); }else { document.location.href = '/new-virtual-private-account.htm?s=$regurgSwitch'; }";
+			$RUNFORM = 1;
+			$loadscript = "";
+		}
+		else {
+			$fyu = 'Forgot your username\?';
+			$fyuJ = '<font class="commonHelper" style="color:#000000;">[<a href="javascript:if(!(!parent.runFancyFancy)){parent.runFancyFancy(\'/forgot-my-username.htm?m=1&em='.$em.'\',\'Virtual Private\',580,370);}else{document.location.href=\'/forgot-my-username.htm?m=1&em='.$em.'\';}" title="Can\'t recall your username? Click now have us remind you." class="commonHelper">Forgot your username?</a>]</font>';
+			$whyNewTry =~ s/$fyu/$fyuJ/gi;
+
+			$RUNFORM = 1;
+		}
+	}
+	##-- re-run form, asking for challenge code
+	else {
+		##-- captcha failed
+		$loadscript = "onLoad=\"document.newprofile.Challenge.select();document.newprofile.Challenge.focus();\"";
+		$RUNFORM = 1;
+	}
+}
+else {
+	$RUNFORM = 1;
+}
+
+
+
+	##-- if haven't been created, must be failure, make sure to reparse to user anyway
+	if (!$Username) { if(!$FORM{'uNaim'}){$FORM{'uNaim'}="";} $Username = "$FORM{'uNaim'}"; }
+	if (!$em) { if(!$FORM{'em'}){$FORM{'em'}="";} $em = "$FORM{'em'}"; }
+	if (!$PD) { if(!$FORM{'pDub'}){$FORM{'pDub'}="";} $PD = "$FORM{'pDub'}"; }
+	if (!$PD2) { if(!$FORM{'pDub2'}){$FORM{'pDub2'}="";} $PD2 = "$FORM{'pDub2'}"; }
+	if (!$zip) { if(!$FORM{'zip'}){$FORM{'zip'}="";} $zip = "$FORM{'zip'}"; }
+	
+	#if ((!$FORM{'em'}) || $FORM{'nc'} eq "1") {
+	#	$uNaim = $FORM{'uNaim'};
+	#	$em = $FORM{'em'};
+	#	$pass = $FORM{'pDub'};
+	#	$pass2 = $FORM{'pDub2'};
+	#	$zip = $FORM{'zip'};
+	#	#-require($HTTPRoot."gesichtDeEsel.nsp");
+	#	#-$elImagen = '<img src="/vizyelpagpapatunay/' . $myImagen . '.jpg" width="154" style="Filter: Gray;" style="border:#000000 1px solid;">';
+	#	#-$elCompromiso = '<input type="hidden" name="gesicht" value="Esel">';
+	#	#-$theChallenge = '<input type="hidden" name="simple" value="' . $myImagen . '">';
+	#	#-$acquireChallenge = '<input class="commonInput" type="text" tabindex="6" maxlength="6" size="10" style="background-color:#F7F7F7;" onFocus="this.select();fOb(this);" OnBlur="bMe(this);" name="challenger" value="">' . $elCompromiso . '';
+	#}
+
+
+	if (!$FeedbackMessage) {
+		$FeedbackMessage = "Creating a new account is easy, just fill out the following form fields:";
+	}
+	$itemTitle = "$PageTitle";
+	$itemTitle2 =  'Try Again: '.$PageTitle.'';
+	##-- captcha feedback messages
+	if ($CaptchaFailed == 1) { $FeedbackMessage = '<b style="color:#AF041C">*</b>Challenge code was incorrect, please try again: '; $itemTitle = $itemTitle2; }
+	elsif ($CaptchaFailed == 8) { $FeedbackMessage = '<b style="color:#AF041C">*</b>Challenge code is 6 characters in length, try again: '; $itemTitle = $itemTitle2; }
+	elsif ($CaptchaFailed == 9) { $FeedbackMessage = '<b style="color:#AF041C">*</b>Challenge code is required, please try again: '; $itemTitle = $itemTitle2; }
+	if ($CaptchaFailed == 0) {
+		if ($whyNewTry) {
+			$itemTitle = $itemTitle2;
+			$FeedbackMessage = $whyNewTry . "";
+		}
+	}
+	$cualPrompt =  '<div class="welcomeText"><b>'.$itemTitle.'</b></div><div class="feedbackMessage">'.$FeedbackMessage.'</em></div>';
+
+
+if ($RUNFORM == 1) {
+print "Cache-Control: must-revalidate\n\n";
+
+print qq~
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>$PageTitle</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-library-jquery-1.4.2.min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-jquery-extension_bubblepopup.v2.3.1.min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension-container_core-min.js"></script>
+<script language="javascript" type="text/javascript" src="/cross_browser_javascripts/javascript-yui-extension_connection-min.js"></script>
+<script language="javascript" type="text/javascript" src="/interface_design_templater.php?q=1&p=CHS"></script>
+<script language="javascript" type="text/javascript" src="/interface_design_templater.php?q=1&p=FCHS"></script>
+<script language="Javascript" type="text/javascript">
+<!--
+/*var fOb=function(c){var e=c;e.style.background="#FFFFFF";};var bMe=function(c){var e=c;e.style.background="#F7F7F7";};*/
+$runClick
+$fancyControl
+//-->
+</script>
+<style type="text/css">
+	body { background:url(/web_design_imagery/accountModel-background-newAccount.png); background-position:bottom right; background-attachment: fixed; background-repeat: no-repeat; }
+	.welcomeText { font-size:12px; font-family:verdana,arial,helvetica;color:#000000; line-height:16px; padding-top:30px; }
+	.feedbackMessage { font-size:12px; font-family:verdana,arial,helvetica;color:#000000; line-height:16px; padding-bottom:0px; padding-top:10px; }
+	.commonInput { height:22px; font-size: 10px; font-family:verdana,arial,helvetica; padding: 2px; background-color:#F7F7F7; }
+	.commonInput:focus { background-color:#FFFFFF; }
+</style>
+<link rel="stylesheet" type="text/css" href="/interface_design_templater.php?q=1&p=CHCSS">
+</head>
+<body bgcolor="#FFFFFF" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" onbeforeunload="$onbefore" $loadscript>
+~;
+
+
+if ($fancyControl) { print "</body></html>"; exit; }
+
+print qq~
+<form method="post" name="newprofile" onSubmit="if (hasClicked == 0) { runClick(document.newprofile.SubmitButton,'Processing'); }">
+<input type="hidden" name="nc" value="0">
+~;
+
+print qq~
+<table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr>
+      	<td align="center" width="100%" valign="middle">
+
+			<!--Start Wrapper1-->
+	  		<table align="center" cellpadding="10" cellspacing="0" border="0">
+				<tr>
+					<td width="100%" align="center" valign="middle">
+					<!--End Wrapper1-->
+					$cualPrompt
+								<div id="HTMLoCodeRequest">
+									<table width="548" cellpadding="0" cellspacing="0" border="0">
+~;
+
+if (!$errorKicker && !$emailSent && !$FORMDISABLED) {
+print qq~
+		<tr><td colspan="3" align="center"><div style="width:1px;height:25px;overflow:hidden;clip:rect(0px 1px 25px 0px);"></div></td></tr>
+		<tr valign="bottom">
+			<td align="right" style="padding-bottom:4px;padding-top:8px;padding-right:8px;" class="vFormTitle"><b><font class="commonHelper" title="This form field is required.">*</font> <label for="uNaim" id="label_uNaim">Username</label></b> [ <a href="javascript:void(0);" title="Maximum 12 characters allowed [ a-z 0-9 - _ ] ( eg: Action-Jack1 )" class="commonHelper">what?</a> ]</td>
+			<td rowspan="2" align="center" style="padding-left:10px;padding-right:10px;"><div style="background-image:url('/website_design_template_images/verticalDottie.gif');background-repeat:repeat-y;width:1px;height:15px;overflow:hidden;clip:rect(0px 1px 15px 0px);"></div></td>
+			<td align="left" style="padding-bottom:4px;padding-top:8px;padding-left:5px;" class="vFormTitle"><b><font class="commonHelper" title="This form field is required.">*</font> <label for="em" id="label_em">Email Address</label></b> [ <a href="javascript:void(0);" title="Maximum 254 characters allowed" class="commonHelper">what?</a> ]</td>
+		</tr>
+		<tr valign="bottom">
+			<td align="right" style="padding-bottom:10px;"><div><div style="padding:1px;"><input tabindex="1" class="commonInput" type="text" maxlength="12" name="uNaim" id="uNaim" value="$Username" style="width:240px;" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);" %%Muaname%%></div></div></td>
+			<td align="left" style="padding-bottom:10px;"><div><div style="padding:1px;"><input tabindex="2" class="commonInput" type="text" maxlength="254" name="em" id="em" value="$em" style="width:240px;" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);" %%Muaemail%%></div></div></td>
+		</tr>
+		<tr><td colspan="3" align="center"><div style="background-image:url('/website_design_template_images/horizontalDottie.gif');background-repeat:repeat-x;width:360px;height:1px;overflow:hidden;clip:rect(0px 360px 1px 0px);"></div></td></tr>
+		<tr valign="bottom">
+			<td align="right" style="padding-bottom:4px;padding-top:8px;padding-right:8px;" class="vFormTitle"><b><font class="commonHelper" title="This form field is required.">*</font> <label for="pDub" id="label_pDub">Password</label></b></td>
+			<td rowspan="2" align="center" style="padding-left:10px;padding-right:10px;"><div style="background-image:url('/website_design_template_images/verticalDottie.gif');background-repeat:repeat-y;width:1px;height:63px;overflow:hidden;clip:rect(0px 1px 61px 0px);"></div></td>
+			<td align="left" style="padding-bottom:4px;padding-top:8px;padding-left:5px;" class="vFormTitle"><b><font class="commonHelper" title="This form field is required.">*</font> <label for="pDub2" id="label_pDub2">Re-Type Password</label></b> [ <a href="javascript:void(0);" title="Re-type the password you typed in the 'Password' field" class="commonHelper">what?</a> ]</td>
+		</tr>
+		<tr valign="bottom">
+			<td align="right" style="padding-bottom:10px;"><div><div style="padding:1px;"><input tabindex="3" class="commonInput" type="password" maxlength="12" name="pDub" id="pDub" value="$PD" style="width:200px;" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);"></div></div></td>
+			<td align="left" style="padding-bottom:10px;"><div><div style="padding:1px;"><input tabindex="4" class="commonInput" type="password" maxlength="12" name="pDub2" id="pDub2" value="$PD2" style="width:200px;" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);"></div></div></td>
+		</tr>
+		<tr><td colspan="3" align="center"><div style="background-image:url('/website_design_template_images/horizontalDottie.gif');background-repeat:repeat-x;width:240px;height:1px;overflow:hidden;clip:rect(0px 240px 1px 0px);"></div></td></tr>
+		<tr valign="bottom">
+			<td colspan="3" align="center" style="padding-bottom:4px;padding-top:8px;padding-right:8px;" class="vFormTitle"><b><label for="zip" id="label_zip">5-Digit Zip Code</label></b> [<a href="javascript:void(0);" title="Zip Code is used in the localization of weather, maps and other features. If not in the USA just leave blank." class="commonHelper" style="text-decoration:none;"><b> ? </b></a>]</td>
+<!--color:#AF041C;-->
+		</tr>
+		<tr valign="bottom">
+			<td colspan="3" align="center" style="padding-bottom:10px;"><div><div style="padding:1px;"><input tabindex="5" class="commonInput" type="text" name="zip" id="zip" value="$zip" maxlength="5" style="width:180px;" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);"></div></div></td>
+		</tr>
+
+~;
+
+
+									
+if ($emailSent) {
+print qq~
+										<tr>
+											<td colspan="3" align="center"><div style="background-image:url('/website_design_template_images/horizontalDottie.gif');background-repeat:repeat-x;width:400px;height:1px;overflow:hidden;clip:rect(0px 400px 1px 0px);"></div></td></tr>
+										</tr>
+										<tr>
+											<td colspan="3" align="center" style="padding-bottom:4px;padding-top:8px;" class="vFormTitle"><input type="button" name="CancelButton" tabIndex="2" value="Cancel" onClick="javascript:runClick(this,'Canceling');"></td>
+										</tr>
+~;
+}
+										
+
+print qq~
+										<tr>
+											<td colspan="3" align="center"><div style="background-image:url('/website_design_template_images/horizontalDottie.gif');background-repeat:repeat-x;width:300px;height:1px;overflow:hidden;clip:rect(0px 300px 1px 0px);"></div></td></tr>
+										</tr>
+										<tr>
+											<td align="right" valign="top" style="padding-right:14px;padding-top:15px;">
+												<table width="206" cellpadding="0" cellspacing="0" border="0">
+													<tr valign="top">
+														<td align="left"><div id="FreeCaptchaChallenge" onClick="freeCaptcha('click');" onMouseOver="freeCaptcha(1);" onMouseOut="freeCaptcha(0);"><img src="/freeCaptcha/?" width="170" id="cFreeCaptcha" class="cFreeCaptcha" name="cFreeCaptcha" border="0"></div></td>
+														<td align="center">
+														<div style="padding-top:1px;padding-left:1px;padding-right:2px;">
+															<div style="padding:1px;border:1px dashed #D5DFE5;">
+																<div style="padding:4px;border:1px dashed #D5DFE5;margin-bottom:2px;"><div id="FreeCaptchaReChallenge" onClick="freeCaptcha('click');" onMouseOver="freeCaptcha(1);" onMouseOut="freeCaptcha(0);"><img src="/web_design_imagery/rFreeCaptcha_off.gif" width="20" height="20" id="rFreeCaptcha" name="rFreeCaptcha" class="rFreeCaptcha" border="0" valign="right"></div></div>
+																<div style="padding:4px;border:1px dashed #D5DFE5;"><div id="FreeCaptcha-Text-to-Speech" onClick="freeCaptcha('text-to-speech');" onMouseOver="freeCaptcha(3);" onMouseOut="freeCaptcha(2);"><a href="/freeCaptcha/text-to-speech/?" target="FreeCaptchaTTS"><img src="/web_design_imagery/aFreeCaptcha_off.gif" width="20" height="20" id="aFreeCaptcha" name="aFreeCaptcha" class="aFreeCaptcha" border="0" valign="right"></a></div></div>
+															</div>
+														</div>
+														</td>
+													</tr>
+												</table>
+
+											</td>
+
+											<td align="center"><div style="background-image:url('/website_design_template_images/verticalDottie.gif');background-repeat:repeat-y;width:1px;height:95px;overflow:hidden;clip:rect(0px 1px 95px 0px);"></div></td>
+
+											<td align="left" valign="top" style="padding-left:14px;padding-top:2px;padding-bottom:8px;">
+												<table width="206" cellpadding="0" cellspacing="0" border="0">
+													<tr><td style="padding-top:10px;padding-bottom:10px;"><div id="FreeCaptchaPromptLabel"><input type="hidden" name="Challenger" value="1"><label for="Challenge" id="label_Challenge" class="FreeCaptchaPromptLabel"><div id="FreeCaptchaPrompt">Type all the characters you see in the challenge code picture to the left.</div></label></div></td></tr>
+													<tr><td align="left"><div id="FreeCaptchaInput"><input tabindex="6" class="commonInput" type="text" maxlength="6" name="Challenge" id="Challenge" value="" style="width:180px;" onFocus="formLabelFlipper(this,1);" onBlur="formLabelFlipper(this,0);"></div></td></tr>
+													<tr><td style="padding-top:2px;"><div id="FreeCaptchaInfo">Letters are not case-sensitive</div></td></tr>
+												</table>											
+											</td>
+										</tr>
+										<tr>
+											<td colspan="3" align="center"><div style="background-image:url('/website_design_template_images/horizontalDottie.gif');background-repeat:repeat-x;width:500px;height:1px;overflow:hidden;clip:rect(0px 500px 1px 0px);"></div></td></tr>
+										</tr>
+										<tr valign="top">
+											<td align="right" style="padding-bottom:10px;padding-top:10px;" class="vFormTitle"><input type="submit" name="SubmitButton" tabIndex="7" value="Create It!"></td>
+											<td align="center" style="padding-left:10px;padding-right:10px;"><div style="background-image:url('/website_design_template_images/verticalDottie.gif');background-repeat:repeat-y;width:1px;height:15px;overflow:hidden;clip:rect(0px 1px 15px 0px);"></div></td>
+											<td align="left" style="padding-bottom:10px;padding-top:10px;" class="vFormTitle"><input type="button" name="CancelButton" tabIndex="8" value="Cancel" onClick="javascript:runClick(this,'Canceling');"></td>
+										</tr>
+
+~;
+}
+										
+if ($emailSent) {
+print qq~
+<script language="javascript" type="text/javascript">
+$runClick
+</script>
+										<tr>
+											<td colspan="3" align="center"><div style="background-image:url('/website_design_template_images/horizontalDottie.gif');background-repeat:repeat-x;width:400px;height:1px;overflow:hidden;clip:rect(0px 400px 1px 0px);"></div></td></tr>
+										</tr>
+										<tr>
+											<td colspan="3" align="center" style="padding-bottom:4px;padding-top:8px;" class="vFormTitle"><input type="button" name="CancelButton" tabIndex="9" value="Back to Login" onClick="javascript:runClick(this,'Loading');"></td>
+										</tr>
+~;
+}
+
+print qq~
+
+									</table>
+								</div>										
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--Start Wrapper2-->
+		</td>
+	  </tr>
+	  </table>
+<!--End Wrapper2-->
+
+    </td>
+      <td width="25%">&nbsp;</td>
+  </tr>
+</table>
+</form>
+</body>
+<script language="javascript" type="text/javascript">
+/* wikiboard title object */
+if (!(!parent.document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = parent.document.getElementById("WikiBoardBarTitle");
+	mwbh = parent.document.getElementById("WikiBoardBarHistory");
+	fbsl = parent.document.getElementById("WikiPeeksSlider");
+	wbct = parent.document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = parent.document.getElementById("Wiki-Peeks-Content-Search");
+}
+else if (!(!document.getElementById("WikiBoardBarTitle"))) { 
+	mwbt = document.getElementById("WikiBoardBarTitle");
+	mwbh = document.getElementById("WikiBoardBarHistory");
+	fbsl = document.getElementById("WikiPeeksSlider");
+	wbct = document.getElementById("Wiki-Peeks-Content-Source");
+	wbcs = document.getElementById("Wiki-Peeks-Content-Search");
+}
+else { mwbt = 0; wbct = 0; }
+var doUnload = function() {
+	if (wbct!=0) {
+		wbct.innerHTML = '<span style="position:relative;top:2px;left:0px;" title="Loading, please wait..."><img src="/web_design_imagery/loadCircle.gif" width="18" height="15" border="0" alt="Loading, please wait..."></span>';
+	}
+};
+// only if we exist in a framed document from our controlling parent
+if (mwbt!=0) {
+	// wikiboard content title [source]
+	wbct.innerHTML = '<span style="font-weight:normal;position:relative;left:-4px;top:0px;">- $PageTitle</span>';
+	// wikiboard content search
+	wbcs.innerHTML = '';
+}
+</script>
+</html>
+
+~;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##-- END CHECKERS
+##-- I WIN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+exit;

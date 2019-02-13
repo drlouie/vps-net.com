@@ -1,0 +1,2219 @@
+################################################################
+#   Program:    Common Website Functions                       #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+################
+##<-- 2k11 -->##
+################
+
+##########################
+##<-- function master-->##
+##########################
+
+
+$netAgent = $ENV{'HTTP_USER_AGENT'};
+$netAgent = uc($netAgent);
+if ($netAgent =~ "OPERA") { $myTriggerKeyDown = "onKeyPress"; }
+else { $myTriggerKeyDown = "onKeyDown"; }
+
+##-- ngen was setup like this, not sure why, must be older versions of browser giving us hell
+#if ($netAgent =~ "SAFARI" || $netAgent =~ "FLOCK" || $netAgent =~ "FIREFOX") { $cualMaxPhone = "14"; }
+#else {  $cualMaxPhone = "13";  }
+##-- for now stabilize it
+$cualMaxPhone = "13";
+
+sub secureTop {
+return <<"END";
+END
+}
+
+
+
+
+sub docTop {
+	my ($version) = @_;
+	$v1left = '<table width="100%" border="0" cellspacing="0" cellpadding="12"><tr><td align="left" style="padding-top:0px;padding-bottom:12px;"><div class="documentTitle">!!SECURETITULO1!!</div></td><td align="right" style="padding-top:0px;padding-bottom:12px;"><div class="documentExtrainfo">!!SECURETITULO2!!</div></td></tr></table>';
+	$v2right = '<table width="100%" border="0" cellspacing="0" cellpadding="12"><tr><td align="left" style="padding-top:0px;padding-bottom:12px;"><div class="documentExtrainfo">!!SECURETITULO2!!</div></td><td align="right" style="padding-top:0px;padding-bottom:12px;"><div class="documentTitle">!!SECURETITULO1!!</div></td></tr></table>';
+	if ($version == 2) { $cleanOut = $v2right; }
+	else { $cleanOut = $v1left; }
+	return $cleanOut;
+}
+
+sub docHeader {
+	$version = $_[0];
+	$v1left = '
+																<table width="100%" cellpadding="0" cellspacing="0" border="0"style="background-image:url(http://www.vps-net.com/electronic-communications/Virtual-Private-Secure-Communications-Left.png);background-position:top center;background-repeat:no-repeat;">
+																	<tr valign="top">
+																		<td>
+																			<div style="height:91px;">
+																				<table width="100%" cellpadding="0" cellspacing="0" border="0">
+																					<tr style="height:90px;">
+																						<td width="50%" style="width:320px;padding-top:11px;" valign="top" align="left"><div id="Virtual_Private_Servers_and_Networks_Logo"><a href="http://www.vps-net.com/newindex.php" target="VPS-NET-COM" title="Visit the Virtual Private Servers and Networks website at: www.vps-net.com"><img src="http://www.vps-net.com/electronic-communications/spacer.gif" border="0" width="282" height="64" alt="Visit the Virtual Private Servers and Networks website at: www.vps-net.com"></a></div></td>
+																						<td width="50%" align="right" valign="middle"><div id="Virtual-Private-Servers-And-Networks-VPS-NET">!!INFOPLACE!!</div></td>
+																					</tr>
+																				</table>
+																			</div>
+																		</td>
+																	</tr>
+																</table>
+	';
+	$v2right = '
+																<table width="100%" cellpadding="0" cellspacing="0" border="0"style="background-image:url(http://www.vps-net.com/electronic-communications/Virtual-Private-Secure-Communications-Right.png);background-position:top center;background-repeat:no-repeat;">
+																	<tr valign="top">
+																		<td>
+																			<div style="height:91px;">
+																				<table width="100%" cellpadding="0" cellspacing="0" border="0">
+																					<tr style="height:90px;">
+																						<td width="50%" align="left" valign="middle"><div id="Virtual-Private-Servers-And-Networks-VPS-NET">!!INFOPLACE!!</div></td>
+																						<td width="50%" align="right" style="width:320px;padding-top:11px;" valign="top"><div id="Virtual_Private_Servers_and_Networks_Logo" style="background-position:top right;"><a href="http://www.vps-net.com/newindex.php" target="VPS-NET-COM" title="Visit the Virtual Private Servers and Networks website at: www.vps-net.com"><img src="http://www.vps-net.com/electronic-communications/spacer.gif" border="0" width="282" height="64" alt="Visit the Virtual Private Servers and Networks website at: www.vps-net.com"></a></div></td>
+																					</tr>
+																				</table>
+																			</div>
+																		</td>
+																	</tr>
+																</table>
+	';
+	if ($version == 2) { $cleanOut = $v2right; }
+	else { $cleanOut = $v1left; }
+	return $cleanOut;
+}
+
+sub theEmailHTML {
+return <<"END";
+			   	<html>
+				<head>
+				<title>Virtual Private Servers and Networks</title>
+				<meta http-equiv="Content-Language" content="en-us">
+				<meta http-equiv="PICS-Label" content='(PICS-1.1 "http://www.icra.org/ratingsv02.html" l gen true r (cz 1 lz 1 nz 1 oz 1 vz 1) "http://www.rsac.org/ratingsv01.html" l gen true r (n 0 s 0 v 0 l 0) "http://www.classify.org/safesurf/" l gen true r (SS\~\~000 1))' />
+				<meta name="source" content="NMS-DRLv2 [drlouie/louierd] Website Developer, OG Hard-Code 7.16.03">
+				<meta name="format" content="text/html">
+				<meta name="charset" content="ISO-8859-1">
+				<meta name="author" content="drlouie\@louierd">
+				<meta name="owner" content="dev\@vps-net.com">
+				<META NAME="GOOGLEBOT" CONTENT="NOARCHIVE">
+				<LINK REL="STYLESHEET" HREF="http://www.vps-net.com/interface_design_templater.php?q=1&p=CHCSS" Type="text/css">
+				<style type="text/css">
+					body{margin:0;padding:0;border:0;background:#FFFFFF;}
+					div{margin:0;padding:0;}
+					table{margin:0;padding:0;}
+					.documentTitle { color:#000000; font-family:tahoma,verdana,arial; font-size:16px; font-weight:normal; }
+					.documentExtrainfo { color:#000000; font-family:tahoma,verdana,arial; font-size:12px; font-weight:normal; }
+					.instruct { color:#266899; font-weight:bold; }
+					!!DYNCSS!!
+					.commonText{font-size:11px;}
+					fieldset{ border:0; }
+					.tradius {
+						margin-top:10px;
+						border-radius: 4px;
+						-moz-border-radius: 4px;
+						-webkit-border-radius: 4px;
+						box-shadow: 0px 3px 4px rgba(0,0,0,0.17);
+						-moz-box-shadow: 0px 3px 3px rgba(0,0,0,0.17);
+						-webkit-box-shadow: 0px 3px 4px rgba(0,0,0,0.17);
+					}
+					#Virtual-Private-Solution-Spanner table {
+						width:100%;
+					}
+				</style>
+				</head>
+				<body leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" bgcolor="#FFFFFF">
+				<center>
+				<table width="100%" border="0" cellspacing="0" cellpadding="0">
+					<tr>
+						<td style="padding:12px;" class="tradius">
+							<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F9F9F9" style="border:solid 1px #F4F4F4;-moz-border-radius:7px;-webkit-border-radius:7px;border-radius:7px;">
+								<tr>
+									<td style="padding:12px;" align="center">
+										!!SECURETOP!!
+										<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="border:solid 1px #D9E6EF;-moz-border-radius:7px;-webkit-border-radius:7px;border-radius:7px;">
+											<tr>
+												<td id="Virtual-Private-Solution-Spanner">
+
+													<table width="100%" border="0" cellspacing="0" cellpadding="12">
+														<tr>
+															<td style="padding-top:5px;padding-bottom:5px;">
+																!!SECUREHEADER!!
+																<table width="100%" border="0" cellspacing="0" id="SubjectMatter">
+																	<tr>
+																		<td style="padding-top:40px;padding-left:40px;padding-bottom:0px;"><b><font class="commonText">!!DOCUMENTSUBJECT!!</font></b></td>
+																	</tr>
+																</table>
+																<table border="0" cellpadding="10" cellspacing="0" width="100%">
+																	<tr valign="top">
+																		<td width="100%" align="left" style="padding-left:40px;">
+																			<table border="0" cellpadding="0" cellspacing="0">
+																				<tr>
+																					<td width="100%" align="left"><font class="commonText">!!DOCUMENTBODY!!</font></td> 
+																				</tr> 
+																			</table>
+																		</td>
+																	</tr>
+																</table>
+															</td>
+														</tr>
+													</table>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+				<font size="1" color="#000000" size="1">!!DOCUMENTFOOTER!!</font>
+				</center>
+				</body>
+				</html>
+END
+}
+
+
+
+
+
+
+
+
+sub getHeaderGoodie {
+	my ($Goodie, $Position) = @_;
+	if ($Position =~ " ") { $laPosition = $Position; }
+	else { $laPosition = 'top left'; }
+	$mykick = ' ';
+	if ($Goodie =~ "278x66") {
+		if ($Goodie =~ "OpenCanvasWebsites") {
+			$mykick = '<style type="text/css">#VPS-NET-Open-Canvas-An-Interactive-Design-Experience { margin-top:11px; background-image:url(http://www.vps-net.com/electronic-communications/VPS-NET-Open-Canvas-An-Interactive-Design-Experience_off.png); background-position:'.$laPosition.'; background-repeat:no-repeat; cursor:pointer; width:278px; height:66px; }#VPS-NET-Open-Canvas-An-Interactive-Design-Experience:hover { margin-top:11px; background-image:url(http://www.vps-net.com/electronic-communications/VPS-NET-Open-Canvas-An-Interactive-Design-Experience_over.png); background-position:'.$laPosition.'; background-repeat:no-repeat; cursor:pointer; width:278px; height:66px; }</style><div id="VPS-NET-Open-Canvas-An-Interactive-Design-Experience"><a href="http://www.vps-net.com/opencanvas-interactive-website-design/" target="VPS-NET-COM" title="Website Design with OpenCanvas, an interactive and personalized technical development experience. By utilizing our pre-engineered content management frameworks as the foundation for your website project, our team of highly skilled artists, technical producers and advanced business model architects will work in collaboration with you to develop an Internet Marketing platform worthy of of representing your company on the World Wide Web\'s global marketplace."><img src="http://www.vps-net.com/electronic-communications/spacer.gif" width="278" height="66" border="0" alt="Website Design with OpenCanvas, an interactive and personalized technical development experience. By utilizing our pre-engineered content management frameworks as the foundation for your website project, our team of highly skilled artists, technical producers and advanced business model architects will work in collaboration with you to develop an Internet Marketing platform worthy of of representing your company on the World Wide Web\'s global marketplace."></a></div>';
+		}
+		if ($Goodie =~ "SecureCommunications") {
+			$mykick = '<style type="text/css">#Virtual-Private-Secure-Server-and-Network-Communications { margin-top:10px; background-image:url(http://www.vps-net.com/electronic-communications/Virtual-Private-Secure-Server-and-Network-Communications.png); background-position:'.$laPosition.'; background-repeat:no-repeat; cursor:pointer; width:278px; height:66px; }</style><div id="Virtual-Private-Secure-Server-and-Network-Communications"><a href="http://www.vps-net.com/" target="VPS-NET-COM" title="Virtual Private\'s electronic commerce and communications systems are secured by leading edge 256-bit encryption technologies provided by our payment processors and internet service providers."><img src="http://www.vps-net.com/electronic-communications/spacer.gif" width="278" height="66" border="0" alt="Virtual Private\'s electronic commerce and communications systems are secured by leading edge 256-bit encryption technologies provided by our payment processors and internet service providers."></a></div>';
+		}
+	}
+	if ($Goodie =~ "150x50") {
+		if ($Goodie =~ "SecureCommunications") {
+			$mykick = '<style type="text/css">#Virtual-Private-Secure-Server-and-Network-Communications-Systems { margin-top:10px; background-image:url(http://www.vps-net.com/electronic-communications/Virtual-Private-Secure-Server-and-Network-Communications-Systems.png); background-position:'.$laPosition.'; background-repeat:no-repeat; cursor:pointer; width:150px; height:50px; }</style><div id="Virtual-Private-Secure-Server-and-Network-Communications-Systems"><a href="http://www.vps-net.com/" target="VPS-NET-COM" title="Virtual Private\'s electronic commerce and communications systems are secured by leading edge 256-bit encryption technologies provided by our payment processors and internet service providers."><img src="http://www.vps-net.com/electronic-communications/spacer.gif" width="150" height="50" border="0" alt="Virtual Private\'s electronic commerce and communications systems are secured by leading edge 256-bit encryption technologies provided by our payment processors and internet service providers."></a></div>';
+		}
+	}
+	if ($Goodie =~ "190x60") {
+		if ($Goodie =~ "OpenCanvasWebsites") {
+			$mykick = '<style type="text/css">#VPS-NET-Open-Canvas-An-Interactive-Design-Experience-Websites { margin-top:11px; background-image:url(http://www.vps-net.com/electronic-communications/VPS-NET-Open-Canvas-An-Interactive-Design-Experience-Websites_off.png); background-position:'.$laPosition.'; background-repeat:no-repeat; cursor:pointer; width:190px; height:60px; }#VPS-NET-Open-Canvas-An-Interactive-Design-Experience-Websites:hover { margin-top:11px; background-image:url(http://www.vps-net.com/electronic-communications/VPS-NET-Open-Canvas-An-Interactive-Design-Experience-Websites_over.png); background-position:'.$laPosition.'; background-repeat:no-repeat; cursor:pointer; width:190px; height:60px; }</style><div id="VPS-NET-Open-Canvas-An-Interactive-Design-Experience-Websites"><a href="http://www.vps-net.com/opencanvas-interactive-website-design/" target="VPS-NET-COM" title="Website Design with OpenCanvas, an interactive and personalized technical development experience. By utilizing our pre-engineered content management frameworks as the foundation for your website project, our team of highly skilled artists, technical producers and advanced business model architects will work in collaboration with you to develop an Internet Marketing platform worthy of of representing your company on the World Wide Web\'s global marketplace."><img src="http://www.vps-net.com/electronic-communications/spacer.gif" width="190" height="60" border="0" alt="Website Design with OpenCanvas, an interactive and personalized technical development experience. By utilizing our pre-engineered content management frameworks as the foundation for your website project, our team of highly skilled artists, technical producers and advanced business model architects will work in collaboration with you to develop an Internet Marketing platform worthy of of representing your company on the World Wide Web\'s global marketplace."></a></div>';
+		}
+	}
+	return $mykick;
+}
+
+
+
+
+sub getEmailHTML {
+	my ($cualTop, $cualHeader, $elTitulo1, $elTitulo2, $elSubject, $elMensage, $elPie, $elExtraInfo, $elExtraInfoP) = @_;
+
+	use HTTP::Request;
+	use LWP::Simple;
+	$dynCSS = get("http://www.vps-net.com/interface_design_templater.php?q=1&p=CHCSS");
+	
+	##--if both empty, must be request by admin's email client
+	if ($elTitulo1 eq "" && $elTitulo2 eq "") {
+		$dynCSS .= '#SubjectMatter{display:none;}';
+	}
+
+	if (!$elExtraInfo) {$elExtraInfo = "";}
+	##-- only if passed does this item get parsed
+	if ($elExtraInfo ne "") {
+		$elExtraInfo = &getHeaderGoodie($elExtraInfo,$elExtraInfoP);
+	}
+
+	$theEmailHTML = &theEmailHTML;
+	$secureEmailTop = &docTop($cualTop);
+	$secureEmailHeader = &docHeader($cualHeader);
+
+
+	$theEmailHTML =~ s/!!DYNCSS!!/$dynCSS/gi;
+	$theEmailHTML =~ s/!!SECURETOP!!/$secureEmailTop/gi;
+	$theEmailHTML =~ s/!!SECUREHEADER!!/$secureEmailHeader/gi;
+	$theEmailHTML =~ s/!!DOCUMENTSUBJECT!!/$elSubject/gi;
+	$theEmailHTML =~ s/!!DOCUMENTBODY!!/$elMensage/gi;
+	$theEmailHTML =~ s/!!DOCUMENTFOOTER!!/$elPie/gi;
+	$theEmailHTML =~ s/!!INFOPLACE!!/$elExtraInfo/gi;
+	$theEmailHTML =~ s/!!SECURETITULO1!!/$elTitulo1/gi;
+	$theEmailHTML =~ s/!!SECURETITULO2!!/$elTitulo2/gi;
+
+	return $theEmailHTML;
+}
+
+
+
+
+
+
+
+
+
+
+
+sub VPSMainTemplateBot {
+return <<"END";
+	<table width="100%" cellpadding="0" height="51" cellspacing="0" border="0" bgcolor="#FFFFFF" style="margin-top:35px;">
+		<tr>
+			<td valign="bottom" width="56" rowspan="3"><a href="http://www.louierd.com/" target="drlouie" title="LouieRd IT Engineering & Production (aka drlouie) - Email me today!"><img src="electronic-communications/footer_louierd.jpg" width="56" height="51" border="0"></a></td>
+			<td valign="top" height="32" align="center" width="100%" class="footerInfo" style="color:#1A2B73;padding-right:86px;"> <a href="Night-Vision-Monoculars.htm" title="Night Vision Monoculars" style="text-decoration:none;color:#1A2B73;">monoculars</a> - <a href="Night-Vision-Goggles.htm" title="Night Vision Goggles" style="text-decoration:none;color:#1A2B73;">goggles</a> - <a href="Night-Vision-Binoculars.htm" title="Night Vision Binoculars - Daytime Binoculars" style="text-decoration:none;color:#1A2B73;">binoculars</a> - <a href="Night-Vision-Weapon-Sight.htm" title="Night Vision Weapon Sights" style="text-decoration:none;color:#1A2B73;">weapon sights</a> 
+			<a href="/" target="VPS-NET"><img src="electronic-communications/footer_VPS-NET.jpg" width="92" height="22" border="0" hspace="10" style="margin-top:5px;" alt="VPS-NET TECH - US Night Vision Corporation Technology Development and Procurement"></a> 
+			<a href="VPS-NET-Inventory-Pricesheet.htm" title="Night Vision Monoculars, Goggles, Binoculars and Weapon Sights" style="text-decoration:none;color:#1A2B73;">night vision</a> - <a href="Thermal-Systems.htm" title="Advanced Thermal Imaging Devices" style="text-decoration:none;color:#1A2B73;">thermal</a> - <a href="Blackout-Infrared-Filters.htm" title="Advanced [IR] Infrared Illumination Devices and Night Vision Accessories" style="text-decoration:none;color:#1A2B73;">infrared</a> - <a href="Night-Vision-Lasers.htm" title="US Night Vision carries a complete line of laser aiming devices for rifles and submachine guns. [ AR-2A M-4 M-16 AR-15 ]" style="text-decoration:none;color:#1A2B73;">lasers</a></td>
+		</tr>
+		<tr>
+			<td colspan="2" valign="bottom" height="1" bgcolor="#DADCE7" width="100%"><div style="width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);"></div></td>
+		</tr>
+		<tr>
+			<td colspan="2" valign="bottom" height="23" bgcolor="#FFFFFF" width="100%">
+				<table width="100%" cellpadding="0" height="24" cellspacing="0" border="0">
+					<tr>
+						<td width="100%" align="center" class="footerInfo" style="padding-left:20px;">Website, data and e-commerce platform are &copy; 2008 <a href="/" style="color:#1A2B73;" title="Content, which includes scripting, imagery and copy, are all US Night Vision Corporation copyright materials. All rights reserved.">US Night Vision Corporation</a> copyright material. All rights reserved.</td>
+						<td width="122" align="center"><img src="electronic-communications/footer_UNIX.gif" width="92" height="24" border="0" style="cursor:hand;" title="LouieRd IT Engineering & Development: Masters of the UNIX FreeBSD server platform. Why FreeBSD UNIX? Just ask! We also deal with other flavors of IX server platforms such as Redhat Linux and Debian Linux." hspace="10"></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2" valign="bottom" height="1" bgcolor="#DADCE7" width="100%"><div style="width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);"></div></td>
+		</tr>
+	</table>
+END
+}
+
+sub VPSMainTBotNoBars {
+return <<"END";
+	<table width="100%" cellpadding="0" height="51" cellspacing="0" border="0" bgcolor="#FFFFFF">
+		<tr>
+			<td valign="bottom" width="56" rowspan="3"><img src="electronic-communications/spacer.gif" width="56" height="51" border="0"></td>
+			<td valign="top" height="32" align="center" width="100%" class="footerInfo" style="color:#1A2B73;padding-right:86px;"> <a href="Night-Vision-Monoculars.htm" title="Night Vision Monoculars" style="text-decoration:none;color:#1A2B73;">monoculars</a> - <a href="Night-Vision-Goggles.htm" title="Night Vision Goggles" style="text-decoration:none;color:#1A2B73;">goggles</a> - <a href="Night-Vision-Binoculars.htm" title="Night Vision Binoculars - Daytime Binoculars" style="text-decoration:none;color:#1A2B73;">binoculars</a> - <a href="Night-Vision-Weapon-Sight.htm" title="Night Vision Weapon Sights" style="text-decoration:none;color:#1A2B73;">weapon sights</a> 
+			<a href="/" target="VPS-NET"><img src="electronic-communications/footer_VPS-NET.jpg" width="92" height="22" border="0" hspace="10" style="margin-top:5px;" alt="VPS-NET TECH - US Night Vision Corporation Technology Development and Procurement"></a> 
+			<a href="VPS-NET-Inventory-Pricesheet.htm" title="Night Vision Monoculars, Goggles, Binoculars and Weapon Sights" style="text-decoration:none;color:#1A2B73;">night vision</a> - <a href="Thermal-Systems.htm" title="Advanced Thermal Imaging Devices" style="text-decoration:none;color:#1A2B73;">thermal</a> - <a href="Blackout-Infrared-Filters.htm" title="Advanced [IR] Infrared Illumination Devices and Night Vision Accessories" style="text-decoration:none;color:#1A2B73;">infrared</a> - <a href="Night-Vision-Lasers.htm" title="US Night Vision carries a complete line of laser aiming devices for rifles and submachine guns. [ AR-2A M-4 M-16 AR-15 ]" style="text-decoration:none;color:#1A2B73;">lasers</a></td>
+		</tr>
+		<tr>
+			<td colspan="2" valign="bottom" height="1" bgcolor="#FFFFFF" width="100%"><div style="width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);"></div></td>
+		</tr>
+		<tr>
+			<td colspan="2" valign="bottom" height="23" bgcolor="#FFFFFF" width="100%">
+				<table width="100%" cellpadding="0" height="24" cellspacing="0" border="0">
+					<tr>
+						<td width="100%" align="center" class="footerInfo" style="padding-left:20px;">Site, data and e-com platform are &copy; 2008 <a href="/" style="color:#1A2B73;" title="Content, which includes scripting, imagery and copy, are all US Night Vision Corporation copyright materials. All rights reserved.">US Night Vision Corporation</a> materials. All rights reserved.</td>
+						<td width="122" align="center"><img src="electronic-communications/spacer.gif" width="92" height="24" border="0" style="cursor:hand;" hspace="10"></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2" valign="bottom" height="1" bgcolor="#FFFFFF" width="100%"><div style="width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);"></div></td>
+		</tr>
+	</table>
+END
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##-- START CHECKERS
+##-- I WIN
+
+
+
+
+
+
+
+sub HTMLencodeMyInput {
+	my ($newCom) = @_;
+	$pound = "\&#35;";
+	$quot = "\&#34;";
+	$acute = "\&#39;";
+	$amper = "\&#38;";
+	$dolla = "\&#36;";
+	$perc = "\&#37;";
+	$lpren = "\&#40;";
+	$rpren = "\&#41;";
+	$aster = "\&#42;";
+	$plus = "\&#43;";
+	$fslash = "\&#47;";
+	$colon = "\&#58;";
+	$scolon = "\&#59;";
+	$lthan = "\&#60;";
+	$equal = "\&#61;";
+	$gthan = "\&#62;";
+	$ats = "\&#64;";
+	$lsbrack = "\&#91;";
+	$rsbrack = "\&#93;";
+	$bslash = "\&#92;";
+	$caret = "\&#94;";
+	$grave = "\&#96;";
+	$lcbrack = "\&#123;";
+	$vbar = "\&#124;";
+	$rcbrack = "\&#125;";
+	$tilde = "\&#126;";
+
+	$clean_n=$newCom;
+	$clean_n =~ tr/+//;
+	$clean_n =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+	$clean_n =~ s/\&/uNaMpEr/g;
+	$clean_n =~ s/\#/uNPoUnD/gi;
+	$clean_n =~ s/;/uNsEMi/g;
+	$clean_n =~ s/\@/$ats/gi;
+	$clean_n =~ s/'/$acute/gi;
+	$clean_n =~ s/\"/$quot/gi;
+	$clean_n =~ s/\$/$dolla/gi;
+	$clean_n =~ s/\%/$perc/gi;
+	$clean_n =~ s/\(/$lpren/g; 
+	$clean_n =~ s/\)/$rpren/g; 
+	$clean_n =~ s/\*/$aster/g; 
+	$clean_n =~ s/\//$fslash/g;
+	$clean_n =~ s/:/$colon/g;
+	$clean_n =~ s/>/$gthan/gi;
+	$clean_n =~ s/</$lthan/gi;
+	$clean_n =~ s/=/$equal/gi;
+	$clean_n =~ s/\[/$lsbrack/gi;
+	$clean_n =~ s/\]/$rsbrack/gi;
+	$clean_n =~ s/\\/$bslash/g;
+	$clean_n =~ s/\^/$caret/gi;
+	$clean_n =~ s/`/$grave/gi;
+	$clean_n =~ s/\{/$lcbrack/gi;
+	$clean_n =~ s/\}/$rcbrack/gi;
+	$clean_n =~ s/\|/$vbar/gi;
+	$clean_n =~ s/~/$tilde/gi;
+	$clean_n =~ s/\+/$plus/gi;
+	$clean_n =~ s/uNaMpEr/$amper/g; 
+	$clean_n =~ s/uNPoUnD/$pound/g;
+	$clean_n =~ s/uNsEMi/$scolon/g;
+	return $clean_n;
+}
+
+
+
+
+
+sub checkEmail {
+	$erroredOut = 0;
+	##--@_-.0123456789abcdefghijklmnopqrstuvwxyz [allowed]
+	if ($em =~ m/[^0-9a-zA-Z-_\.\@]/) {
+		$em =~ s/[^0-9a-zA-Z-_\.\@]//g;
+		$em = '';
+		$whyNewTry = 'Invalid characters in your email address, please try again.';
+		$erroredOut = 1; 
+	}
+	else {
+		##-- SAME CHECK AS THIS RE-MADE AT [error: 7] another check
+		if ($em !~ "\@" || $em !~ ".") { 
+			$erroredOut = 1; 
+			$whyNewTry = 'Invalid email address format was detected, please try again.';
+		}
+		else {
+			##-- another check
+			use Data::Validate::Email qw(is_email is_email_rfc822);
+			if(is_email($em)){ $isok = 1; } 
+			elsif(is_email_rfc822($em)){ $isok = 1; } 
+			else { 
+				$erroredOut = 1; 
+				$whyNewTry = 'Invalid email address was submitted, please try again.';
+			}
+		}
+	}
+	return $erroredOut;
+}
+
+
+sub checkUsername {
+	$erroredOut = 0;
+	##--@_-.0123456789abcdefghijklmnopqrstuvwxyz [allowed]
+	if ($Username =~ m/[^0-9a-zA-Z-_]/) {
+		$Username =~ s/[^0-9a-zA-Z-_]//g;
+		$Username = '';
+		$whyNewTry = 'Invalid characters in your username.';
+		$erroredOut = 1; 
+	}
+	return $erroredOut;
+}
+
+
+sub checkName {
+	$myName = $_[0];
+	$myType = $_[1];
+	$myDefault = $_[2];
+	$charS = '';
+	$hasChanged = 0;
+	$badTry = 0;
+	$tooShort = 0;
+	$tooLong = 0;
+	$lengther1 = length($myName);
+	$myName =~ s/[^0-9a-zA-Z-_ ]//g;
+	$lengther2 = length($myName);
+	##-->> hasChanged
+	if (lc($myName) =~ $myDefault) { $badTry = 1; $whyNewTry = "Your ".lc($myType)." name is invalid, please try again."; }
+	elsif ($lengther1 != $lengther2) { $hasChanged = ($lengther1 - $lengther2); if ($hasChanged >= 2) { $charS = 's'; } use Lingua::EN::Nums2Words;$Number = int($hasChanged);$wordedDiff = lc(num2word($Number));$badTry = 1; $whyNewTry = "Your ".lc($myType)." name contains $wordedDiff($hasChanged) <font color='#AF041C' style='cursor:help;' title='".$myType." name may contain a series of characters inluding letters A thru Z (upper or lower-case), numbers 0 thru 9, underscores(_) or dashes(-). Beyond this specified set of characters, nothing else is allowed in your ".lc($myType)." name.'>invalid character".$charS."</font>:"; }
+	elsif ($lengther2 < 2) { $tooShort = 1; $badTry = 1; $whyNewTry = "Your ".lc($myType)." name was too short, minimum 2 characters."; }
+	elsif ($lengther2 > 15) { $tooLong = 1; $badTry = 1; $whyNewTry = "Your ".lc($myType)." name was too long, maximum 15 characters."; }
+	return $badTry;
+}
+
+
+sub checkAdminEmail {
+	$badTry = 0;
+	$adi =~ s/[^0-9a-zA-Z-_\.\@]//g;
+	if ($adi !~ "drlouie\@louierd.com" && $adi !~ "sns\@vps-net.com" && $adi !~ "sales\@vps-net.com")	{
+		$badTry = 1;	
+	}
+	return $badTry;
+}
+
+sub checkNewEmail {
+	$charS = '';
+	$hasChanged = 0;
+	$badTry = 0;
+	$tooShort = 0;
+	$tooLong = 0;
+	$lengther1 = length($em);
+	$em =~ s/[^0-9a-zA-Z-_\.\@]//g;
+	$lengther2 = length($em);
+	##-->> hasChanged
+	if ($lengther1 != $lengther2) { $hasChanged = ($lengther1 - $lengther2); if ($hasChanged >= 2) { $charS = 's'; } use Lingua::EN::Nums2Words;$Number = int($hasChanged);$wordedDiff = lc(num2word($Number));$badTry = 1; $whyNewTry = "Your email address contains $wordedDiff($hasChanged) <font color='#AF041C' style='cursor:help;' title='Email addresses may contain a series of characters inluding letters A thru Z (upper or lower-case), numbers 0 thru 9, underscores(_), dashes(-), ampersands(@), periods(.) along with a domain extension, eg: com, net, gov. Beyond this specified set of rules, nothing else is allowed in your email address.'>invalid character".$charS."</font>."; }
+	elsif ($lengther2 < 6) { $tooShort = 1; $badTry = 1; $whyNewTry = "Your email address was too short, minimum 6 characters."; }
+	elsif ($lengther2 > 254) { $tooLong = 1; $badTry = 1; $whyNewTry = "Your email address was too long, maximum 254 characters."; }
+	else {
+		##-- SAME CHECK AS THIS RE-MADE AT [error: 7] another check
+		if ($em !~ "\@" || $em !~ ".") { 
+			$badTry = 1;
+			$whyNewTry = 'Invalid email address format was detected, please try again.';
+		}
+		else {
+			##-- another check
+			use Data::Validate::Email qw(is_email is_email_rfc822);
+			if(is_email($em)){ $isok = 1; }
+			elsif(is_email_rfc822($em)){ $isok = 1; }
+			else {
+				$badTry = 1; 
+				$whyNewTry = 'Invalid email address was submitted, please try again.';
+			}
+		}
+	}
+	return $badTry;
+}
+
+
+
+sub checkMultipleEmails {
+	my ($incoming) = @_;
+	$myEmailStack = $incoming;
+	$badTry = 0;
+	@allEmails = split(/,/,$recipientEmailAddresses);
+	$countEmails = 0;
+	$aem = int(@allEmails);
+	foreach $aemail (@allEmails) {
+		$countEmails++;
+		$em = '';
+		$em = $aemail;
+		$emfailed = 1;
+		$emfailed = &checkNewEmail;
+		if ($emfailed == 1) {
+			$badTry = 1; 
+
+			##-- number sequence naming
+			if ($countEmails == 1 && $aem == 1) { 
+				$countEmails = 'The email address you submitted'; 
+				$whyNewTry =~ s/Your email address/$countEmails/gi; 
+			}
+			else {
+				if ($countEmails == 1) { $countEmails .= 'st'; }
+				elsif ($countEmails == 2) { $countEmails .= 'nd'; }
+				elsif ($countEmails == 3) { $countEmails .= 'rd'; }
+				else { $countEmails .= 'th';}
+				$whyNewTry =~ s/Your /The $countEmails /gi;
+			}
+
+			##-- return at first error
+			return $badTry;
+		}
+	}
+	return $badTry;
+}
+
+
+sub checkNewUsername {
+	$charS = '';
+	$hasChanged = 0;
+	$badTry = 0;
+	$tooShort = 0;
+	$tooLong = 0;
+	$lengther1 = length($Username);
+	$Username =~ s/[^0-9a-zA-Z-_]//g;
+	$lengther2 = length($Username);
+	##-->> hasChanged
+	if ($lengther1 != $lengther2) { $hasChanged = ($lengther1 - $lengther2); if ($hasChanged >= 2) { $charS = 's'; } use Lingua::EN::Nums2Words;$Number = int($hasChanged);$wordedDiff = lc(num2word($Number));$badTry = 1; $whyNewTry = "Your username contains $wordedDiff($hasChanged) <font color='#AF041C' style='cursor:help;' title='Usernames may contain a series of characters inluding letters A thru Z (upper or lower-case), numbers 0 thru 9, underscores(_) or dashes(-). Beyond this specified set of characters, nothing else is allowed in your username.'>invalid character".$charS."</font>:"; }
+	elsif ($lengther2 < 6) { $tooShort = 1; $badTry = 1; $whyNewTry = "Your username was too short, minimum 6 characters."; }
+	elsif ($lengther2 > 12) { $tooLong = 1; $badTry = 1; $whyNewTry = "Your username was too long, maximum 12 characters."; }
+	return $badTry;
+}
+
+
+sub checkNewPassword {
+	$charS = '';
+	$hasChanged = 0;
+	$badTry = 0;
+	$tooShort = 0;
+	$tooLong = 0;
+	$lengther1 = length($PD);
+	$PD =~ s/[^0-9a-zA-Z-_\@~!#\$^*]//g;
+	$lengther2 = length($PD);
+	##-->> hasChanged
+	if ($lengther1 != $lengther2) { $hasChanged = ($lengther1 - $lengther2); if ($hasChanged >= 2) { $charS = 's'; } use Lingua::EN::Nums2Words;$Number = int($hasChanged);$wordedDiff = lc(num2word($Number));$badTry = 1; $whyNewTry = "Your password contains $wordedDiff($hasChanged) <font color='#AF041C' style='cursor:help;' title='Passwords may contain a series of characters inluding letters A thru Z (upper or lower-case), numbers 0 thru 9, underscores(_), dashes(-), ampersands(@), tildes(~), question-marks(!), pound signs(#), dollar signs(\$), carat symbols(^) or asterisks(*). Beyond this specified set of characters, nothing else is allowed in your password.'>invalid character".$charS."</font>:"; }
+	elsif ($lengther2 < 8) { $tooShort = 1; $badTry = 1; $whyNewTry = "Your password was too short, minimum 8 characters."; }
+	elsif ($lengther2 > 12) { $tooLong = 1; $badTry = 1; $whyNewTry = "Your password was too long, maximum 12 characters."; }
+	elsif ($PD ne $PD2) { $badTry = 1; $CualPasswordField = 'pDub2'; $whyNewTry = "<i>Password</i> and <i>Re-Type Password</i> fields do not match:"; }
+	return $badTry;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sub checkNewUserProfile {
+	$badTry = 0;
+	##-->> now check email
+	### QUERY DB
+	use DBI;
+	use locale;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1;
+	$elCID = 0;
+	my $sth = $dbh->prepare("SELECT UserID FROM Users WHERE Username='$Username'");
+	$sth->execute or die "Unable to execute query\n"; 
+	my $row = $sth->fetchrow_arrayref;
+	$elCID = $row->[0];
+	$sth->finish;
+	if ($elCID && ($elCID >= 1)) { 
+		$badTry = 1; 
+		$whyNewTry = 'The username you submitted is not available, try another username:';
+		$usernameInUse = 1;
+	}
+	else {
+		$elCID = 0;
+		$thyEmail = $em;
+		$thyEmail =~ s/@/[at]/g;
+		my $sth = $dbh->prepare("SELECT UserID FROM Users WHERE Email='$thyEmail'");
+		$sth->execute or die "Unable to execute query\n"; 
+		my $row = $sth->fetchrow_arrayref;
+		$elCID = $row->[0];
+		$sth->finish;
+		if ($elCID && ($elCID >= 1)) { 
+			$badTry = 1; 
+			$whyNewTry = 'Email address you submitted is already in use. Forgot your username?';
+			$emailInUse = 1;
+		}
+	}
+	$dbh->disconnect;
+	return $badTry;
+}
+
+
+
+
+
+## -- >> GLOBAL ZIP CODE CHECKER/CITY & STATE KICKBACK
+sub parseZip {
+	my ($incoming) = @_;
+	$thisZip = $incoming;
+	$ZipCities = "";
+	$losCSsCuenta=0;
+	use DBI; 
+	use locale;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	$sth = $dbh->prepare("SELECT * FROM USPS_AIS WHERE ZipCode = '$thisZip'");
+	$sth->execute; 
+	my @row;
+	while(@row = $sth->fetchrow_array) {
+		$C = $row[2];
+		$S = $row[3];
+		## to test for multiple 
+		push(@ZipCities,"$C");
+		$losCSsCuenta++;
+	}
+	$sth->finish;
+
+	##--> found in results
+	if ($losCSsCuenta >= 1) {
+		$CSVerified = '1';
+		$miS = lc($S);
+		##- get full state name
+		if (length($S) == 2) {
+			$sth = $dbh->prepare("SELECT StateName, StateAbrv FROM States WHERE StateAbrv = '$miS'");
+			$sth->execute or die "Unable to execute query\n"; 
+			my $row = $sth->fetchrow_arrayref;
+			my $StateName = $row->[0];
+			$sth->finish;
+			$estado = "$StateName";
+		}
+	}
+	$dbh->disconnect;
+}
+
+
+
+
+
+## -- >> GLOBAL ZIP CODE CHECKER/CITY & STATE KICKBACK
+sub checkZipCode {
+	$charS = '';
+	$hasChanged = 0;
+	$badTry = 0;
+	$tooShort = 0;
+	$tooLong = 0;
+	$lengther1 = length($zip);
+	$zip =~ s/[^0-9]//g;
+	$lengther2 = length($zip);
+	##-->> hasChanged
+	if ($lengther1 != $lengther2) { $hasChanged = ($lengther1 - $lengther2); if ($hasChanged >= 2) { $charS = 's'; } use Lingua::EN::Nums2Words;$Number = int($hasChanged);$wordedDiff = lc(num2word($Number)); $badTry = 1; $whyNewTry = "Your zip code contains $wordedDiff($hasChanged) <font color='#AF041C' style='cursor:help;' title='Zip code must be a 5 digit number between 00501 and 99950. If you DO NOT live in the USA, use 11111.'>invalid character".$charS."</font>:"; }
+	elsif ($lengther2 != 5 || $zip < 501 || $zip > 99950) { $badTry = 1; $whyNewTry = "The <font color='#AF041C' style='cursor:help;' title='Zip code must be a 5 digit number between 00501 and 99950. If you DO NOT live in the USA, use 11111.'>zip codes</font> must be a 5 digit number between 00501 and 99950."; }
+	###--->> PROPER LENGTH (5) CHECK USPS
+	elsif ((length($zip) == 5)) {
+		$ogZip = $zip;
+		$zip = int($zip);
+			$losCSsCuenta=0;
+			use DBI; 
+			use locale;
+			my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+			$dbh->{RaiseError} = 1; 
+			$sth = $dbh->prepare("SELECT * FROM AIS WHERE ZipCode = '$zip'");
+			$sth->execute; 
+			my @row;
+			while(@row = $sth->fetchrow_array) {
+				$C = $row[2];
+				$S = $row[3];
+				## to test for multiple 
+				push(@ZipCities,"$C");
+				$losCSsCuenta++;
+			}
+			$sth->finish;
+			$dbh->disconnect;
+		$zip = $ogZip;
+
+		##--> found in results
+		if ($losCSsCuenta >= 1 || $zip == 11111) { $hasPassed = 1; }
+		##--> not found in results
+		else {
+			$badTry = 1;
+			$whyNewTry = 'Zip Code is invalid according to the latest United States Postal Service data'; 
+		}
+	}
+	else {
+		$badTry = 1;
+		$whyNewTry = 'Zip Code must be exactly 5 digits'; 
+	}
+	return $badTry;
+}
+
+
+
+
+
+
+## -- >> GLOBAL PHONE NUMBER CHECK
+sub checkPhoneNumber {
+	$charS = '';
+	$hasChanged = 0;
+	$badTry = 0;
+	$tooShort = 0;
+	$tooLong = 0;
+	##-- clean 'er up before sizing 'er up
+	$DID =~ s/-//gi; $DID =~ s/\)//gi; $DID =~ s/\(//gi; $DID =~ s/ //gi;
+	$lengther1 = length($DID);
+	$DID =~ s/[^0-9]//g;
+	$lengther2 = length($DID);
+	##-->> hasChanged
+	if ($lengther1 != $lengther2) { 
+		$hasChanged = ($lengther1 - $lengther2); 
+		##-- if more than one bad character in phone, kill the input, save the javascript, user try again
+		##-- also this amount for plural wording
+		if ($hasChanged >= 2) { $charS = 's'; $DID = ''; } 
+		use Lingua::EN::Nums2Words;$Number = int($hasChanged);
+		$wordedDiff = lc(num2word($Number)); $badTry = 1; 
+		$whyNewTry = "Your phone number contains $wordedDiff($hasChanged) <font color='#AF041C' style='cursor:help;' title='Phone number must be precisely a 10 digit number. If you DO NOT live in the USA, use 1111111111.'>invalid character".$charS."</font>.";
+		
+	}
+	elsif ($lengther2 != 10) { $badTry = 1; $whyNewTry = "The <font color='#AF041C' style='cursor:help;' title='Phone number must be precisely a 10 digit number. If you DO NOT live in the USA, use 1111111111.'>phone number</font> must be a 10 digit number."; }
+	###--->> PROPER LENGTH (10) CHECK USPS
+	elsif ((length($DID) == 10)) {
+		$hasPassed = 1;
+	}
+	else {
+		$badTry = 1;
+		$whyNewTry = 'Phone number is invalid, it must be precisely a 10 digit number.'; 
+	}
+	return $badTry;
+}
+
+
+
+
+
+
+
+## -- >> EMAIL CHECKER/USER CHECKER (START)
+sub scrubEmail {
+	$erroredOut = 0;
+	$ShipProblems = "";
+	$Email = $em;
+	$countThis=0;
+	## Start User Account Check, NO DUPES!
+	use DBI; 
+	use locale;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+
+	my $sth = $dbh->prepare("SELECT * FROM Users");
+	$sth->execute or die "Unable to execute query\n"; 
+	my @row;
+	while(@row = $sth->fetchrow_array) { 
+		$cualCT = $row[3];
+		my $SavedEmail = $row[15];
+		my $SavedUsername = $row[16];
+			
+		$SavedEmailLC = lc($SavedEmail);
+		$EmailLC = lc($Email);
+		$SavedUsernameLC = lc($SavedUsername);
+		## ------------->>> IF EXISTS DIE
+		if (($SavedEmailLC eq "$EmailLC") || ($SavedUsernameLC eq "$EmailLC")) {
+			$countThis++;
+		}
+	}
+	$sth->finish;
+	$dbh->disconnect;
+
+	if ($countThis eq "0") {
+		if ($em =~ "@") { $isgood = 1; }
+		else { 
+			$erroredOut = 1; 
+			$miError = 'Invalid email address was submitted.'; 
+		}
+	}
+	else { 
+		$erroredOut = 1; 
+		$miError = 'Email Address already in-use by a user in our system. If this is indeed your email address, you can always reset your password if you have forgotten it. To reset your password utilize the link located within the website login screen.'; 
+	}	
+	
+	
+	##-- ERRORED AT THIS STEP SPIT IT!
+	#if ($erroredOut eq "1") {
+	#	print "Content-type: text/html\n\n";
+	#	print "<script>alert('Error: \\'$miError\\'');history.go(-1)</script>";
+	#	exit;
+	#}
+}
+
+
+
+
+sub tryLogin {
+	$erroredOut = 0;
+	
+	## Define Variables
+	$Username = "$unaim";
+	$Password = "$pdub";
+	### QUERY DB
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n";
+	$dbh->{RaiseError} = 1;
+	my $sth = $dbh->prepare("SELECT UserID, CompanyType, MailZip, FirstName, LastName, ProfessionalTitle, Email, Username, Password, LastLogin, AccountStatus FROM Users WHERE Username = '$Username'");
+	$sth->execute or die "Unable to execute query\n";
+		my $row = $sth->fetchrow_arrayref;
+		$UserID = $row->[0];
+		$AType = $row->[1];
+		$Zip = $row->[2];
+		$First = $row->[3];
+		$Last = $row->[4];
+		$Title = $row->[5];
+		$Email = $row->[6];
+		$UserN = $row->[7];
+		$Pass = $row->[8];
+		$LastLog = $row->[9];
+		$AS = $row->[10];
+	$sth->finish;
+
+	$sth = $dbh->prepare("SELECT MD5('$Password')");
+	$sth->execute or die "Unable to execute query\n"; 
+	my $row2 = $sth->fetchrow_arrayref;
+	my $elCrypto = $row2->[0];
+	$sth->finish;
+
+	##--slice enc
+	$elCrypto = substr($elCrypto, 2);
+	
+	if ($Pass eq $elCrypto && $AS eq "AcTiVe") {
+		##days since last login if available
+		$diff = "?";
+		if ($LastLog =~ "-" && $LastLog =~ ":") {
+			($lld, $llt) = split(/ /,$LastLog);
+			$diff = date($today) - date($lld);
+		}
+
+  		$IP = "$ENV{'REMOTE_ADDR'}";
+		$dateCap = $datetime;
+
+		###---->> turn IP into numeric value
+		use Net::IPAddress::Minimal ('invert_ip');
+		my $input_string = $IP;
+		my $numericIP = invert_ip( $input_string );
+		if ($numericIP =~ m/[^0-9]/) { print "Cache-Control: must-revalidate\n\n"; print "<script>alert('Error 3250: IP Address disparity. Fix your IP address issues before attempting to revisit this website. Thank you.'); parent.location.href='/';</script>"; exit; }
+
+		##-- some salty substitutions
+		$numericIP =~ s/0/N/gi; $numericIP =~ s/1/E/gi; $numericIP =~ s/2/T/gi; $numericIP =~ s/3/W/gi; $numericIP =~ s/4/O/gi; $numericIP =~ s/5/R/gi; $numericIP =~ s/6/K/gi; $numericIP =~ s/7/S/gi; $numericIP =~ s/8/P/gi; $numericIP =~ s/9/V/gi;
+
+		$Email =~ s/@/[at]/g;
+		$ascii_HASH = $Email . '@' . $numericIP;
+		
+		$sth = $dbh->prepare("SELECT MD5('$ascii_HASH')");
+		$sth->execute or die "Unable to execute query\n"; 
+		my $row3 = $sth->fetchrow_arrayref;
+		my $rencrem = $row3->[0];
+		$sth->finish;
+	
+		# Print headers with only one \n 
+		print "Cache-Control: must-revalidate\n";
+			&SetCookies('IN',$rencrem);
+		print "\n";
+		
+		## UPDATE LAST LOG INFO FOR USER ACCOUNT
+		$sth = $dbh->prepare("UPDATE LOW_PRIORITY Users 
+								 SET LastLogin='$datetime',
+								 GUID='$rencrem'
+								 WHERE Username='$Username'");
+		$sth->execute or die "Unable to execute query\n";
+		$sth->finish; 
+		
+		###-- 
+		###-- simulate full login w/cookie params
+		$CSun = "$UserN";
+		$CSim = "$Email";
+		$CSfn = "$First";
+		$CSln = "$Last";
+		$CSat = "$AType";
+		$CSzip = "$Zip";
+		$CStitle = "$Title";
+
+		$HASJUSTLOGGEDIN = 1;
+
+	}
+	else {
+		$erroredOut = 1; 
+		$miError = 'Login attempt failed: Invalid account information submitted. Please try again.';
+	}
+	
+	$dbh->disconnect;	
+	
+	
+	
+	##-- ERRORED AT THIS STEP SPIT IT!
+	#if ($erroredOut eq "1") {
+	#	print "Content-type: text/html\n\n";
+	#	print "<script>alert('Error: \\'$miError\\'');history.go(-1)</script>";
+	#	exit;
+	#}
+}
+
+
+sub testCaptcha {
+	$cfailed = 0;
+	if ($FORM{"Challenger"}) {
+		if (length($FORM{"Challenge"}) == 6) {
+			require($HTTPRoot."gesichtDeEsel.nsp");
+			if ($UserPassed == 1 && $CookiePassed == 1) { $cfailed = 0; }
+			else { $cfailed = 1; }
+		}
+		else {
+			##-- too short or long
+			if (length($FORM{"Challenge"}) > 0 && (length($FORM{"Challenge"}) <= 5 || length($FORM{"Challenge"}) >= 7)) { $cfailed = 8; }
+			##-- is required
+			else { $cfailed = 9; }
+		}
+	}
+	return $cfailed;
+}
+
+
+
+
+
+
+
+
+
+sub checkBan {
+	$badTry = 0;
+	$dateCap = $datetime;
+	($ipuno,$ipdos,$iptres,$ipcuatro) = split(/\./,$IP);
+	if (int($ipuno) >= 1 && int($ipdos) >= 1 && int($iptres) >= 1 && int($ipcuatro) >= 1) {
+
+		###---->> turn IP into numeric value
+		use Net::IPAddress::Minimal ('invert_ip');
+		my $input_string = $IP;
+		my $numericIP = invert_ip( $input_string );
+		if ($numericIP =~ m/[^0-9]/) { print "Cache-Control: must-revalidate\n\n"; print "<script>alert('Error 3250: IP Address disparity. Fix your IP address issues before attempting to revisit this website. Thank you.'); parent.location.href='/';</script>"; exit; }
+
+		##-- some salty substitutions [INGEniOUSs]
+		$saltyIP = $numericIP;
+		$saltyIP =~ s/0/I/gi; $saltyIP =~ s/1/N/gi; $saltyIP =~ s/2/G/gi; $saltyIP =~ s/3/E/gi; $saltyIP =~ s/4/n/gi; $saltyIP =~ s/5/i/gi; $saltyIP =~ s/6/O/gi; $saltyIP =~ s/7/U/gi; $saltyIP =~ s/8/S/gi; $saltyIP =~ s/9/s/gi;
+	
+		$thyEmail = $em;
+		$thyEmail =~ s/@/[at]/g;
+
+		$BannedIP = 0;
+		use DBI;
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+		$dbh->{RaiseError} = 1; 
+		$BCount=0;
+		my $sth = $dbh->prepare("SELECT BannedID, Email, BannedIP FROM Banned where (IP='$saltyIP' OR Email='$thyEmail')");
+		$sth->execute or die "Unable to execute query\n"; 
+		my $row = $sth->fetchrow_arrayref;
+		$BannedID = $row->[0];
+		$BannedEmail = $row->[1];
+		$BannedIP = $row->[2];
+		$sth->finish;
+		$dbh->disconnect;
+		
+		###---- SCRAM IP saved as:
+		###----$scramIP = ''.int($iptres).'.'.int($ipdos).'.'.int($ipcuatro).'.'.int($ipuno).'';
+		if ($BannedID && (int($BannedID) >= 1)) {
+			($bipuno,$bipdos,$biptres,$bipcuatro) = split(/\./,$BannedIP);
+			if ("$BannedEmail" eq "$thyEmail") {
+				$whyNewTry = "There was an error with the verification of your email address.";
+				$badTry = 1;
+			}
+			elsif (int($bipuno) >= 1 && int($bipdos) >= 1 && int($biptres) >= 1 && int($bipcuatro) >= 1) {
+				$unscramIP = ''.int($bipuno).'.'.int($bipdos).'.'.int($biptres).'.'.int($bipcuatro).'';
+				if ("$unscramIP" eq "$IP") {
+					$whyNewTry = "There was an error with the verification of your IP address.";
+					$badTry = 1;
+				}
+			}
+		}
+	}
+	else {
+		$whyNewTry = "There was an error with the verification of your IP address:";
+		$badTry = 1;
+	}
+	#$whyNewTry = "There was an error with the verification of your IP address: $IP [ $unscramIP ] $saltyIP $thyEmail [$BannedEmail]";
+	#$badTry = 1;
+	return $badTry;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+##-- if it completes this process with no error, we get back 0 for no error
+sub activateNewUserAccount {
+	$badTry = 0;
+
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+
+	$isUser = 0;
+	$isActive = '';
+	my $sth = $dbh->prepare("SELECT UserID, AccountStatus FROM Users where Username='$Username'");
+	$sth->execute or die "Unable to execute query\n"; 
+	my $row = $sth->fetchrow_arrayref;
+	$isUser = $row->[0];
+	$isActive = $row->[1];
+	$sth->finish;
+	if (int($isUser) > 555) {
+		##-- now active
+		if ($isActive eq "PeNdInG") {
+			## SET ACCOUNT TO ACTIVE and UPDATE LAST LOG INFO FOR USER ACCOUNT
+			$sth = $dbh->prepare("UPDATE LOW_PRIORITY Users 
+									 SET AccountStatus='AcTiVe'
+									 WHERE Username='$Username'");
+			$sth->execute or die "Unable to execute query\n";
+			$sth->finish;
+			$badTry = 0;
+		}
+		##-- already active
+		elsif ($isActive eq "AcTiVe") {
+			$errorKicker = 4;
+			$badTry = 1;
+		}
+		##-- other unchangable status, cant change using this process
+		else {
+			$errorKicker = 5;
+			$badTry = 1;
+		}
+	}
+	else {
+		$errorKicker = 3;
+		$badTry = 1;
+	}
+	$dbh->disconnect;
+	return $badTry;
+}
+
+
+
+
+sub createNewAccount {
+	my ($status) = @_;
+	$badTry = 0;
+	$thyEmail = $em;
+	$thyEmail =~ s/@/[at]/g;
+
+	$dateCap = $datetime;
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n";
+	$dbh->{RaiseError} = 1;
+	my $sth = $dbh->prepare("SELECT MD5('$PD')");
+	$sth->execute or die "Unable to execute query\n"; 
+	my $row = $sth->fetchrow_arrayref;
+	my $elCrypto = $row->[0];
+	$sth->finish;
+	$elCrypto = substr($elCrypto, 2);
+
+	##--> INSERT NEW USER TO ACCT
+	$sth = $dbh->prepare("INSERT INTO Users (UserID, MailZip, Email, Username, Password, AccountSince, AccountStatus, IP, AllowEmail)
+							 VALUES (Null, '$zip', '$thyEmail', '$Username', '$elCrypto', '$dateCap', '$status', '$saltyIP', 'N')");
+	$sth->execute or die "Unable to execute query\n";
+	$sth->finish;
+
+	$elUID = 0;
+	$sth = $dbh->prepare("SELECT UserID, Password, GUID FROM Users WHERE (Username='$Username' AND Email='$thyEmail' AND AccountSince='$dateCap')");
+	$sth->execute or die "Unable to execute query\n"; 
+	my $row2 = $sth->fetchrow_arrayref;
+	my $elUID = $row2->[0];
+	my $elPWD = $row2->[1];
+	my $elGUID = $row2->[2];
+	$sth->finish;
+	$dbh->disconnect;
+
+	if ($elUID > 555) {
+		$badTry = 0;
+		##--RUN verify link shaker
+		$shakeP = $elPWD;
+		$shakeUser = $thyEmail;
+		$shakeGUID = $Username;
+		$emailShakenU = &makeVerifyAccountHashACT;
+	}
+	return $badTry;
+}
+
+
+##--verify link shaker
+sub makeVerifyAccountHashACT {
+	$elDato = $datetime;
+	$elDato =~ s/://gi;
+	$elDato =~ s/-//gi;
+	$elDato =~ s/ //gi;
+
+	##-- key 1: the date
+	$key = "$elDato";
+	##-- raw password (current MD5 password)
+	##-- 1: reverse the raw password
+	$rShakeP = reverse $shakeP;
+	##-- 2: get a piece of the reversed password
+	$trueShakeP = substr($rShakeP,3,15);
+	##-- 3: encrypt outcome with our key(date)
+	$cryptpass = &encrypt ($trueShakeP, $key);
+
+	##--crypt the date
+	##-- date is reversed, chopped up, salted and then reversed again
+	$elDatoCR = reverse $elDato;
+	$elDatoC = substr($elDatoCR,9,3) . '' . substr($elDatoCR,3,3) . '' . substr($elDatoCR,0,3) . '' . substr($elDatoCR,6,3) . '' . substr($elDatoCR,12,2);
+	##-- some salty substitutions [VIRTUALitY]
+	$elDatoC =~ s/0/V/g; $elDatoC =~ s/1/I/g; $elDatoC =~ s/2/R/g; $elDatoC =~ s/3/T/g; $elDatoC =~ s/4/U/g; $elDatoC =~ s/5/A/g; $elDatoC =~ s/6/L/g; $elDatoC =~ s/7/i/g; $elDatoC =~ s/8/t/g; $elDatoC =~ s/9/Y/g;
+	$elDatoE = reverse $elDatoC;
+
+	##-- key 2: raw password (from key 1: step 2)
+	$key2 = "$trueShakeP";
+	##-- 1: encrypt GUID (raw Username)
+	$cryptGUID = &encrypt ($shakeGUID, $key2);
+	##-- 2: maintain the $cryptGUID as is, for use in encrypting $shakeUser
+	$CGUID = $cryptGUID;
+	##-- 3: reverse the crypted string (passed to user)
+	$RCGUID = reverse $CGUID;
+
+	##-- key 3: raw password (from key 2: step 2)
+	$key3 = "$cryptGUID";
+	##-- 1: reverse shakeUser (raw Email address)
+	$RCUSER = reverse $shakeUser;
+	##-- 2: encrypt reversed shakeUser (passed to user)
+	$cryptuser = &encrypt ($RCUSER, $key3);
+
+	##--start cryptthedate
+	##-- cut up the encrypted datetime stamp, $elDatoE, and sprinkle sporatically [same method as our original chopping of string]
+	$elDatoCut1=substr($elDatoE,8,2);
+	$elDatoCut2=substr($elDatoE,4,2);
+	$elDatoCut3=substr($elDatoE,10,4);
+	$elDatoCut4=substr($elDatoE,0,2);
+	$elDatoCut5=substr($elDatoE,2,2);
+	$elDatoCut6=substr($elDatoE,6,2);
+	##-- pass dato as padding for our string-parts [c6 c1 : c5 c2 : c4 c3] [yes our return makes the entire cryptthedate]
+	return $elDatoCut5. "$RCGUID" .$elDatoCut4. ":" .$elDatoCut6. "$cryptuser" .$elDatoCut2. ":" .$elDatoCut1. "$cryptpass" .$elDatoCut3;
+	##--end cryptthedate
+}
+
+
+##-- challange used in activate-account [verify link shaker]
+sub challengeACT {
+	$SHOWFORM = 0;
+
+	##--no tracking no way!
+	if ($elCFT)  {
+	($partone, $parttwo, $partthree) = split(":",$elCFT);
+
+	##--test parts to make sure we can work with them
+	if (length($partone) >= 6 && length($parttwo) >= 6 && length($partthree) >= 6)  {
+
+	##--start undo cryptthedate
+	$elDatoCut5 = substr($partone,0,2);
+	$LRCGUID = substr($partone,2,-2);
+	$elDatoCut4 = substr($partone,-2,2);
+
+	$elDatoCut6 = substr($parttwo,0,2);
+	$Lcryptuser = substr($parttwo,2,-2);
+	$elDatoCut2 = substr($parttwo,-2,2);
+
+	$elDatoCut1 = substr($partthree,0,2);
+	$Lcryptpass = substr($partthree,2,-4);
+	$elDatoCut3 = substr($partthree,-4,4);
+
+	##--remake our date from our cryptthedate pieces
+	$LelDato = $elDatoCut4."".$elDatoCut5."".$elDatoCut2."".$elDatoCut6."".$elDatoCut1."".$elDatoCut3;
+	##--end undo cryptthedate
+	
+	##--decrypt the date
+	$LelDatoC = reverse $LelDato;
+	##-- de-salt [VIRTUALitY]
+	$LelDatoC =~ s/V/0/g; $LelDatoC =~ s/I/1/g; $LelDatoC =~ s/R/2/g; $LelDatoC =~ s/T/3/g; $LelDatoC =~ s/U/4/g; $LelDatoC =~ s/A/5/g; $LelDatoC =~ s/L/6/g; $LelDatoC =~ s/i/7/g; $LelDatoC =~ s/t/8/g; $LelDatoC =~ s/Y/9/g;
+	$elDato = substr($LelDatoC,6,3) . '' . substr($LelDatoC,3,3) . '' . substr($LelDatoC,9,3) . '' . substr($LelDatoC,0,3) . '' . substr($LelDatoC,12,2);
+	$LelDatoS = reverse $elDato;
+
+	##--undo key1: step3
+	$decryptedpass = &decrypt ($Lcryptpass, "$LelDatoS");
+	##--undo key1: step1 of  [this is remade $trueShakeP]
+	$remadeShakeP = reverse $decryptedpass;
+
+	##--- SANITIZE [same as MD5 string, MD5 consists of upper-lower-digits but giving it dash and underscore also]
+	$decryptedpass =~ s/[^0-9a-zA-Z-_]//g;
+
+	$key = $decryptedpass;
+	##-- undo key2: step3: reverse the crypted string (Username)
+	$LCGUID = reverse $LRCGUID;
+	##-- undo key2: step2: decrypt
+	$decryptedGUID = &decrypt ($LCGUID, $key);
+
+	##--- SANITIZE [same as $Username]
+	$decryptedGUID =~ s/[^0-9a-zA-Z-_]//g;
+
+	$key = $LCGUID;
+	##-- undo key3: step3: decrypt string (Email)
+	$LCUSER = &decrypt ($Lcryptuser, $key);
+	##-- undo key3: step1: reverse
+	$decryptuser = reverse $LCUSER;
+
+	##--- SANITIZE [same as $em]
+	$decryptuser =~ s/[^0-9a-zA-Z-_\.\[\]]//g;
+
+	# Start DB connection
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	my $sth = $dbh->prepare("SELECT UserID, Password, AccountStatus FROM Users WHERE (Email = '$decryptuser' AND Username = '$decryptedGUID')");
+	$sth->execute;
+		my $row = $sth->fetchrow_arrayref;
+		$thisUserID = $row->[0];
+		$CurrUserPass = $row->[1];
+		$CurrUserStatus = $row->[2];
+	$sth->finish;
+	$dbh->disconnect;
+
+	if (!$thisUserID) { $thisUserID = 0; }
+
+	## if our challenge doesnt match we simply let them know they got an error in their process.
+	## or error on user id [make sure its an integer at this point, later no need to recheck this]
+	if (int($thisUserID) >= 555) {
+		$nowDato = $datetime;
+		$nowDato =~ s/://gi;
+		$nowDato =~ s/-//gi;
+		$nowDato =~ s/ //gi;
+
+		##--- if current pass md5 isn't 15 or more chars in length, no good [always is at least 15]
+		if (length($CurrUserPass) >= 15) {
+			##--- get the same substring value as $shakeP
+			$checkShakePR = reverse $CurrUserPass;
+			$checkShakeP = substr($checkShakePR,3,15);
+			$checkShakeP = reverse $checkShakeP;
+		}
+
+		##--- SavedPassword MD5 length is not long enough to cover our unshake 
+		##--- (OR password has changed since LINK was sent out)
+		if (!$checkShakeP || ("$checkShakeP" ne "$remadeShakeP")) {
+			$errorKicker = 2; 
+		}
+		##--- LINK older than 1 hour
+		elsif ($LelDatoS + 10000 < $nowDato) {
+			$errorKicker = 3;
+		}
+		##--good, show the password reset form
+		else { 
+			$SHOWFORM = 1; 
+		}
+	}
+	##-- no match
+	else { $errorKicker = 1; }
+	
+	#-$errorKicker = 2;
+	#-$whyNewTry = "$remadeShakeP [ $checkShakeP ] $decryptuser $decryptedGUID";
+	}
+	##-- bad link
+	else { $errorKicker = 2; }
+	}
+	return $SHOWFORM;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##--password reset shaker
+sub makeVerifyAccountHashFMP {
+	$elDato = $datetime;
+	$elDato =~ s/://gi;
+	$elDato =~ s/-//gi;
+	$elDato =~ s/ //gi;
+
+	##-- key 1: the date
+	$key = "$elDato";
+	##-- raw password (current MD5 password)
+	##-- 1: reverse the raw password
+	$rShakeP = reverse $shakeP;
+	##-- 2: get a piece of the reversed password
+	$trueShakeP = substr($rShakeP,3,15);
+	##-- 3: encrypt outcome with our key(date)
+	$cryptpass = &encrypt ($trueShakeP, $key);
+
+	##--crypt the date
+	##-- date is reversed, chopped up, salted and then reversed again
+	$elDatoCR = reverse $elDato;
+	$elDatoC = substr($elDatoCR,9,3) . '' . substr($elDatoCR,3,3) . '' . substr($elDatoCR,0,3) . '' . substr($elDatoCR,6,3) . '' . substr($elDatoCR,12,2);
+	##-- some salty substitutions [cRyPtEnITe]
+	$elDatoC =~ s/0/c/g; $elDatoC =~ s/1/R/g; $elDatoC =~ s/2/y/g; $elDatoC =~ s/3/P/g; $elDatoC =~ s/4/t/g; $elDatoC =~ s/5/E/g; $elDatoC =~ s/6/n/g; $elDatoC =~ s/7/I/g; $elDatoC =~ s/8/T/g; $elDatoC =~ s/9/e/g;
+	$elDatoE = reverse $elDatoC;
+
+	##-- key 2: raw password (from key 1: step 2)
+	$key2 = "$trueShakeP";
+	##-- 1: encrypt GUID (raw Username)
+	$cryptGUID = &encrypt ($shakeGUID, $key2);
+	##-- 2: maintain the $cryptGUID as is, for use in encrypting $shakeUser
+	$CGUID = $cryptGUID;
+	##-- 3: reverse the crypted string (passed to user)
+	$RCGUID = reverse $CGUID;
+
+	##-- key 3: raw password (from key 2: step 2)
+	$key3 = "$cryptGUID";
+	##-- 1: reverse shakeUser (raw Email address)
+	$RCUSER = reverse $shakeUser;
+	##-- 2: encrypt reversed shakeUser (passed to user)
+	$cryptuser = &encrypt ($RCUSER, $key3);
+
+	##--start cryptthedate
+	##-- cut up the encrypted datetime stamp, $elDatoE, and sprinkle sporatically [same method as our original chopping of string]
+	$elDatoCut1=substr($elDatoE,6,2);
+	$elDatoCut2=substr($elDatoE,4,2);
+	$elDatoCut3=substr($elDatoE,10,4);
+	$elDatoCut4=substr($elDatoE,2,2);
+	$elDatoCut5=substr($elDatoE,8,2);
+	$elDatoCut6=substr($elDatoE,0,2);
+	##-- pass dato as padding for our string-parts [c6 c1 : c5 c2 : c4 c3] [yes our return makes the entire cryptthedate]
+	return $elDatoCut6. "$cryptpass" .$elDatoCut1. ":" .$elDatoCut5. "$RCGUID" .$elDatoCut2. ":" .$elDatoCut4. "$cryptuser" .$elDatoCut3;
+	##--end cryptthedate
+}
+
+
+##-- challange used in forgot-password [password reset shaker]
+sub challengeFMP {
+	$SHOWFORM = 0;
+	##--no tracking no way!
+	if ($elCFT)  {
+	($partone, $parttwo, $partthree) = split(":",$elCFT);
+
+	##--test parts to make sure we can work with them
+	if (length($partone) >= 6 && length($parttwo) >= 6 && length($partthree) >= 6)  {
+
+	##--start undo cryptthedate
+	$elDatoCut6 = substr($partone,0,2);
+	$Lcryptpass = substr($partone,2,-2);
+	$elDatoCut1 = substr($partone,-2,2);
+
+	$elDatoCut5 = substr($parttwo,0,2);
+	$LRCGUID = substr($parttwo,2,-2);
+	$elDatoCut2 = substr($parttwo,-2,2);
+
+	$elDatoCut4 = substr($partthree,0,2);
+	$Lcryptuser = substr($partthree,2,-4);
+	$elDatoCut3 = substr($partthree,-4,4);
+
+	##--remake our date from our cryptthedate pieces
+	$LelDato = $elDatoCut6."".$elDatoCut4."".$elDatoCut2."".$elDatoCut1."".$elDatoCut5."".$elDatoCut3;
+	##--end undo cryptthedate
+	
+	##--decrypt the date
+	$LelDatoC = reverse $LelDato;
+	##-- de-salt [cRyPtEnITe]
+	$LelDatoC =~ s/c/0/g; $LelDatoC =~ s/R/1/g; $LelDatoC =~ s/y/2/g; $LelDatoC =~ s/P/3/g; $LelDatoC =~ s/t/4/g; $LelDatoC =~ s/E/5/g; $LelDatoC =~ s/n/6/g; $LelDatoC =~ s/I/7/g; $LelDatoC =~ s/T/8/g; $LelDatoC =~ s/e/9/g;
+	$elDato = substr($LelDatoC,6,3) . '' . substr($LelDatoC,3,3) . '' . substr($LelDatoC,9,3) . '' . substr($LelDatoC,0,3) . '' . substr($LelDatoC,12,2);
+	$LelDatoS = reverse $elDato;
+
+	##--undo key1: step3
+	$decryptedpass = &decrypt ($Lcryptpass, "$LelDatoS");
+	##--undo key1: step1 of  [this is remade $trueShakeP]
+	$remadeShakeP = reverse $decryptedpass;
+
+	##--- SANITIZE [same as MD5 string, MD5 consists of upper-lower-digits but giving it dash and underscore also]
+	$decryptedpass =~ s/[^0-9a-zA-Z-_]//g;
+
+	$key = $decryptedpass;
+	##-- undo key2: step3: reverse the crypted string (Username)
+	$LCGUID = reverse $LRCGUID;
+	##-- undo key2: step2: decrypt
+	$decryptedGUID = &decrypt ($LCGUID, $key);
+
+	##--- SANITIZE [same as $Username]
+	$decryptedGUID =~ s/[^0-9a-zA-Z-_]//g;
+
+	$key = $LCGUID;
+	##-- undo key3: step3: decrypt string (Email)
+	$LCUSER = &decrypt ($Lcryptuser, $key);
+	##-- undo key3: step1: reverse
+	$decryptuser = reverse $LCUSER;
+
+	##--- SANITIZE [same as $em]
+	$decryptuser =~ s/[^0-9a-zA-Z-_\.\[\]]//g;
+
+	# Start DB connection
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	my $sth = $dbh->prepare("SELECT UserID, Password, AccountStatus FROM Users WHERE (Email = '$decryptuser' AND Username = '$decryptedGUID')");
+	$sth->execute;
+		my $row = $sth->fetchrow_arrayref;
+		$thisUserID = $row->[0];
+		$CurrUserPass = $row->[1];
+		$CurrUserStatus = $row->[2];
+	$sth->finish;
+	$dbh->disconnect;
+
+	if (!$thisUserID) { $thisUserID = 0; }
+
+	## if our challenge doesnt match we simply let them know they got an error in their process.
+	## or error on user id [make sure its an integer at this point, later no need to recheck this]
+	if (int($thisUserID) >= 555) {
+		$nowDato = $datetime;
+		$nowDato =~ s/://gi;
+		$nowDato =~ s/-//gi;
+		$nowDato =~ s/ //gi;
+
+		##--- if current pass md5 isn't 15 or more chars in length, no good [always is at least 15]
+		if (length($CurrUserPass) >= 15) {
+			##--- get the same substring value as $shakeP
+			$checkShakePR = reverse $CurrUserPass;
+			$checkShakeP = substr($checkShakePR,3,15);
+			$checkShakeP = reverse $checkShakeP;
+		}
+
+		##--- SavedPassword MD5 length is not long enough to cover our unshake 
+		##--- (OR password has changed since LINK was sent out)
+		if (!$checkShakeP || ("$checkShakeP" ne "$remadeShakeP")) {
+			$errorKicker = 2; 
+		}
+		##--- LINK older than 1 hour
+		elsif ($LelDatoS + 10000 < $nowDato) {
+			$errorKicker = 3;
+		}
+		##--good, show the password reset form
+		else { 
+			$SHOWFORM = 1; 
+		}
+	}
+	##-- no match
+	else { $errorKicker = 1; }
+	
+	#-$errorKicker = 2;
+	#-$whyNewTry = "$remadeShakeP [ $checkShakeP ] $decryptuser $decryptedGUID";
+	}
+	##-- bad link
+	else { $errorKicker = 2; }
+	}
+	return $SHOWFORM;
+}
+
+
+sub connectDB {
+	$elDB = $_[0];
+	if ($elDB =~ m/(^vpsnetcom)/i) { $midbp = 'YOUR-MySQL-PASSWORD'; }
+	else { $midbp = 'YOUR-MySQL-PASSWORD'; }
+	return $midbp;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#######----########
+#### START 2013 ###
+#######----########
+
+
+
+##-- doubles as rudimentary existence check in logs
+sub checkOptIns {
+	$CheckType = $_[0];
+	$CheckContext = $_[1];
+	##-- check conv log
+	my $hasCONV = 0;
+	my $ROI = 1;
+
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+
+	##--doesn't matter about the first or last, only email
+	my $sth = $dbh->prepare("SELECT LineID from ConversationLog WHERE ($CheckType AND MessageContext LIKE '%$CheckContext')");
+	$sth->execute or die "Error 5233\n";
+	my $row = $sth->fetchrow_arrayref;
+	$hasCONV = $row->[0];
+	$sth->finish;
+
+	$dbh->disconnect;
+
+	###-- already opted-in with this email [dont ask again]
+	if (int($hasCONV) != 0) { $ROI = 0; }
+	return $ROI;
+}
+
+
+
+
+sub runThisUser {
+	#-- check to see if user has already opted-in for this type of mailer
+	##-- was $requestOPTIN
+	my ($checkUIDExistenceInConversationLog, $previousMessageContext) = &findThisUser("UID='$inUID'",'{e:%@%.%');
+
+	$NotFound = 0;
+	$KILLFP = 0;
+	##-- if finds UID and email attached to it, get email address(es) to work with
+	if ($checkUIDExistenceInConversationLog == 1) {
+
+		##-find email from last conversationLog
+		if ($previousMessageContext ne "") {
+			##-- check structure of dataset
+			$fp = 0;
+			$fp++ foreach ($previousMessageContext =~ /({*:*})/g);
+						
+			##--data structure is not good, kill cookie, ask user to submit contact info
+			if ($fp == 0) { 
+				$KILLFP = 1;
+			}
+			else {
+				$mydel = '},';
+				@myPMC = split(/$mydel/,$previousMessageContext);
+				foreach $unPMC (@myPMC) {
+					if ($unPMC =~ m/\{e:/ && $unPMC =~ "\@" && $unPMC =~ ".") {
+						$unPMC =~ s/\{e://gi;
+						$previouslyUsedEmail = $unPMC;
+						$AllFound++;
+					}
+					if ($unPMC =~ m/\{f:/) {
+						$unPMC =~ s/\{f://gi;
+						$previouslyUsedFirst = $unPMC;
+						$AllFound++;
+					}
+					if ($unPMC =~ m/\{l:/) {
+						$unPMC =~ s/\{l://gi;
+						$previouslyUsedLast = $unPMC;
+						$AllFound++;
+					}
+				}
+				##-- didnt find a real email in the data, 
+				if (!$previouslyUsedEmail || !$previouslyUsedFirst || !$previouslyUsedLast) { 
+					$KILLFP = 1; 
+				}
+			}
+			if ($KILLFP == 1) {
+				$NotFound = 1;
+			}
+		}
+	}
+	return ($NotFound, $AllFound);
+}
+
+
+
+
+
+##-- check for user in history
+sub findThisUser {
+	$CheckType = $_[0];
+	$CheckContext = $_[1];
+	##-- check conv log
+	my $hasCONV = 0;
+	my $ROI = 0;
+	my $mCon = "";
+
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+
+	##--doesn't matter about the first or last, only email
+	my $sth = $dbh->prepare("SELECT LineID, MessageContext from ConversationLog WHERE ($CheckType AND MessageContext LIKE '%$CheckContext') ORDER BY LineID DESC LIMIT 1");
+	$sth->execute or die "Error 5234\n";
+	my $row = $sth->fetchrow_arrayref;
+	$hasCONV = $row->[0];
+	$mCon = $row->[1];
+	$sth->finish;
+
+	$dbh->disconnect;
+
+	###-- this email address exists
+	if (int($hasCONV) != 0) { $ROI = 1; }
+
+	return ($ROI, $mCon);
+}
+
+
+
+
+sub bakeMyCanvasCartCookie {
+
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+
+	$IP = "$ENV{'REMOTE_ADDR'}";
+	$dateCap = $datetime;
+	if (!$newOCv) { $newOCv = '1'; }
+	$QuickSaveQuery = "INSERT INTO customerScarts (CartID, UID, EA, CID, Created, OCv) VALUES (Null, '$IP', '', '', '$dateCap', '$newOCv')";
+
+	##-- save to db for future reference by myUID
+	my $sth = $dbh->prepare("$QuickSaveQuery");
+	$sth->execute or die "Unable to execute query\n";
+	$sth->finish;
+
+	##-- get cartid for item we just inserted
+	my $sth = $dbh->prepare("SELECT CartID from customerScarts WHERE (UID='$IP' AND Created='$dateCap' AND OCv='$newOCv')");
+	$sth->execute or die "Error 5231\n";
+	my $row = $sth->fetchrow_arrayref;
+	my $cartID = $row->[0];
+	$sth->finish;
+			
+	##--START CRYPT
+	###---->> turn IP into numeric value
+	use Net::IPAddress::Minimal ('invert_ip');
+	my $input_string = $IP;
+	my $numericIP = invert_ip( $input_string );
+	if ($numericIP =~ m/[^0-9]/) { if ($headerPrinted == 0) { print "Cache-Control: must-revalidate\n\n"; } print "<script>alert('Error 3251: IP Address disparity. Fix your IP address issues before attempting to revisit this website. Thank you.'); parent.location.href='/';</script>"; exit; }
+
+	###----hashes from same ip address look similar up to the end of string, which is the cart id portion of it [always unique, unless two people from same IP address visit site at exactly the same second, virtually impossible] 
+	###---->> $dateCap = $datetime
+	use Data::UUID;
+	$myHASH = $numericIP . '-' . int($cartID);
+
+	##-- some salty substitutions
+	$myHASH =~ s/0/N/gi; $myHASH =~ s/1/E/gi; $myHASH =~ s/2/T/gi; $myHASH =~ s/3/W/gi; $myHASH =~ s/4/O/gi; $myHASH =~ s/5/R/gi; $myHASH =~ s/6/K/gi; $myHASH =~ s/7/S/gi; $myHASH =~ s/8/P/gi; $myHASH =~ s/9/V/gi;
+				
+	$ug = new Data::UUID;
+	$uuid = $ug->to_string("$myHASH");
+	$myUID = $uuid;
+	$myUID =~ s/[^a-zA-Z0-9]//g;
+
+	use Crypt::Tea_JS;
+	$llave = int($cartID);
+	$ENUID = &encrypt ($myUID, $llave);
+
+	##--END CRYPT
+	##-- IP always gets checked at cookiesnif level, will never get to this point if failed
+	##-- update UID with hashed string
+	my $sth = $dbh->prepare("UPDATE LOW_PRIORITY customerScarts SET UID='$ENUID' WHERE (UID='$IP' AND Created='$dateCap' AND OCv='$newOCv')");
+	$sth->execute or die "Unable to execute query\n";
+	$sth->finish;
+
+	$dbh->disconnect;
+
+	print "Cache-Control: must-revalidate\n";
+		## make it expire one year from today at midnight :)
+		my $ahora = today();
+		my $CCD = $ahora + 365;
+		## set proper expiration datetime stamp (Sat, 31-Dec-2011 23:59:59 GMT)
+		$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+		&SetCookies('OpenCanvasDesign',$ENUID);
+		&SetCookies('OpenCanvasVersion',$newOCv);
+	print "\n";
+
+	$inUID = $ENUID;
+	$OpenCanvasVersion = $ENUID;
+	$OpenCanvasDesign = $newOCv;
+
+	return 1;
+}
+
+
+
+sub cartMyCanvas {
+	$elUID = $_[0];
+	##-- set canvas cart
+	print "Cache-Control: must-revalidate\n";
+	if ($elUID ne "" && $elUID ne " ") {
+		my $ahora = today();
+		my $CCD = $ahora + 365;
+		$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+		&SetCookies('VirtualPrivateCart',$elUID);
+	}
+	print "\n";
+	return 1;
+}
+
+##-- send virtual private instant message [db save + email]
+#-- one step only
+sub sendVirtualPrivateMessage {
+	$myUID = $_[0];
+	$myType = $_[1];
+	$myContext = $_[2];
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	##-- save comments to db, clear the form
+	##-- we dont save CartID here, for we are not in cart mode ATM, meaning this comment(question) not coming from cart source (example: aae)
+	$MYSTACK = &makeCartStack($myUID);
+	my $sth = $dbh->prepare("INSERT INTO ConversationLog (LineID, EntryType, MessageContext, CreationDate, UID) VALUES (Null, '$myType', '$myContext $MYSTACK', '$datetime', '$myUID')");
+	$sth->execute or die "Unable to execute query\n";
+	$sth->finish;
+	$dbh->disconnect;
+	
+	&fireOffVirtualPrivateEmail($myType, $myContext);
+
+}
+
+##-- first phase/process in sending message, meaning was unlogged [we need to get more info to send message]
+##--now that we have first and last name, maybe even phone number, update the log
+sub saveVirtualPrivateMessage {
+	$myType = $_[0];
+	$myContext = $_[1];
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	##-- save comments to db, clear the form
+	##-- we dont save CartID here, for we are not in cart mode ATM, meaning this comment(question) not coming from cart source (example: aae)
+	my $sth = $dbh->prepare("INSERT INTO ConversationLog (LineID, EntryType, MessageContext, CreationDate, UID) VALUES (Null, '$myType', '$myContext', '$datetime', '')");
+	$sth->execute or die "Unable to execute query\n";
+	$sth->finish;
+	$dbh->disconnect;
+}
+
+##-- second phase/process in sending message, meaning was unlogged [had to get more info to send]
+sub updateVirtualPrivateMessage {
+	$myUID = $_[0];
+	$myType = $_[1];
+	$myLastContext = $_[2];
+	$myNewContext = $_[3];
+	$myLeadNumber = $_[4];
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+
+	$LogID = 0;
+	my $sth = $dbh->prepare("SELECT * FROM ConversationLog WHERE LeadNumber='0' AND EntryType='$myType' AND MessageContext LIKE '$myLastContext%' AND UID='' ORDER BY LineID DESC LIMIT 1");
+	$sth->execute or die "Error 5245\n";
+	my $row = $sth->fetchrow_arrayref;
+	my $LogID = $row->[0];
+	$sth->finish;
+
+	## only if higher that this number, at which time this 
+	if ($LogID >= 319295) {
+		$MYSTACK = &makeCartStack($myUID);
+		##-- only if a clean lead number is found (phone number), we save it
+		$writeLeadNumber="";
+		$myLeadNumber =~ s/[^0-9]//g;
+		if (length($myLeadNumber) == 10) { $writeLeadNumber = ", LeadNumber='$myLeadNumber'"; }
+
+		## UPDATE LAST LOG INFO FOR USER ACCOUNT
+		$sth = $dbh->prepare("UPDATE LOW_PRIORITY ConversationLog 
+								 SET MessageContext='$myNewContext $MYSTACK',
+								 UID='$myUID'$writeLeadNumber
+								 WHERE LineID='$LogID'");
+		$sth->execute or die "Unable to execute query\n";
+		$sth->finish;
+	}
+
+	$dbh->disconnect;
+
+	&fireOffVirtualPrivateEmail($myType, $myNewContext);
+
+
+}
+
+
+
+
+sub fireOffVirtualPrivateEmail {
+	$myType = $_[0];
+	$myContext = $_[1];
+
+	$isAccountHolder = 0;
+
+	####-- define user
+	$XUsername = '';
+	@myContexts = split(/,/,$myContext);
+	foreach $uncontexto (@myContexts) {
+		if ($uncontexto =~ '{e:') {
+			$lXEmail = $uncontexto;
+			$lXEmail =~ s/{e://gi;
+			$lXEmail =~ s/}//gi;
+			if ($uncontexto =~ '[at]') { 
+				$isAccountHolder = 1;
+				$lXEmail =~ s/\[at\]/@/gi;
+			}
+		}
+		elsif ($uncontexto =~ '{f:') {
+			$XUsername .= $uncontexto;
+			$XUsername =~ s/{f://gi;
+			$XUsername =~ s/}//gi;
+		}
+		elsif ($uncontexto =~ '{l:') {
+			$XUsername .= $uncontexto;
+			$XUsername =~ s/{l:/ /gi;
+			$XUsername =~ s/}//gi;
+		}
+	}
+
+	$SubjectSelection = '';
+	$XRecipient = '';
+	####-- find all recipients
+	@myParams = split(/},{/,$myContext);
+	foreach $uncontexto (@myParams) {
+		if ($uncontexto =~ 's:') {
+			$XRecipient = $uncontexto;
+			$XRecipient =~ s/s://gi;
+			$XRecipient =~ s/}//gi;
+		}
+		if ($uncontexto =~ 'm:') {
+			$XMessage = $uncontexto;
+			$XMessage =~ s/m://gi;
+			$XMessage =~ s/}//gi;
+		}
+
+
+
+		##-- SUBMIT CANVAS/CART
+			if ($uncontexto =~ 'Cart:') { $XCart = $uncontexto; $XCart =~ s/}//gi; }
+			if ($uncontexto =~ 'Created:') { $XCreated = $uncontexto; $XCreated =~ s/}//gi; }
+			if ($uncontexto =~ 'Updated:') { $XUpdated = $uncontexto; $XUpdated =~ s/}//gi; }
+			if ($uncontexto =~ 'History:') { $XHistory = $uncontexto; $XHistory =~ s/}//gi; }
+			if ($uncontexto =~ 'Canvas:') { $XCanvas = $uncontexto; $XCanvas =~ s/}//gi; }
+			if ($uncontexto =~ 'Favorites:') { $XFavorites = $uncontexto; $XFavorites =~ s/}//gi; }
+			if ($uncontexto =~ 'Trash:') { $XTrash = $uncontexto; $XTrash =~ s/}//gi; }
+			if ($uncontexto =~ 'OCv:') { $XOCV = $uncontexto; $XOCV =~ s/}//gi; }
+
+			$SubjectSelection = "$XCart<br>$XCreated<br>$XUpdated<br>$XHistory<br>$XCanvas<br>$XFavorites<br>$XTrash<br>$XOCV";
+	}
+
+
+
+
+
+	##-- if not blank, was: submit canvas/cart
+	if ($SubjectSelection ne '') {
+
+		## ----------------->>> 	
+		## ----------------->>> FIRST read saved cart [SAME AS customer-communication-panel.htm FUNCTION FOR HASHING UID]
+		## ----------------->>> 
+
+		use DBI; my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n";  $dbh->{RaiseError} = 1; my $sth = $dbh->prepare("SELECT * FROM customerScarts WHERE UID = '$myUID'"); $sth->execute or die "Error 5231\n"; my $row = $sth->fetchrow_arrayref; my $cartID = $row->[0]; my $cartContents = $row->[2]; my $cartEA = $row->[3]; my $cartCID = $row->[4]; my $cartDate = $row->[5]; my $cartHistory = $row->[8]; $sth->finish; $dbh->disconnect; $llave = int($cartID); $ENUID = &decrypt ($inUID, $llave); $remadeUID = substr($ENUID,0,8) . '-' . substr($ENUID,8,4) . '-' . substr($ENUID,12,4) . '-' . substr($ENUID,16,4) . '-' . substr($ENUID,20,32); use Data::UUID; $ug2 = new Data::UUID; $idHash = $ug2->from_string($remadeUID); $idHash =~ s/[^a-zA-Z0-9-]//g; $idHash =~ s/N/0/gi; $idHash =~ s/E/1/gi; $idHash =~ s/T/2/gi; $idHash =~ s/W/3/gi; $idHash =~ s/O/4/gi; $idHash =~ s/R/5/gi; $idHash =~ s/K/6/gi; $idHash =~ s/S/7/gi; $idHash =~ s/P/8/gi; $idHash =~ s/V/9/gi; ($UIDIP, $UIDCARTID) = split(/-/,$idHash); $saltyCID = $UIDCARTID; $saltyCID =~ s/0/W/gi; $saltyCID =~ s/1/E/gi; $saltyCID =~ s/2/B/gi; $saltyCID =~ s/3/S/gi; $saltyCID =~ s/4/I/gi; $saltyCID =~ s/5/T/gi; $saltyCID =~ s/6/D/gi; $saltyCID =~ s/7/G/gi; $saltyCID =~ s/8/N/gi; $saltyCID =~ s/9/R/gi; @idRev = split(//,$saltyCID); $saltyCID = join('',reverse(@idRev));
+		$idHash =~ s/$UIDCARTID/$saltyCID/g;
+
+		$XOpenCanvasURL = 'http://www.vps-net.com/opencanvas-interactive-website-design/';
+		$XCart = $XOpenCanvasURL."?OpenCanvasID=$idHash";
+
+
+		$XCanvas =~ s/Canvas://gi;
+		$XOCV =~ s/OCv://gi;
+		@allCanvases = split(/,/,$XCanvas);
+		foreach $unc (@allCanvases) { 
+			if ($unc ne '') {
+				$theCanvases .= "<li style=\"padding-top:10px;\"><div style=\"padding:1px;margin:0;font-size:11px;\"><a href=\"http://www.vps-net.com/opencanvas-interactive-website-design/?DesignID=OCv".$XOCV."".$unc."\" title=\"OpenCanvas Design ID: $unc\">OpenCanvas Design ID: $unc</a></div><div style=\"border:rgb(38, 104, 153) 1px solid;padding:1px;margin:10px;max-width:120px;\"><a href=\"http://www.vps-net.com/opencanvas-interactive-website-design/?DesignID=OCv".$XOCV."".$unc."\"><img src=\"http://www.vps-net.com/opencanvas-interactive-website-design/website-design-template-images.htm?t=OCv".$XOCV."".$unc."&k=s&s=tm\" alt=\"OpenCanvas Design ID: $unc\" width=\"100%\" height=\"100%\" border=\"0\"></a></div></li>\n\r";
+			}
+		}
+		if ($theCanvases) { $theCanvases = "<ul>" . $theCanvases . "</ul>"; }
+
+		$SubjectSelection = "<ul><li style=\"padding-top:10px;\"><a href=\"$XOpenCanvasURL\" title=\"OpenCanvas, the Interactive Design Experience\">OpenCanvas, the Interactive Design Experience</a><br><a href=\"$XCart\" title=\"OpenCanvas, the Interactive Design Experience - Canvas ID: $idHash\">(Canvas ID: $idHash)</a><br>$theCanvases</li></ul>";
+	}
+
+
+	
+	
+	
+	
+	
+	##-WAS 
+	##-@losRecipients = split(/,/,$XRecipient);
+	
+	##-NOW [2013]
+	$elTipo = $myType;
+	if ($myType eq "VPSNETShare") { 
+		$elTipo = 'Website Content Share'; 
+		##- if sharing or multiple recipients
+		if ($XRecipient =~ ',') { @losRecipients = split(/,/,$XRecipient); }
+		else { $losRecipients[0] = $XRecipient; }
+	}
+	##- messaging admin (sales)
+	else { $losRecipients[0] = 'Virtual Private Servers and Networks [VPS-NET] <admin@vps-net.com>'; }
+	##-NOW [2013]
+
+
+
+	##-- only from contact form, share form, etc...
+	if ($FORM{'SubjectSelection'}) {
+		$SubjectSelection = $FORM{'SubjectSelection'};
+			
+		##-- following javascript variable naming and follow-through conventions, that's why its so long:
+		##-- js acquire(d) from customer-communication-panel.htm
+		$vpsneturl = 'http://www.vps-net.com/';
+		$vps_net_address = $vpsneturl;
+		$vpsnetshareurl = $vps_net_address;
+		$open_canvas_package = '$open_canvas_package';
+
+		$packageone = 'express-web-design-package.php';
+		$packagetwo = 'business-website-design-package.php';
+		$packagethree = 'advanced-web-site-design-package.php';
+
+		##- OpenCanvas package
+		##- server(document) or script based positive
+		##- if more than one sub-item chosen, resort back to main url
+			if ($SubjectSelection =~ '\(OpenCanvas' || $SubjectSelection =~ 'OpenCanvas \(' || $SubjectSelection =~ 'Design ID:' || $SubjectSelection =~ 'Canvas ID:') {
+			#vpsnetshareurl .= 'opencanvas-interactive-website-design/';
+			##- root calls
+			if ($SubjectSelection =~ 'Design ID:') { 
+				$MYvpsnetshareurl = $vpsnetshareurl.'opencanvas-interactive-website-design/?DesignID='.$FORM{'t'}.''; 
+				$myREP = " - <a href='$MYvpsnetshareurl'>Design ID: $FORM{'t'}</a><br>";
+				$SubjectSelection =~ s/Design ID: $FORM{'t'}/$myREP/gi;
+			}
+			if($SubjectSelection =~ 'Canvas ID:') { 
+				$MYvpsnetshareurl = $vpsnetshareurl.'opencanvas-interactive-website-design/?OpenCanvasID='.$FORM{'idHash'}.''; 
+				$myREP = "- <a href='$MYvpsnetshareurl'>Canvas ID: $FORM{'idHash'}</a><br>";
+				$SubjectSelection =~ s/Canvas ID: $FORM{'idHash'}/$myREP/gi;
+			}
+			##- enhanced calls
+			if ($SubjectSelection =~ 'eXpress' || $SubjectSelection =~ 'Advanced' || $SubjectSelection =~ 'Business') {
+				if ($SubjectSelection =~ 'eXpress') {
+					$MYvpsnetshareurl = $vpsnetshareurl.'opencanvas-interactive-website-design/'.$packageone; 
+					$myREP = "- <a href='$MYvpsnetshareurl'>OpenCanvas eXpress</a><br>";
+					$SubjectSelection =~ s/OC1 \(OpenCanvas eXpress\)/$myREP/gi;
+				}
+				##- advanced before business for other way around would catch business first
+				if($SubjectSelection =~ 'Advanced') { 
+					$MYvpsnetshareurl = $vpsnetshareurl.'opencanvas-interactive-website-design/'.$packagethree; 
+					$myREP = "- <a href='$MYvpsnetshareurl'>OpenCanvas Advanced</a><br>";
+					$SubjectSelection =~ s/OC3 \(OpenCanvas Advanced\)/$myREP/gi;
+				}
+				if($SubjectSelection =~ 'Business') { 
+					$MYvpsnetshareurl = $vpsnetshareurl.'opencanvas-interactive-website-design/'.$packagetwo; 
+					$myREP = "- <a href='$MYvpsnetshareurl'>OpenCanvas Business</a><br>";
+					$SubjectSelection =~ s/OC2 \(OpenCanvas Business\)/$myREP/gi;
+				}
+			}
+			if($SubjectSelection =~ 'OpenCanvas \(Interactive Web Design Experience\)') {
+				$MYvpsnetshareurl = $vpsnetshareurl.'opencanvas-interactive-website-design/'; 
+				$myREP = "- <a href='$MYvpsnetshareurl'>OpenCanvas, the Interactive Web Design Experience</a><br>";
+				$SubjectSelection =~ s/OpenCanvas \(Interactive Web Design Experience\)/$myREP/gi;
+			}
+		}
+		if($SubjectSelection =~ 'SEM') {
+			$MYvpsnetshareurl = $vpsnetshareurl.'internet-search-and-social-marketing/sem-search-engine-marketing.php';
+			$myREP = "- <a href='$MYvpsnetshareurl'>Search Engine Marketing</a><br>";
+			$SubjectSelection =~ s/SEM \(Search Engine Marketing\)/$myREP/gi;
+		}
+		if($SubjectSelection =~ 'SEO') {
+			$MYvpsnetshareurl = $vpsnetshareurl.'internet-search-and-social-marketing/seo-search-engine-optimization.php';
+			$myREP = "- <a href='$MYvpsnetshareurl'>Search Engine Optimization</a><br>";
+			$SubjectSelection =~ s/SEO \(Search Engine Optimization\)/$myREP/gi;
+		}
+		if($SubjectSelection =~ 'Domains') {
+			$MYvpsnetshareurl = $vpsnetshareurl.'domain-registration-search/';
+			$myREP = "- <a href='$MYvpsnetshareurl'>Domain Name Registration, Whois and Search</a><br>";
+			$SubjectSelection =~ s/Domains \(Domain Name Search\)/$myREP/gi;
+		}
+
+		if($SubjectSelection =~ 'HTML-O') {
+			$MYvpsnetshareurl = $vpsnetshareurl.'internet-development-tools/html-data-obfuscation-web-tool.php';
+			$myREP = "- <a href='$MYvpsnetshareurl'>HTML Markup Obfuscator</a><br>";
+			$SubjectSelection =~ s/HTML-O \(HTML Obfuscator\)/$myREP/gi;
+		}
+		if($SubjectSelection =~ 'BuyItNow') {
+			$MYvpsnetshareurl = $vpsnetshareurl.'internet-development-tools/wordpress-plugins/google-checkout-paypal-buy-it-now-button.php';
+			$myREP = "- <a href='$MYvpsnetshareurl'>Wordpress E-Commerce Plugin</a><br>";
+			$SubjectSelection =~ s/BuyItNow \(Wordpress E-Commerce Plugin\)/$myREP/gi;
+		}
+
+		if($SubjectSelection =~ 'Tools') {
+			$MYvpsnetshareurl = $vpsnetshareurl.'internet-development-tools/';
+			$myREP = "- <a href='$MYvpsnetshareurl'>Website Tools & Widgets</a><br>";
+			$SubjectSelection =~ s/Tools \(Website Tools \& Widgets\)/$myREP/gi;
+		}
+		if($SubjectSelection =~ 'WikiPeeks') {
+			$MYvpsnetshareurl = $vpsnetshareurl.'internet-development-tools/cross-browser-javascripting/wiki-peeks/';
+			$myREP = "- <a href='$MYvpsnetshareurl'>WikiPeeks (Internet Wiki Plug-In for Websites)</a>";
+			$SubjectSelection =~ s/WikiPeeks \(Internet Wiki Plug-In for Websites\)/$myREP/gi;
+		}
+
+		##$SubjectSelection .= $vpsnetshareurl;
+	}
+
+
+	if ($myType eq "VPSNETShare") {
+		$elTipo = 'Website Content Share';
+		$elTitulo = 'Hello!';
+		$elContexto = "<p>One of our website users thought you'd like to hear about us, we are Virtual Private Servers and Networks, VPS-NET for short. These are some of the technological products and services we provide, which <b>$XUsername</b> was so kind to take the time and share with you:</p>";
+
+	}
+	else {
+		$elTitulo = "Website Contact Form Submitted";
+
+		##-- setting this way gives admin view of OpenCanvas ID
+		$elContexto = "<p>" . $XMessage . "</p>";
+
+		if ($elTipo eq "SaveCanvas") { 
+			$elTipo = 'OpenCanvas Saved';
+			$elTitulo = "Open Canvas Was Saved"; 
+		}
+		elsif ($elTipo eq "SubmitCanvas") { 
+			$elTipo = 'OpenCanvas Submitted';
+			$elTitulo = "Open Canvas Was Submitted"; 
+		}
+
+		##-- notes only for save and submit
+		if ($elTipo eq "SaveCanvas" || $elTipo eq "SubmitCanvas") { 
+			$elContexto = "<p><i>Notes:</i><br>".$elContexto."</p>";
+		}
+	}
+
+
+
+
+	##--SEND MAIN EMAIL [IF CANVAS AND SUCH = ADMIN || IS SHARE, ETC]
+	$cEmails = 0;
+	foreach $aRecipient (@losRecipients) {
+		$laEME = $lXEmail;
+		my $OGRecipientIn = "$aRecipient";
+		my $OGSenderIn = "$XUsername <$laEME>";
+		my $OGsubject = "Virtual Private Communication ($elTipo)";
+	
+		##--WAS
+		##--$myEmailBody = &getEmailHTML(1,2,"Virtual Private - $elTipo","","$elTipo","$uncontexto $XRecipient");
+		##--NOW [2013]
+		$myEmailBody = &getEmailHTML(1,2,"Virtual Private - $elTipo","","$elTitulo","$elContexto ".$SubjectSelection." $elFooter");
+	
+		use lib "/usr/local/lib/";
+		use MIME::Lite;
+		my $msg = MIME::Lite->new(
+							From    =>$OGSenderIn,
+		                	To      =>$OGRecipientIn,
+		  	 		        Subject =>$OGsubject,
+		                	Type    =>'multipart/mixed'
+		  					);
+		$msg->attach(Type => 'text/html',
+		Data => $myEmailBody);
+		$msg->send();
+
+		##--SEND USER EMAIL [IF CANVAS AND SUCH] ONLY ONLY FIRST RUN, NOT SURE WHY THERE WOULD BE MORE RUNS, BUT YEAH, ANYWAYS LOL
+		if ($cEmails == 0 && ($elTipo eq "OpenCanvas Saved" || $elTipo eq "OpenCanvas Submitted")) { 
+			$laEME = $lXEmail;
+			my $OGRecipientIn = "$XUsername <$laEME>";
+			my $OGSenderIn = "$aRecipient";
+			my $OGsubject = "Virtual Private Communication ($elTipo)";
+	
+			$myEmailBody = &getEmailHTML(1,2,"Virtual Private - $elTipo","","$elTitulo","$elContexto ".$SubjectSelection." $elFooter");
+	
+			use lib "/usr/local/lib/";
+			use MIME::Lite;
+			my $msg = MIME::Lite->new(
+								From    =>$OGSenderIn,
+		        	        	To      =>$OGRecipientIn,
+		  		 		        Subject =>$OGsubject,
+			                	Type    =>'multipart/mixed'
+			  					);
+			$msg->attach(Type => 'text/html',
+			Data => $myEmailBody);
+			$msg->send();
+		}
+		$cEmails++;
+	}
+
+
+
+}
+
+
+
+
+######----#######
+#### END 2013 ###
+######----#######
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1;

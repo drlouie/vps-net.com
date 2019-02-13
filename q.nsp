@@ -1,0 +1,91 @@
+################################################################
+#   Program:    Query Sniffer, Bot/Spam Killer                 #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+if ($ENV{'REQUEST_METHOD'} eq 'GET'){@pairs=split(/&/, $ENV{'QUERY_STRING'});}elsif($ENV{'REQUEST_METHOD'} eq 'POST'){read(STDIN, $buffer, $ENV{'CONTENT_LENGTH'});@pairs=split(/&/, $buffer);}else{0;}foreach $pair (@pairs){local($name, $value) = split(/=/, $pair);$name =~ tr/+/ /;$name =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;if($value){$value =~ tr/+/ /;$value =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;$value =~ s/<!--(.|\n)*-->//g;}if ($FORM{$name} && $value){push(@Todo_Form,"$name-----$value");$FORM{$name}="$FORM{$name}, $value";}elsif($value){push(@Todo_Form,"$name-----$value");push(@Field_Order,$name);$FORM{$name}=$value;}
+##--added 110311 to make sure we read in items with only field name, but no value [fixed 111311: Use of uninitialized value $value in concatenation]
+elsif($name && $singleShotQuery){if (!$value) {$value='';}push(@Todo_Form,"$name-----$value");push(@Field_Order,$value);$FORM{$value}=$name;}}
+
+##-- attempting to log in
+if ($FORM{'uNaim'} && $FORM{'pDub'}) {
+	if (length($FORM{'uNaim'}) >= 1 && length($FORM{'pDub'}) >= 1) {
+		$unaim = $FORM{'uNaim'};
+		$pdub = $FORM{'pDub'};
+		if ($unaim =~ m/[^0-9A-Za-z_-]/){
+			$unaim = "";
+		}
+		#$fs = '/';
+		#$bs = '\';
+		#$pdub =~ s/\n//gi; $pdub =~ s/%//gi; $pdub =~ s/'//gi; $pdub =~ s/"//gi; $pdub =~ s/$fs//gi; $pdub =~ s/$bs//gi; $pdub =~ s/=//gi; $pdub =~ s/\&//gi; $pdub =~ s/\#//gi; $pdub =~ s/ //gi;
+	}
+}
+
+
+##-->> sanitize
+foreach $afi (@FORM) {
+	$afi =~ s/'//gi;
+	$afi =~ s/"//gi;
+	$afi =~ s/%//gi;
+}
+
+
+##-->> SPAM filtering: kill these for now [being triggered from the processes afffected, not the entire site]
+if ($NOSPAM) {
+	if ($NOSPAM == 1) {
+		$KILLIT = 0;
+		$IP = "$ENV{'REMOTE_ADDR'}";
+		##-- japanese / chinese cralwer range
+		if ($IP =~ "180.76.5." || $IP =~ "180.76.6.") { $KILLIT = 1; }
+		##-- softlayer cralwer
+		elsif ($IP =~ "5.10.83.") { $KILLIT = 1; }
+		##-- other crawlers 
+		elsif ($IP eq "175.137.71.168") { $KILLIT = 1; }
+		##-- bing bot
+		elsif ($IP =~ "157.55.35.") { $KILLIT = 1; }
+		##-- google cralwer
+		elsif ($IP eq "66.249.72.111" || $IP =~ "66.249.68.") { $KILLIT = 1; }
+		##-- hard coded dev IP
+
+		#- if ($IP ne "75.82.241.12") { $KILLIT = 1; }
+		#-require $HTTPRoot.'cookie.lib';
+		#-if (&GetCookies('IN')) {
+		#-	&GetCookies('IN');
+		#-	$ISIN = $Cookies{'IN'};
+		#-	#-- raw dirty login test
+		#-	if (!($ISIN =~ m/[^0-9A-Za-z]/)){
+		#-		$KILLIT = 0;
+		#-	}
+		#-}
+
+		if ($KILLIT == 1) {
+			##-- same as old Virtual Private index.htm, now used to track these blocks using access_log
+			require($HTTPRoot."virtual-private-servers-and-networks-spam-free.htm");
+			exit;
+		}
+	}
+}
+
+
+
+1;

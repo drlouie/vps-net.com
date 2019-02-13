@@ -1,0 +1,107 @@
+#!/usr/bin/perl -w
+
+################################################################
+#   Program:    Website Account Log Out Functionality          #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+	$invHTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/invisibleHTTP/';
+}
+else {
+	$HTTPRoot = '/var/www/vps-net.com/htdocs/';
+	$invHTTPRoot = '/var/www/vps-net.com/invisibleHTTP/';
+}
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+require($HTTPRoot."q.nsp");
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+#-- 370 262
+$backgroundHeight = '262';
+
+##-- 
+##-- defeat warnings [used only once: possible typo]
+##-- 
+$noDateParse = $noDateParse;
+$days = $days;
+$Cookie_Exp_Date = $Cookie_Exp_Date;
+$months = $months;
+##-- 
+##-- done defeating
+##-- 
+
+
+##-kill the cookie and ask forward to re-log
+print "Cache-Control: must-revalidate\n";
+	## make it expire one year ago at midnight :)
+	my $ahora = today();
+	my $CCD = $ahora - 365;
+	## set proper expiration datetime stamp (Sat, 31-Dec-2011 23:59:59 GMT)
+	$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+	&SetCookies('IN','');
+print "\n";
+
+$backgroundHeight = 'h'.$backgroundHeight;
+		
+print qq~
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Virtual Private Logout</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+	body { background:url(/web_design_imagery/accountModel-background-$backgroundHeight.png); background-position:bottom right; background-attachment: fixed; background-repeat: no-repeat; }
+	.welcomeText { font-size:12px;font-family:verdana,arial,helvetica;color:#000000; line-height:16px; }
+</style>
+<link rel="stylesheet" type="text/css" href="/interface_design_templater.php?q=1&p=CHCSS">
+</head>
+<body bgcolor="#FFFFFF" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0">
+<script language="javascript" src="cross_browser_javascripts/counter.js"></script>
+<script type="text/javascript" language="javascript">
+	//--set counter's runSwitch function variables
+	elGo = ''+parent.location.href+'?rf'+'$datetime';
+	tipTop = 'parent';
+</script>
+<TABLE width="100%" cellspacing ="0" cellpadding="10" border="0" valign="middle">
+     <TR> 
+         <TD width="100%" align="center" valign="middle" style="padding-top:35px;padding-bottom:35px;"><font face="verdana,arial,helvetica" size="2" color="#000000" class="welcomeText"><b>You have been logged out of the system successfully.</b><br>We will now take you to our website homepage.<br><br><br><div id="numberCountdown"></div><br><a href="javascript:runSwitch();">Don't wait, go there now.</a></font></td>
+	</tr>
+</table>
+<script>
+	startCountdown();
+</script>
+</body>
+</html>
+~;
+
+
+exit;

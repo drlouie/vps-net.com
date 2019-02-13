@@ -1,0 +1,12 @@
+##- trim leading and trailing white space
+##- collapse internal whitespace to single space each
+##- take input from $_ if no arguments given
+##- rejoin return list into single scalar with intervening spaces if return is scalar context
+
+sub trim {
+	my @out = @_ ? @_ : $_;
+	$_ = join( ' ', split(' ')) for @out;
+	return wantarray ? @out : "@out";
+}
+
+1;

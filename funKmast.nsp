@@ -1,0 +1,742 @@
+################################################################
+#   Program:    Common Website Functions                       #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+###############
+##<-- 2k8 -->##
+###############
+
+##########################
+##<-- function master-->##
+##########################
+
+## --> CRYPTOLOGY
+#-WAS
+#-use Crypt::Tea;
+#-IS
+use Crypt::Tea_JS;
+
+require($HTTPRoot."cartReader.nsp");
+
+require($HTTPRoot."cookiesnif.nsp");
+
+$netAgent = $ENV{'HTTP_USER_AGENT'};
+if ($netAgent =~ "Opera") { $myTriggerKeyDown = "onKeyPress"; }
+else { $myTriggerKeyDown = "onKeyDown"; }
+
+
+#-WAS
+#-use Crypt::Tea;
+#-IS
+use Crypt::Tea_JS;
+
+if (&GetCookies('IN') && &GetCookies('EN')) {
+	$ISIN = int($Cookies{'IN'});
+}
+
+if ($ISIN > 0) {
+	&GetCookies('IN'); &GetCookies('EN'); $resulta = &decrypt ($Cookies{'EN'}, $Cookies{'IN'});
+}
+
+
+### shield icon and welcome message
+if ($resulta eq "SI") {
+	###--backward compat
+	$Cookies{'Logged'} = "SI";
+	
+	use DBI; 
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	
+	$sth = $dbh->prepare("SELECT * FROM CustomersNEW WHERE Username='$cualUser'");
+	$sth->execute or die "Unable to execute query\n"; 
+	my @row;
+	while(@row = $sth->fetchrow_array) { 
+		$myUT = $row[32];
+	}
+	$sth->finish;
+	$dbh->disconnect;
+	
+#-	$cualFNe = "$Cookies{'FNe'}";
+#-	$cualLNe = "$Cookies{'LNe'}";
+#-	$cualUser = "$Cookies{'UNo'}";
+#-	$welcomeSpot = "<div class=\"welcomeMessage2k8\">Logged as <b>$cualFNe $cualLNe</b> [ <a href=\"logout.htm\"><font class=\"welcomeLink2k8\">Log Out</font></a> ]</div>";
+#-	if ($myUT eq "TopAdmin" || $myUT eq "MidAdmin" || $myUT eq "MinAdmin") {
+#-		$shieldIcon = "<a href=\"adminSystem2008.htm\"><img src=\"NightVisionImages/night_vision_shieldov.gif\" border=\"0\" width=\"17\" height=\"15\" alt=\"Logged as $cualFNe $cualLNe, click for administration system\" name=\"shield\"></a>";	
+#-	}
+#-	else {
+#-		$shieldIcon = "<img src=\"NightVisionImages/night_vision_shieldov.gif\" border=\"0\" width=\"17\" height=\"15\" alt=\"Logged as $cualFNe $cualLNe\" name=\"shield\">";	
+#-	}
+#-}
+#-else {
+#-	$welcomeSpot = "<div class=\"welcomeMessage2k8\">Welcome, Guest [ <a href=\"/login.htm\"><font class=\"welcomeLink2k8\">Log In</font></a> ]</div>"; 
+#-	$shieldIcon = "<img src=\"NightVisionImages/night_vision_shieldoff.gif\" border=\"0\" width=\"17\" height=\"15\" alt=\"USNV :: Not logged in\" name=\"shield\">";
+#-}
+
+
+###--> cart icon
+#-if ($Cookies{'OpenCanvasDesign'} ne "") { $cartIcon = "<a href=\"cart2008.htm\"><img src=\"NightVisionImages/nightvision_cartInUse.gif\" name=\"cart\" border=\"0\" width=\"20\" height=\"15\" alt=\"$itemCount in Cart(\$$CarterTheTotal) - Click to view contents\"></a>"; }
+#-else { $cartIcon = "<img src=\"NightVisionImages/nightvision_cartEmpty.gif\" name=\"cart\" border=\"0\" width=\"20\" height=\"15\" alt=\"Cart is Empty\">"; }
+
+
+
+if ($FORM{'leAdmin'} eq "adminP" || $NVPhotoGalleries eq "1") { $nvPhotoLoader = "integratePhotos();placeFramie();"; $placeFramieOnResize = "onResize=\"placeFramie();\""; }
+else { $placeFramieOnResize = ""; }
+
+
+if (!$myHead) { 
+	$myHead = "";
+}
+
+if ($Blackout eq "1") { $cualFirstALT = "Blackout Infrared Filters"; }
+else { $cualFirstALT = "Monoculars"; }
+
+
+
+##if ($isHOME eq "1") { $mainMenu = "<div style=\"position:relative;top:40px;left:-22px;\"><img src=\"NightVisionImages/NightVisionMenus/mainmenu_over.gif\" width=\"220\" height=\"36\" border=\"\"></div>"; }
+##else { 
+$mainMenu = "<script src=\"NightVisionScripting/mainmenu.cgi\" type=\"text/javascript\"></script>"; 
+##}
+
+$topMenu = "
+	<div id=\"overLibDiv\" style=\"position:absolute; visibility:hidden; z-index:1000;\"></div>
+	<script language=\"JavaScript\" src=\"NightVisionScripting/overlib.js\"></script>
+	<script src=\"cross_browser_javascripts/popwindow.js\" type=\"text/javascript\"></script>
+	<script src=\"cross_browser_javascripts/tcv.js\" type=\"text/javascript\"></script>
+	<script language=\"Javascript\">
+	function ThawteCertificateVerify() {
+		thisSW = 500; thisSH = 600;
+		popWindow('https://www.thawte.com/core/process?process=public-site-seal-cert-details&public-site-seal-cert-details.referer=http://www.vps-net.com/','THAWTE',thisSW,thisSH,'NO');
+	}
+	</script>
+	<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#FFFFFF\" style=\"background-image:url(NightVisionImages/NightVisionFlag.jpg);background-position:top center;background-repeat:no-repeat;\">
+		<tr valign=\"top\">
+			<td width=\"50%\" height=\"149\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#FFFFFF\" style=\"background-image:url(NightVisionImages/edgespanner.jpg);background-position:top center;background-repeat:repeat-x;\"><tr><td><img src=\"Night_Vision_Images/spacer.gif\" border=\"0\" width=\"1\" height=\"149\"></td></tr></table></td>
+			<td>
+				<div style=\"width:838px;height:149px;\">
+					<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+						<tr>
+							<td colspan=\"2\" style=\"height:25px;padding-top:2px;padding-right:10px;\" align=\"right\" valign=\"top\">
+								<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+									<tr>
+										<td class=\"menuIcon\"><a href=\"\"><img src=\"NightVisionImages/GSA_Government_Supply.gif\" border=\"0\" width=\"32\" height=\"20\" alt=\"Night Vision at 'GSA Advantage' Scheduled Pricing\"></a></td>
+										<td class=\"menuIcon\">$cartIcon</td>
+										<td class=\"menuIcon\">$shieldIcon</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr style=\"height:90px;\">
+							<td style=\"width:320px;padding-top:20px;\" valign=\"top\" align=\"left\"><a href=\"/index.2008.htm\"><img src=\"NightVisionImages/US-Night-Vision-Logo_off.gif\" border=\"0\" width=\"282\" height=\"64\" onMouseOver=\"this.src='NightVisionImages/US-Night-Vision-Logo_over.gif';\" onMouseOut=\"this.src='NightVisionImages/US-Night-Vision-Logo_off.gif';\"></a></td>
+							<td align=\"left\" valign=\"top\">
+								<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+									<tr>
+										<td class=\"Night_Vision_Sales\" align=\"right\">T&nbsp;o&nbsp; &nbsp;O&nbsp;r&nbsp;d&nbsp;e&nbsp;r&nbsp; &nbsp;C&nbsp;a&nbsp;l&nbsp;l&nbsp;:&nbsp; &nbsp;1&nbsp;(&nbsp;8&nbsp;0&nbsp;0&nbsp;)&nbsp;5&nbsp;0&nbsp;0&nbsp;-&nbsp;4&nbsp;0&nbsp;2&nbsp;0</td>
+									</tr>
+									<tr>
+										<td width=\"100%\">
+											<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+												<tr>
+													<td><div style=\"width:109px;\"><script src=\"NightVisionScripting/nightvisionmenu.js\" type=\"text/javascript\"></script></div></td>
+													<td><div style=\"width:85px;\"><script src=\"NightVisionScripting/thermalmenu.js\" type=\"text/javascript\"></script></div></td>
+													<td><div style=\"width:84px;\"><script src=\"NightVisionScripting/infraredmenu.js\" type=\"text/javascript\"></script></div></td>
+													<td><div style=\"width:109px;\"><script src=\"NightVisionScripting/illuminationmenu.js\" type=\"text/javascript\"></script></div></td>
+													<td><div style=\"width:71px;\"><script src=\"NightVisionScripting/lasersmenu.js\" type=\"text/javascript\"></script></div></td>
+												</tr>
+											</table>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr valign=\"top\" width=\"100%\">
+							<td colspan=\"2\" style=\"padding-top:8px;padding-left:30px;\">
+								<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+									<tr valign=\"top\">
+										<td align=\"top\"><div style=\"width:220px;\">$mainMenu</div></td>
+										<td align=\"right\">
+											<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+												<tr>
+													<td style=\"padding-left:2px;padding-right:2px;\"><div style=\"width:142px;\"><script src=\"NightVisionScripting/contactmenu.js\" type=\"text/javascript\"></script></div></td>
+													<td style=\"padding-left:2px;padding-right:2px;\"><div style=\"width:120px;\"><script src=\"NightVisionScripting/freecatalog.js\" type=\"text/javascript\"></script></div></td>
+													<td style=\"padding-left:2px;padding-right:2px;\"><div style=\"width:120px;\"><script src=\"NightVisionScripting/informationmenu.js\" type=\"text/javascript\"></script></div></td>
+													<!--<td style=\"padding-left:2px;padding-right:12px;\"><div style=\"width:120px;\"><a href=\"/NightVisionCart.htm\" onMouseOver=\"document.images.yourcart.src='/NightVisionImages/NightVisionMenus/mainButton_yourvps-netCart_over.gif';\" onMouseOut=\"document.images.yourcart.src='/NightVisionImages/NightVisionMenus/mainButton_yourvps-netCart_off.gif';\"><img src=\"/NightVisionImages/NightVisionMenus/mainButton_yourvps-netCart_off.gif\" width=\"120\" height=\"28\" border=\"0\" name=\"yourcart\"></a></div></td>-->
+													<td style=\"padding-left:2px;padding-right:12px;\"><div style=\"width:120px;\"><script src=\"NightVisionScripting/cartmenu.js\" type=\"text/javascript\"></script></div></td>
+												</tr>
+											</table>										
+										</td>
+									</tr>
+								</table>
+
+							
+							</td>
+						</tr>
+					</table>
+				</div>
+			</td>
+			<td width=\"50%\" height=\"149\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#FFFFFF\" style=\"background-image:url(NightVisionImages/edgespanner.jpg);background-position:top center;background-repeat:repeat-x;\"><tr><td><img src=\"Night_Vision_Images/spacer.gif\" border=\"0\" width=\"1\" height=\"149\"></td></tr></table></td>
+		</tr>
+	</table>
+";
+
+
+
+
+
+
+
+
+
+
+
+
+$secureTop = "
+<script src=\"cross_browser_javascripts/popwindow.js\" type=\"text/javascript\"></script>
+<script language=\"Javascript\">
+function ThawteCertificateVerify() {
+	thisSW = 500; thisSH = 600;
+	popWindow('https://www.thawte.com/core/process?process=public-site-seal-cert-details&public-site-seal-cert-details.referer=http://www.vps-net.com/','THAWTE',thisSW,thisSH,'NO');
+}
+</script>
+	<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#FFFFFF\" style=\"background-image:url(NightVisionImages/NightVisionSecured.jpg);background-position:top center;background-repeat:no-repeat;\">
+		<tr valign=\"top\">
+			<td width=\"50%\" height=\"91\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#FFFFFF\" style=\"background-image:url(NightVisionImages/secureTopSpanner.jpg);background-position:top center;background-repeat:repeat-x;\"><tr><td><img src=\"Night_Vision_Images/spacer.gif\" border=\"0\" width=\"1\" height=\"91\"></td></tr></table></td>
+			<td>
+				<div style=\"width:838px;height:91px;\">
+					<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+						<tr style=\"height:90px;\">
+							<td style=\"width:320px;padding-top:15px;\" valign=\"top\" align=\"left\"><a href=\"http://www.vps-net.com/index.2008.htm\"><img src=\"NightVisionImages/US-Night-Vision-Logo_off.gif\" border=\"0\" width=\"282\" height=\"64\" onMouseOver=\"this.src='NightVisionImages/US-Night-Vision-Logo_over.gif';\" onMouseOut=\"this.src='NightVisionImages/US-Night-Vision-Logo_off.gif';\"></a></td>
+							<td align=\"right\" valign=\"top\" class=\"secureTitulo\" style=\"cursor:pointer;\" title=\"US Night Vision Corporation's electronic commerce and communications systems are secured by leading edge 256-bit encryption technologies provided by Thawte. Click now to review our Thawte Internet Security Certificate.\" onClick=\"ThawteCertificateVerify();\">!!SECURETITULO!!</td>
+						</tr>
+					</table>
+				</div>
+			</td>
+			<td width=\"50%\" height=\"91\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#FFFFFF\" style=\"background-image:url(NightVisionImages/secureTopSpanner.jpg);background-position:top center;background-repeat:repeat-x;\"><tr><td><img src=\"Night_Vision_Images/spacer.gif\" border=\"0\" width=\"1\" height=\"91\"></td></tr></table></td>
+		</tr>
+	</table>
+";
+
+
+
+
+$secureEmailTop = "
+	<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#FFFFFF\" style=\"background-image:url(http://www.vps-net.com/NightVisionImages/secureTopSpanner.jpg);background-position:top center;background-repeat:repeat-x;\">
+		<tr valign=\"top\">
+			<td width=\"100%\" align=\"center\">
+				<div style=\"width:838px;height:91px;\" style=\"background-image:url(http://www.vps-net.com/NightVisionImages/NightVisionSecured.jpg);background-position:top center;background-repeat:no-repeat;\">
+					<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+						<tr style=\"height:90px;\">
+							<td style=\"width:320px;padding-top:15px;\" valign=\"top\" align=\"left\"><a href=\"http://www.vps-net.com/index.2008.htm\"><img src=\"http://www.vps-net.com/NightVisionImages/US-Night-Vision-Logo_off.gif\" border=\"0\" width=\"282\" height=\"64\"></a></td>
+							<td align=\"right\" valign=\"top\" style=\"font-size:14px; font-family:verdana,arial,helvetica; font-color:#000000; letter-spacing:5px; padding-top:52px; padding-right:70px;\" title=\"US Night Vision Corporation's electronic commerce and communications systems are secured by leading edge 256-bit encryption technologies provided by Thawte. Click now to review our Thawte Internet Security Certificate.\">!!SECURETITULO!!</td>
+						</tr>
+					</table>
+				</div>
+			</td>
+		</tr>
+	</table>
+";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$USNVMainTemplateBot = "
+	<table width=\"100%\" cellpadding=\"0\" height=\"51\" cellspacing=\"0\" border=\"0\" bgcolor=\"#FFFFFF\" style=\"margin-top:35px;\">
+		<tr>
+			<td valign=\"bottom\" width=\"56\" rowspan=\"3\"><a href=\"http://www.louierd.com/\" target=\"drlouie\" title=\"LouieRd IT Engineering & Production (aka drlouie) - Email me today!\"><img src=\"NightVisionImages/footer_louierd.jpg\" width=\"56\" height=\"51\" border=\"0\"></a></td>
+			<td valign=\"top\" height=\"32\" align=\"center\" width=\"100%\" class=\"footerInfo\" style=\"color:#1A2B73;padding-right:86px;\"> <a href=\"Night-Vision-Monoculars.htm\" title=\"Night Vision Monoculars\" style=\"text-decoration:none;color:#1A2B73;\">monoculars</a> - <a href=\"Night-Vision-Goggles.htm\" title=\"Night Vision Goggles\" style=\"text-decoration:none;color:#1A2B73;\">goggles</a> - <a href=\"Night-Vision-Binoculars.htm\" title=\"Night Vision Binoculars - Daytime Binoculars\" style=\"text-decoration:none;color:#1A2B73;\">binoculars</a> - <a href=\"Night-Vision-Weapon-Sight.htm\" title=\"Night Vision Weapon Sights\" style=\"text-decoration:none;color:#1A2B73;\">weapon sights</a> 
+			<a href=\"/\" target=\"USNV\"><img src=\"NightVisionImages/footer_USNV.jpg\" width=\"92\" height=\"22\" border=\"0\" hspace=\"10\" style=\"margin-top:5px;\" alt=\"USNV TECH - US Night Vision Corporation Technology Development and Procurement\"></a> 
+			<a href=\"USNV-Inventory-Pricesheet.htm\" title=\"Night Vision Monoculars, Goggles, Binoculars and Weapon Sights\" style=\"text-decoration:none;color:#1A2B73;\">night vision</a> - <a href=\"Thermal-Systems.htm\" title=\"Advanced Thermal Imaging Devices\" style=\"text-decoration:none;color:#1A2B73;\">thermal</a> - <a href=\"Blackout-Infrared-Filters.htm\" title=\"Advanced [IR] Infrared Illumination Devices and Night Vision Accessories\" style=\"text-decoration:none;color:#1A2B73;\">infrared</a> - <a href=\"Night-Vision-Lasers.htm\" title=\"US Night Vision carries a complete line of laser aiming devices for rifles and submachine guns. [ AR-2A M-4 M-16 AR-15 ]\" style=\"text-decoration:none;color:#1A2B73;\">lasers</a></td>
+		</tr>
+		<tr>
+			<td colspan=\"2\" valign=\"bottom\" height=\"1\" bgcolor=\"#DADCE7\" width=\"100%\"><div style=\"width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);\"></div></td>
+		</tr>
+		<tr>
+			<td colspan=\"2\" valign=\"bottom\" height=\"23\" bgcolor=\"#FFFFFF\" width=\"100%\">
+				<table width=\"100%\" cellpadding=\"0\" height=\"24\" cellspacing=\"0\" border=\"0\">
+					<tr>
+						<td width=\"100%\" align=\"center\" class=\"footerInfo\" style=\"padding-left:20px;\">Website, data and e-commerce platform are &copy; 2008 <a href=\"/\" style=\"color:#1A2B73;\" title=\"Content, which includes scripting, imagery and copy, are all US Night Vision Corporation copyright materials. All rights reserved.\">US Night Vision Corporation</a> copyright material. All rights reserved.</td>
+						<td width=\"122\" align=\"center\"><img src=\"NightVisionImages/footer_UNIX.gif\" width=\"92\" height=\"24\" border=\"0\" style=\"cursor:hand;\" title=\"LouieRd IT Engineering & Development: Masters of the UNIX FreeBSD server platform. Why FreeBSD UNIX? Just ask! We also deal with other flavors of IX server platforms such as Redhat Linux and Debian Linux.\" hspace=\"10\"></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=\"2\" valign=\"bottom\" height=\"1\" bgcolor=\"#DADCE7\" width=\"100%\"><div style=\"width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);\"></div></td>
+		</tr>
+	</table>
+";
+
+
+$USNVMainTBotNoBars = "
+	<table width=\"100%\" cellpadding=\"0\" height=\"51\" cellspacing=\"0\" border=\"0\" bgcolor=\"#FFFFFF\">
+		<tr>
+			<td valign=\"bottom\" width=\"56\" rowspan=\"3\"><img src=\"NightVisionImages/spacer.gif\" width=\"56\" height=\"51\" border=\"0\"></td>
+			<td valign=\"top\" height=\"32\" align=\"center\" width=\"100%\" class=\"footerInfo\" style=\"color:#1A2B73;padding-right:86px;\"> <a href=\"Night-Vision-Monoculars.htm\" title=\"Night Vision Monoculars\" style=\"text-decoration:none;color:#1A2B73;\">monoculars</a> - <a href=\"Night-Vision-Goggles.htm\" title=\"Night Vision Goggles\" style=\"text-decoration:none;color:#1A2B73;\">goggles</a> - <a href=\"Night-Vision-Binoculars.htm\" title=\"Night Vision Binoculars - Daytime Binoculars\" style=\"text-decoration:none;color:#1A2B73;\">binoculars</a> - <a href=\"Night-Vision-Weapon-Sight.htm\" title=\"Night Vision Weapon Sights\" style=\"text-decoration:none;color:#1A2B73;\">weapon sights</a> 
+			<a href=\"/\" target=\"USNV\"><img src=\"NightVisionImages/footer_USNV.jpg\" width=\"92\" height=\"22\" border=\"0\" hspace=\"10\" style=\"margin-top:5px;\" alt=\"USNV TECH - US Night Vision Corporation Technology Development and Procurement\"></a> 
+			<a href=\"USNV-Inventory-Pricesheet.htm\" title=\"Night Vision Monoculars, Goggles, Binoculars and Weapon Sights\" style=\"text-decoration:none;color:#1A2B73;\">night vision</a> - <a href=\"Thermal-Systems.htm\" title=\"Advanced Thermal Imaging Devices\" style=\"text-decoration:none;color:#1A2B73;\">thermal</a> - <a href=\"Blackout-Infrared-Filters.htm\" title=\"Advanced [IR] Infrared Illumination Devices and Night Vision Accessories\" style=\"text-decoration:none;color:#1A2B73;\">infrared</a> - <a href=\"Night-Vision-Lasers.htm\" title=\"US Night Vision carries a complete line of laser aiming devices for rifles and submachine guns. [ AR-2A M-4 M-16 AR-15 ]\" style=\"text-decoration:none;color:#1A2B73;\">lasers</a></td>
+		</tr>
+		<tr>
+			<td colspan=\"2\" valign=\"bottom\" height=\"1\" bgcolor=\"#FFFFFF\" width=\"100%\"><div style=\"width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);\"></div></td>
+		</tr>
+		<tr>
+			<td colspan=\"2\" valign=\"bottom\" height=\"23\" bgcolor=\"#FFFFFF\" width=\"100%\">
+				<table width=\"100%\" cellpadding=\"0\" height=\"24\" cellspacing=\"0\" border=\"0\">
+					<tr>
+						<td width=\"100%\" align=\"center\" class=\"footerInfo\" style=\"padding-left:20px;\">Site, data and e-com platform are &copy; 2008 <a href=\"/\" style=\"color:#1A2B73;\" title=\"Content, which includes scripting, imagery and copy, are all US Night Vision Corporation copyright materials. All rights reserved.\">US Night Vision Corporation</a> materials. All rights reserved.</td>
+						<td width=\"122\" align=\"center\"><img src=\"NightVisionImages/spacer.gif\" width=\"92\" height=\"24\" border=\"0\" style=\"cursor:hand;\" hspace=\"10\"></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=\"2\" valign=\"bottom\" height=\"1\" bgcolor=\"#FFFFFF\" width=\"100%\"><div style=\"width:1px;height:1px;overflow:hidden;clip:rect(0px 1px 1px 0px);\"></div></td>
+		</tr>
+	</table>
+";
+
+### MONEY FORMATTER
+sub format_money {
+	my $number=$_[0];	
+	$number=sprintf("%.2f", $number);
+	my $stringlength=length($number);
+	if ($stringlength < 7) {return($number);}
+	
+	$number=substr($number,0,$stringlength-6).",".substr($number,$stringlength-6,6);
+	return($number);
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+##-- START CHECKERS
+##-- I WIN
+
+sub checkEmail {
+	$erroredOut = 0;
+
+	##-- SAME CHECK AS THIS RE-MADE AT [error: 7] another check
+	if ($em !~ '\@' || $em =~ "://") { $erroredOut = 1; $miError = 'E1 - Invalid email address was submitted.'; }
+	else {
+		##-- another check
+		use Data::Validate::Email qw(is_email is_email_rfc822);
+		if(is_email($em)){ $isok = 1; } 
+		elsif(is_email_rfc822($em)){ $isok = 1; } 
+		else { $erroredOut = 1; $miError = 'E2 - Invalid email address was submitted.'; }
+	}
+
+	##-- ERRORED AT THIS STEP SPIT IT!
+	if ($erroredOut eq "1") {
+		print "Content-type: text/html\n\n";
+		print "<script>alert('Error: \\'$miError\\'');history.go(-1)</script>";
+		exit;
+	}
+}
+
+$foundErrors = "";
+sub checkPassLength {
+	$erroredOut = 0;
+	if ((length($pass) <= 7)) {  $erroredOut = 1; $miError = 'Passsword entered is too short [8 characters minimum], surely that cant be your password.'; }
+	elsif ((length($pass) >= 13)) {  $erroredOut = 1; $miError = 'Password entered is too long [12 characters maximum], surely that cant be your password.'; }
+	##-- ERRORED AT THIS STEP SPIT IT!
+	if ($erroredOut eq "1") {
+		$foundErrors = $foundErrors . "- $miError<br><br>";
+		1;
+	}
+}
+
+sub checkNewPass {
+	$erroredOut = 0;
+	if ((length($pass) <= 7)) {  $erroredOut = 1; $miError = 'Passsword too short [8 characters minimum].'; }
+	elsif ((length($pass) >= 13)) {  $erroredOut = 1; $miError = 'Password too long [12 characters maximum].'; }
+	elsif ($pass ne "$pass2") {  $erroredOut = 1; $miError = 'Passwords do not match.'; }
+	##-- ERRORED AT THIS STEP SPIT IT!
+	if ($erroredOut eq "1") {
+		$foundErrors = $foundErrors . "- $miError<br><br>";
+		1;
+	}
+}
+
+
+## -- >> GLOBAL ZIP CODE CHECKER/CITY & STATE KICKBACK
+sub parseZip($incoming) {
+	my ($incoming) = @_;
+	$thisZip = $incoming;
+
+		$ZipCities = "";
+		$losCSsCuenta=0;
+
+		use DBI; 
+		use locale;
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+		$dbh->{RaiseError} = 1; 
+		$sth = $dbh->prepare("SELECT * FROM USPS_AIS WHERE ZipCode = '$thisZip'");
+		$sth->execute; 
+		my @row;
+		while(@row = $sth->fetchrow_array) {
+			$C = $row[2];
+			$S = $row[3];
+			## to test for multiple 
+			push(@ZipCities,"$C");
+			$losCSsCuenta++;
+		}
+		$sth->finish;
+
+		##--> found in results
+		if ($losCSsCuenta >= 1) {
+			$CSVerified = '1';
+			$miS = lc($S);
+			##- get full state name
+			if (length($S) == 2) {
+				$sth = $dbh->prepare("SELECT StateName, StateAbrv FROM States WHERE StateAbrv = '$miS'");
+				$sth->execute or die "Unable to execute query\n"; 
+				my $row = $sth->fetchrow_arrayref;
+				my $StateName = $row->[0];
+				$sth->finish;
+
+				$estado = "$StateName";
+			}
+
+		}
+		$dbh->disconnect;
+
+}
+
+
+
+
+
+## -- >> GLOBAL ZIP CODE CHECKER/CITY & STATE KICKBACK
+sub checkZip($incoming) {
+	my ($incoming) = @_;
+	$thisZip = $incoming;
+
+	$erroredOut = 0;
+	###--->> PROPER LENGTH (5) CHECK USPS
+	if ((length($thisZip) == 5)) {
+
+		$losCSsCuenta=0;
+
+		use DBI; 
+		use locale;
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+		$dbh->{RaiseError} = 1; 
+		$sth = $dbh->prepare("SELECT * FROM USPS_AIS WHERE ZipCode = '$thisZip'");
+		$sth->execute; 
+		my @row;
+		while(@row = $sth->fetchrow_array) {
+			$C = $row[2];
+			$S = $row[3];
+			$losCSsCuenta++;
+		}
+		$sth->finish;
+		$dbh->disconnect;
+
+		##--> found in results
+		if ($losCSsCuenta >= 1) { $hasPassed = 1; }
+		##--> not found in results
+		else {
+			$erroredOut = 1; 
+			$miError = 'Zip Code you entered is invalid according to the latest United States Postal Service Data'; 
+		}
+	}
+	else {
+		$erroredOut = 1;
+		$miError = 'Zip Code must be exactly 5 digits'; 
+	}
+	##-- ERRORED AT THIS STEP SPIT IT!
+	if ($erroredOut eq "1") {
+		print "Content-type: text/html\n\n";
+		print "<script>alert('Error: \\'$miError\\'');history.go(-1)</script>";
+		exit;
+	}
+}
+
+
+
+
+
+
+
+## -- >> EMAIL CHECKER/USER CHECKER (START)
+sub scrubEmail {
+	$erroredOut = 0;
+
+	$ShipProblems = "";
+
+	$Email = $em;
+	$countThis=0;
+
+	## Start User Account Check, NO DUPES!
+	use DBI; 
+	use locale;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+
+	my $sth = $dbh->prepare("SELECT * FROM CustomersNEW");
+	$sth->execute or die "Unable to execute query\n"; 
+	my @row;
+	while(@row = $sth->fetchrow_array) { 
+		$cualCT = $row[3];
+		my $SavedEmail = $row[15];
+		my $SavedUsername = $row[16];
+			
+		$SavedEmailLC = lc($SavedEmail);
+		$EmailLC = lc($Email);
+		$SavedUsernameLC = lc($SavedUsername);
+		## ------------->>> IF EXISTS DIE
+		if (($SavedEmailLC eq "$EmailLC") || ($SavedUsernameLC eq "$EmailLC")) {
+			$countThis++;
+		}
+	}
+	$sth->finish;
+	$dbh->disconnect;
+
+	if ($countThis eq "0") {
+		if ($em =~ "@") { $isgood = 1; }
+		else { 
+			$erroredOut = 1; 
+			$miError = 'Invalid email address was submitted.'; 
+		}
+	}
+	else { 
+		$erroredOut = 1; 
+		$miError = 'Email Address already in-use by a user in our system. If this is indeed your email address, you can always reset your password if you have forgotten it. To reset your password utilize the link located within the website login screen.'; 
+	}	
+	
+	
+	##-- ERRORED AT THIS STEP SPIT IT!
+	if ($erroredOut eq "1") {
+		print "Content-type: text/html\n\n";
+		print "<script>alert('Error: \\'$miError\\'');history.go(-1)</script>";
+		exit;
+	}
+}
+
+
+
+
+sub tryLogin {
+	$erroredOut = 0;
+	
+	## Define Variables
+	my $Username = "$em";
+	my $Password = "$pass";
+	### QUERY DB
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+	my $sth = $dbh->prepare("SELECT CustomerID, CompanyType, MailZip, FirstName, LastName, ProfessionalTitle, Email, Username, Password, LastLogin, AccountStatus FROM CustomersNEW WHERE Email = '$em'");
+	$sth->execute or die "Unable to execute query\n"; 
+		my $row = $sth->fetchrow_arrayref;
+		$UserID = $row->[0];
+		$AType = $row->[1];
+		$Zip = $row->[2];
+		$First = $row->[3];
+		$Last = $row->[4];
+		$Title = $row->[5];
+		$Email = $row->[6];
+		$UserN = $row->[7];
+		$Pass = $row->[8];
+		$LastLog = $row->[9];
+		$AS = $row->[10];
+	$sth->finish;
+
+	my $sth = $dbh->prepare("SELECT MD5('$Password')");
+	$sth->execute or die "Unable to execute query\n"; 
+	my $row = $sth->fetchrow_arrayref;
+	my $elCrypto = $row->[0];
+	$sth->finish;
+
+	##--slice enc
+	$elCrypto = substr($elCrypto, 2);
+	
+	if ($Pass eq $elCrypto && $AS eq "AcTiVe") {
+		##days since last login if available
+		$diff = "?";
+		if ($LastLog =~ "-" && $LastLog =~ ":") {
+			($lld, $llt) = split(/ /,$LastLog);
+			$diff = date($today) - date($lld);
+		}
+
+		$llave = $UserID;
+		$ascii_IM = $Email;
+		$ascii_IM =~ s/@/[at]/g;
+		$encrem = &encrypt ($ascii_IM, $llave);
+		$rencrem = reverse $encrem;
+		
+		# Print headers with only one \n 
+		print "Cache-Control: must-revalidate\n";
+			&SetCookies('IN',$rencrem);
+		print "\n";
+		
+		## UPDATE LAST LOG INFO FOR USER ACCOUNT
+		my $sth = $dbh->prepare("UPDATE LOW_PRIORITY CustomersNEW 
+								 SET LastLogin='$datetime',
+								 GUID='$rencrem'
+								 WHERE Username='$Username'");
+		$sth->execute or die "Unable to execute query\n";
+		$sth->finish; 
+		
+		###-- 
+		###-- simulate full login w/cookie params
+		$CSkey = $llave;
+		$CSin = $CSkey;
+		$CSen = "SI";
+		$CSun = "$UserN";
+		$CSim = "$Email";
+		$CSfn = "$First";
+		$CSln = "$Last";
+		$CSat = "$AType";
+		$CSzip = "$Zip";
+		$CStitle = "$Title";
+
+		###-- backward compat cookies
+		#-$Cookies{'Logged'} = "SI";
+		##-->> cid
+		#-$Cookies{'CNum'} = "$llave";
+		##-->> username
+		#-$Cookies{'UNo'} = "$UserN";
+		#-$Cookies{'IM'} = "$Email";
+		#-$Cookies{'FNe'} = "$First";
+		#-$Cookies{'LNe'} = "$Last";
+		##-->> company type
+		#-$Cookies{'CT'} = "$AType";
+		
+		$HASJUSTLOGGEDIN = 1;
+
+	}
+	else {
+		$erroredOut = 1; 
+		$miError = 'Login attempt failed: Invalid account information submitted. Please try again.';
+	}
+	
+	$dbh->disconnect;	
+	
+	
+	
+	##-- ERRORED AT THIS STEP SPIT IT!
+	if ($erroredOut eq "1") {
+		print "Content-type: text/html\n\n";
+		print "<script>alert('Error: \\'$miError\\'');history.go(-1)</script>";
+		exit;
+	}
+}
+
+
+
+
+
+
+sub getEmailHTML($incoming) {
+	my ($incoming) = @_;
+	$elMensage = $incoming;
+	$secureEmailTop =~ s/!!SECURETITULO!!/Secure Email Communications/gi;
+	$elHTML = "
+		<html>
+		<head>
+		<LINK REL=\"STYLESHEET\" HREF=\"http://www.vps-net.com/tMaster2k8.css\" Type=\"text/css\">
+		</head>
+		<body bgcolor=\"#FFFFFF\" leftmargin=\"0\" topmargin=\"0\" marginwidth=\"0\" marginheight=\"0\">
+		$secureEmailTop
+		<center>
+		<table width=\"615\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom:35px;margin-top:20px;\">
+			<tr>
+				<td width=\"100%\" align=\"left\" style=\"font-size:12px;font-family:verdana,arial,helvetica;color:#000000;line-height:16px;\">$elMensage</td>
+			</tr>
+			<tr>
+				<td width=\"100%\"><div style=\"width:614px;height:4px;overflow:hidden;clip:rect(0px 614px 4px 0px);\"></div></td>
+			</tr>
+		</table>
+		</center>
+		</body>
+		</html>	
+	";
+}
+
+
+
+if ($showCartPreview ne "0" || $FROMMENU eq "1") {
+	$myCartPreview = "
+		<table width=\"165\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" id=\"cartTable\" background=\"NightVisionImages/NightVisionMenus/leftiOpenCanvasWebsite.gif\">
+			<tr>
+				<td height=\"88\" align=\"center\" valign=\"bottom\" onClick=\"javascript:location.href='NightVisionCart.htm';\">
+					<table width=\"165\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\">
+						<tr>
+							<td><a href=\"NightVisionCart.htm\"><img src=\"Night_Vision_Images/spacer.gif\" border=\"0\" width=\"40\" height=\"33\"></a></td>
+							<td><a href=\"NightVisionCart.htm\"><img src=\"Night_Vision_Images/spacer.gif\" border=\"0\" width=\"128\" height=\"33\"></a></td>
+						</tr>
+						<tr>
+							<td><a href=\"NightVisionCart.htm\"><img src=\"Night_Vision_Images/spacer.gif\" border=\"0\" width=\"40\" height=\"49\"></a></td>
+							<td align=\"center\" valign=\"top\">
+								<table width=\"100\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\">
+									<tr>
+										<td align=\"center\" width=\"45%\" class=\"counterCart\"><a href=\"NightVisionCart.htm\" class=\"counterCart\">items</a><br><a href=\"NightVisionCart.htm\" class=\"counterCartNums\" style=\"text-decoration:none;\">$itemCount</a></td>
+										<td align=\"center\" width=\"55%\" class=\"counterCart\"><a href=\"NightVisionCart.htm\" class=\"counterCart\">cart total</a><br><a href=\"NightVisionCart.htm\" class=\"counterCartNums\" style=\"text-decoration:none;\">\$$CarterTheTotal</a></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	";
+}
+else { $myCartPreview = "<img src=\"Night_Vision_Images/spacer.gif\" border=\"0\" width=\"165\" height=\"90\" vspace=\"10\">"; }
+
+
+
+
+
+1;

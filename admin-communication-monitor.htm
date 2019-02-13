@@ -1,0 +1,374 @@
+#!/usr/bin/perl -s
+
+################################################################
+#   Program:    Admin Sent Email History                       #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+#   About                                                      #
+#        Type:  All email sent via site services or scripts,   #
+#               including direct marketing mailers.            #
+#        Also:  Set up to be used in conjunction with          #
+#               admin-communication-panel.htm to reuse emails  #
+#               in resending exact or similar emails to new    #
+#               recipients.                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+$perlCompileOS = $^O;
+if ($perlCompileOS =~ m/Win/i) {
+	$HTTPRoot = 'H:/dvwf/rbsd_IO/vhosts/vsnet/htdocsNEW/';
+}
+else { $HTTPRoot = '/var/www/vps-net.com/htdocs/'; }
+
+###############
+##<-- 2k10 -->##
+###############
+
+$|=1;
+
+$noDateParse = 1;
+require($HTTPRoot."dateNewest.nsp");
+
+require($HTTPRoot."q.nsp");
+
+## --> Snif cookie, if present test for logged in status
+require ($HTTPRoot."cookiesnif.nsp");
+
+##--power functions
+require($HTTPRoot."vfunc.nsp");
+
+##-- yes we can still hardcode an admin IP if needed, overwriting log in requirement [but with this, we need to pass ?adi=email@address.com, hence can't list all messages by all users, must log in for that, and only main admin or 555 can accecss]
+$AIP = "66.74.8.144";
+
+##--
+##-- COMMMUNICATION: MONITOR
+##--
+
+##-- if logged in, set last login IP to unlocking IP, if not same, must relogin
+if ($ISIN ne "") {
+	$AIP = $UserIP;
+	@pEmail = split(/\[at\]/,$Email);
+	$tEm = $pEmail[0] . '@' . $pEmail[1];
+	if ($FORM{'adi'} =~ "@") {
+		$adi = $FORM{'adi'};
+	}
+}
+else {
+	$adi = $FORM{'adi'};
+	$tEm = $adi;
+}
+
+##--
+##-- COMMMUNICATION: FORM  (AJAX ASSISTED)
+##--
+$mip = $ENV{'REMOTE_ADDR'};
+if (($tEm && ($tEm ne 'drlouie@louierd.com' && $tEm ne 'guru@vps-net.com' && $tEm ne 'guru@vps-net.com' && $tEm ne 'i@ngen-io.us' && $tEm ne 'sales@vps-net.com' && $tEm ne 'sns@vps-net.com')) || ($mip && ($mip ne $AIP)) || ($ISIN && !($ISIN ne ""))) {
+	#print "<script language=\"Javascript\" type=\"text/javascript\">alert('Error 2150: It is advisable you take note of this error and report it to the site administrator. Thanks. ($mip)');</script>";
+
+	#--> Hack attempt / or bad input
+	if (($ISIN && !($ISIN ne "")) || ($mip && ($mip ne $AIP))) {
+		$NOPASS = 1;
+	}
+}
+
+
+
+### HEADER WAS, MIGHT HAVE BEEN AN IE ISSUE, DOUBLE-CHECK LATER:
+print qq~
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE = 8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Virtual Private Communication Monitor (Email Messages Sent)</title>
+<link rel="stylesheet" type="text/css" href="/javascript-jquery-extension_fancybox-1.3.1.css">
+<link rel="stylesheet" type="text/css" href="/jquery.bubblepopup.v2.3.1.css">
+<link rel="stylesheet" type="text/css" href="/interface_design_templater.php?q=1&p=CHCSS">
+<style type="text/css">
+body { background:url(/web_design_imagery/accountModel-background-newAccount.png); background-position:bottom right; background-attachment: fixed; background-repeat: no-repeat; }
+#panel { display:none; position:absolute;right:0px;top:0px;height:100%;width:100%;z-index:25; overflow-x:hidden;overflow-y:hidden; background:#FFFFFF url(/web_design_imagery/accountModel-background-newAccount.png); background-position:bottom right; background-attachment: fixed; background-repeat: no-repeat; }
+#panelContent { display:none; position:absolute;right:0px;top:0px;height:100%;width:100%;z-index:25; overflow-x:hidden;overflow-y:hidden; background:#FFFFFF url(/web_design_imagery/accountModel-background-newAccount.png); background-position:bottom right; background-attachment: fixed; background-repeat: no-repeat; }
+#content { visibility:visible;display:visible; }
+.VirtualPrivateCommentWrapper { height:210px; }
+.VirtualPrivateCommentFormContainer { height:202px; padding-left:15px; padding-right:15px; padding-top:10px; }
+.VirtualPrivateCommentPrompt { font-family:tahoma,arial,verdana; font-size:12px; font-weight:bold; color:#000000; }
+.VirtualPrivateCommentInstructions { margin-bottom:10px; font-family:verdana,tahoma,arial; font-size:12px; color:#000000; font-weight:normal; }
+textarea.VirtualPrivateCommentTextarea { width:100%; height:$TAheight; font-family:Courier New,monospace,serif; font-size:14px; }
+#VirtualPrivateUser, #VPSNETFirst, #VPSNETLast, #VPSNETDID, input.VirtualPrivateSelectorOutput { padding:2px; width:65%; font-family:Courier New,monospace,serif; font-size:14px; }
+#VPSNETFirst, #VPSNETLast, #VPSNETDID { width:90%; padding:2px; font-size:14px; }
+#VPSNETDID { width:55%; text-align:center; }
+label.VirtualPrivateCommentLabel { font-size:14px; $feedbackCSS }
+#ContactFieldset { }
+#ContactFieldset label.VirtualPrivateCommentLabel { font-size:12px; }
+input.VirtualPrivateSelectorOutput { font-family:Courier New,monospace,serif; font-size:14px; }
+#VirtualPrivateSelectorOutput { padding:0.50%; margin-bottom:2px; }
+#VirtualPrivateSelectorPrintout { 
+	/*
+	margin-bottom:10px;
+	padding-left:20px;
+	*/
+}
+
+.Call-Virtual-Private-VPS-NET { color:#000; }
+.Call-Virtual-Private-VPS-NET:hover { color:#3F8FBD; }
+.The-Experts-Virtual-Private-VPS-NET { color:#3F8FBD; }
+#VirtualPrivateCommentActions {height:27px;}
+#VirtualPrivateActivity { padding-right:10px; }
+#VirtualPrivateCommentButtons { }
+#TemplateCommentAreas { margin-bottom:10px; }
+#infoWrap { padding-left:15px; padding-right:15px; padding-bottom:6px; position:relative; top:0px; left:0px; }
+
+#templateModalImage { position:relative; top:20px; left:6px; padding:0px; background: #D5DFE5; width:122px; height:112px; }
+#templateModalImage img { border: #D5DFE5 1px solid; }
+/* following TOP is driven by previous TOP, just offset by 3px */
+.imageShadow { position:relative;top:17px;left:6px; }
+/* following TOP is driven by previous TOP, just offset by 3px */
+.templateModalData { position:absolute; top:14px; left:146px; padding-left:30px; text-align:left; font:10px verdana,arial,helvetica; }
+.templateModalData div { padding-left:7px; background: url(/web_design_imagery/graphical-user-interface-arrow_off.gif) no-repeat 0px 3px; text-align:left; font-weight:normal; }
+.templateModalData div.spanned { background-position:0px 6px; }
+.templateModalData div div { line-height:12px; margin-top:10px; background: none; }
+.templateModalData div div div { padding-left:0px; }
+/*contact info*/
+.templateModalData div div div { line-height:18px; padding-bottom:6px; }
+.templateModalDasher { padding-right:10px; background: none; }
+
+/* 
+.templateOptionsData { width:100%; text-align:left; font-weight:normal; }
+.templateOptionsData span { font-size:10px; background:#F8F9FA; border: 1px solid #E1E3EC; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; color: #000000; cursor: default; display: block; float: left; height: 19px; margin: 3px 0 3px 3px; padding: 0 2px; position: relative; white-space: nowrap; } 
+*/
+.ContactOptionItem, .ContactOptionItem:hover { color:#000000; text-decoration:none; margin-left: 4px; }
+.delete { margin: 2px 0 -4px 1px; outline: none; }
+.miniclose { cursor: pointer; display: inline-block; padding:1px; margin-top: 2px; margin-left: 4px; background-image: url(/web_design_imagery/graphical-user-interface-delete_off.gif); background-repeat: no-repeat; height: 11px; width: 11px; border:1px solid #D5DFE5; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; }
+.miniclose:hover { padding:1px; background-image: url(/web_design_imagery/graphical-user-interface-delete_over.gif); border:1px dashed #D5DFE5; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; }
+
+.activeUserData span { font-size:11px; background:transparent; border: none; padding: 1px 3px 1px 3px; color: #555555; cursor: default; display: block; float: left; height: 19px; margin: 3px 0 3px 0; position: relative; white-space: nowrap; }
+.activeUserData span:hover { cursor:pointer; border: none; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; padding: 1px 3px 1px 3px; }
+
+span .userarrow, span .userconfig { margin: 0; outline: none; }
+.activeUserData span .userarrow { cursor: pointer; display: inline-block; padding:2px; margin-top: 1px; margin-left: 1px; background: url(/web_design_imagery/website_design_communications/arrow-dark.png) -1px 0px no-repeat; height: 9px; width: 9px; border:none; }
+.activeUserData span:hover .userarrow { padding:2px; background: url(/web_design_imagery/website_design_communications/arrow-dark-over.png) -1px 0px no-repeat; border:none; }
+
+.activeUserData span .userconfig { cursor: pointer; display: inline-block; padding:0; background: url(/web_design_imagery/website_design_communications/gear_dark.png) 0 1px no-repeat; height:17px; width:16px; border:none; }
+.activeUserData span:hover .userconfig { background: url(/web_design_imagery/website_design_communications/gear_dark_dropdown.png) 0 1px no-repeat; border:none; height:17px; width:16px; }
+.activeUserData span.config { padding: 1px 3px 1px 3px; }
+.activeUserData span.config:hover { border:0; padding: 1px 3px 1px 3px; }
+
+#CommunicationsLogin { border:0;margin:0;padding: 3px 2px 2px 4px; }
+
+/* old clearfix *//* .clearfix::after { visibility: hidden; clear: both; display: block; line-height: 0; height: 0; font-size: 0; content: "."; } */
+/* new clearfix */
+.clearfix:after { visibility: hidden; display: block; font-size: 0; content: " "; clear: both; height: 0; }
+* html .clearfix             { zoom: 1; } /* IE6 */
+*:first-child+html .clearfix { zoom: 1; } /* IE7 */
+
+/*Virtual Private Servers and Networks Communications Panel*/
+#VirtualPrivateServersURLs { width:90%;margin:0;padding:0;cursor:pointer; }
+#VirtualPrivateURLs, #VirtualPrivateURL { font-family:arial,tahoma,helvetica; font-size:9px; line-height:12px; }
+#VirtualPrivateURLs { color:#000000; }
+#VirtualPrivateURLs:hover { color:#3F8FBD; cursor:pointer; }
+#VirtualPrivateURL { padding:3px;padding-top:2px;width:100%;cursor:pointer; }
+#MoreVirtualPrivateNetworks { width:93%; margin:0; padding:0; padding-right:7%; }
+#CopyVirtualPrivateServers {  margin-left:10px; float:left; text-align:left; }
+#OtherVirtualPrivateServersLinks { margin-right:10px; float:right; text-align:right; }
+
+span.DefaultOptionsMenu { border:#FFFFFF 1px dashed; background:none; }
+
+#chat-sales { padding-bottom:10px; }
+
+#comments-form-message { padding: 5px 5px 5px 30px; width:auto; display: block; text-align:left; border: 1px dashed #AAB19E; margin:0; color:#000000; font-size: 11px; -moz-border-radius:2px; -webkit-border-radius:2px; border-radius:2px; }
+#comments-form-message.comments-form-message-error { border: 1px dashed #E98D8D; }
+.comments-form-message-error {background: #F5CCCC url(/web_design_imagery/website_design_communications/icon_error.png) no-repeat 6px 3px; }
+.comments-form-message-info {background: #F9F9F9 url(/web_design_imagery/website_design_communications/icon_info.png) no-repeat 6px 3px; }
+.comments-form-message-optin {background: #F9F9F9 url(/web_design_imagery/website_design_communications/icon_email.png) no-repeat 6px 3px; }
+.comments-form-message-time {background: #F9F9F9 url(/web_design_imagery/website_design_communications/icon_time.png) no-repeat 6px 3px; }
+.comments-form-message-contact-added {background: #F9F9F9 url(/web_design_imagery/website_design_communications/virtual-private-contact-added.png) no-repeat 6px 3px; }
+
+li.main { padding:50px 0px 20px 0px; }
+li.main li { padding:0px 40px 0px 0px; }
+small {font-style:italic;}
+fieldset {
+margin: 0 40px 0 0;
+padding: 3%;
+display: block;
+background: #FFFFFF;
+line-height: 1.40em;
+border: 1px solid #E5E5E5;
+-moz-box-shadow: rgba(200,200,200,0.7) 0 4px 10px -1px;
+-webkit-box-shadow: rgba(200, 200, 200, 0.7) 0 4px 10px -1px;
+box-shadow: rgba(200, 200, 200, 0.7) 0 4px 10px -1px;
+-webkit-border-radius: 3px;
+border-radius: 3px;
+border-width: 1px;
+border-style: solid;
+}
+.admincomtitle{position:absolute;left:0;top:0;padding:0;font-size:17px;font-weight:bold;}
+.admincomsubtitle{font-style:italic;font-size:10px;font-weight:normal;}
+</style>
+</head>
+<body style="margin:0;padding:0;" onbeforeunload="doUnload();" onload="$feedbackScript">
+
+~;
+
+
+$HeaderGuide = "<br><span style=\"font-weight:normal;font-size:13px;font-style:italic;\">Please specify the sender's email address to search, for example: /user-communication-monitor.htm/?adi=user\@domain.com.<br>Or, <a href=\"/login.htm?redirect=/user-communication-monitor.htm\" title=\"Virtual Private Login\"><strong>login</strong></a> as administrator, then try again.</span>";
+
+## - adi = Admin Email Communications
+## - ajax on this one simply spit back message, client won't do anything with results anyway (silent)
+if ((!(!$adi) || ($ISIN ne "")) && !$NOPASS){
+		
+		#-- associative UID = OpenCanvasDesign ID (Cart) [IF EXISTS]
+		if ($OpenCanvasDesign  && ($OpenCanvasDesign ne "" && $OpenCanvasDesign ne " ")) { $inUID = $OpenCanvasDesign; }
+		
+		use DBI;
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
+		$dbh->{RaiseError} = 1; 
+
+		$EntryType = 'User-Outgoing-Message';
+
+		$HeaderTitle = "Virtual Private Communication Monitor (Email Messages Sent)";
+
+		my @row;
+		$SentBySearch = 0;
+		if ($UserID && (int($UserID) >= 555)) {
+			##- superadmin logged in without email to search for, or end user logged in
+			if ((!(!$adi) && int($UserID) == 555) || (int($UserID) > 555)) {
+				$SentBySearch = 1;
+			}
+			else {
+				$sth = $dbh->prepare("SELECT LineID, MessageContext, CreationDate FROM ConversationLog ORDER BY LineID DESC LIMIT 250");
+				$sth->execute or die "Unable to execute query\n";
+				$HeaderTitle = "Admin Communication Monitor (Last 250 Email Messages Sent)";
+				
+				$HeaderGuide = "<br><span class=\"admincomsubtitle\">Messages sent using: <a href=\"https://vps-net.com/user-communication-panel.htm\" target=\"UCPanel\" title=\"Virtual Private Communications Panel\">https://vps-net.com/user-communication-panel.htm</a></span>";
+
+
+			}
+		}
+		elsif (!(!$adi) && ($mip && ($mip eq $AIP))) {
+			$SentBySearch = 1;
+		}
+
+		if ($SentBySearch == 1) {
+
+			##-- logged in: user [not admin]
+			if ($UserID && (int($UserID) > 555)) {
+				$UserSentTag = "%},{sender:".$tEm."},{senderName:%";
+				$HeaderTitle = "Virtual Private Communication Monitor (Email Messages Sent)";
+				$EntryType = 'User-Outgoing-Message';
+
+				$HeaderGuide = "<br><span style=\"font-weight:normal;font-size:13px;font-style:italic;\">Sent as: <a href=\"/user-communication-monitor.htm?adi=$tEm\" title=\"Emails sent as: $tEm\"><strong>$tEm</strong></a></span>" . "<br><span class=\"admincomsubtitle\">Messages sent using: <a href=\"/user-communication-panel.htm?adi=$tEm\" title=\"Virtual Private Communications Panel\" target=\"UCPanel\">https://vps-net.com/user-communication-panel.htm</a></span>";
+				#print "ok1";
+
+				$sth = $dbh->prepare("SELECT LineID, MessageContext, CreationDate FROM ConversationLog WHERE EntryType=? AND MessageContext LIKE ? ORDER BY LineID DESC LIMIT 250");
+				$sth->execute($EntryType, $UserSentTag) or die "Unable to execute query\n"; 
+			}
+			##-- logged in: superadmin or otherwise
+			else {
+				$UserSentTag = "%},{sender:".$adi."},{senderName:%";
+				$HeaderTitle = "Virtual Private Communication Monitor (Email Messages Sent)";
+
+				$HeaderGuide = "<br><span style=\"font-weight:normal;font-size:13px;font-style:italic;\">Sent as: <a href=\"/user-communication-monitor.htm?adi=$adi\" title=\"Emails sent as: $adi\"><strong>$adi</strong></a></span>" . "<br><span class=\"admincomsubtitle\">Messages sent using: <a href=\"/user-communication-panel.htm?adi=$adi\" title=\"Virtual Private Communications Panel\" target=\"UCPanel\">https://vps-net.com/user-communication-panel.htm</a></span>";
+				#print "ok2";
+
+				$sth = $dbh->prepare("SELECT LineID, MessageContext, CreationDate FROM ConversationLog WHERE MessageContext LIKE ? ORDER BY LineID DESC LIMIT 250");
+				$sth->execute($UserSentTag) or die "Unable to execute query\n";
+			}
+		}
+		
+		print qq~ <div class="admincomtitle">$HeaderTitle $HeaderGuide</div> ~;
+		print "<ol>";
+
+		while(@row = $sth->fetchrow_array) { 
+			$MessageID = $row[0];
+			$MessageContext = $row[1];
+			$CreationDate = $row[2];
+			@MessageParts = split(/},{/,$MessageContext);
+			$MessageParts[0] =~ s/{f://gi;
+			$MessageParts[0] = "<li><small>(Recipient First Name)</small><div>$MessageParts[0]</div></li>";
+			$MessageParts[1] =~ s/l://gi;
+			$MessageParts[1] = "<li><small>(Recipient Last Name)</small><div>$MessageParts[1]</div></li>";
+			$MessageParts[2] =~ s/e://gi;
+			$MessageParts[2] = "<li><small>(Recipient Email)</small><div>$MessageParts[2]</div></li>";
+			$MessageParts[3] =~ s/sender://gi;
+			$MessageParts[3] = "<li><small>(Sender Email)</small><div>$MessageParts[3]</div></li>";
+			$MessageParts[4] =~ s/senderName://gi;
+			$MessageParts[4] = "<li><small>(Sender Name)</small><div>$MessageParts[4]</div></li>";
+			@DefineMessageSubject = split(/}{/,$MessageParts[5]);
+					# already using, reset to use as was using
+			$MessageParts[5] = $DefineMessageSubject[0];
+			$MessageParts[5] =~ s/sendertitle://gi;
+			$MessageParts[5] =~ s/</\&lt;/gi;
+			$MessageParts[5] =~ s/>/\&gt;/gi;
+			$MessageParts[5] = "<li><small>(Sender Title)</small><div>$MessageParts[5]</div></li>";
+
+					#-- to print inline, make this 6 into 7 and next (subject) into 6
+			$MessageParts[7] = $MessageParts[6];
+			$MessageParts[7] =~ s/messagebody://gi;
+			$MessageParts[7] =~ s/}//gi;
+			$MessageParts[7] = "<li><small>(Message Body)</small><div>$MessageParts[7]</div><small></small></li>";
+
+			$MessageParts[6] = $DefineMessageSubject[1];
+			$MessageParts[6] =~ s/messagesubject://gi;
+			$MessageParts[6] =~ s/</\&lt;/gi;
+			$MessageParts[6] =~ s/>/\&gt;/gi;
+			$MessageParts[6] = "<li><small>(Message Subject)</small><div>$MessageParts[6]</div></li>";
+
+
+			print "<li class=\"main\"><div>Sent: $CreationDate <a href='http://wwp.greenwichmeantime.com/to/pst/' title='GMT to PST (Greenwich Mean Time to Pacific Time) Conversion' style='color:#000;' target='GMT'>GMT</a></div>" . "<br>" . "<fieldset><legend>Edit & Resend ( <a href=\"/user-communication-panel.htm?resend-exact=$MessageID\" title=\"Send Same Exact Message (Virtual Private Communications Panel)\" target=\"UCPanel\">Exact</a> | <a href=\"/user-communication-panel.htm?resend-similar=$MessageID\" title=\"Send Similar Message (Virtual Private Communications Panel)\" target=\"UCPanel\">Similar</a> )</legend><ul>@MessageParts</ul></fieldset></li>";
+		}
+		$sth->finish;
+		print "</ol>";
+
+		$dbh->disconnect;
+}
+else {
+	if (!(!$NOPASS)) {
+		print qq~ 
+			<div class="admincomtitle">Virtual Private Communication Monitor (<a href="/login.htm?redirect=/user-communication-monitor.htm" title="Virtual Private Login">Login Required</a>)</div> 
+		~;
+	}
+	else {
+		print qq~ <div class="admincomtitle">Virtual Private Communication Monitor$HeaderGuide</div> ~;
+	}
+}
+
+
+print qq~
+</body>
+~;
+
+
+print qq~</html>~; 
+
+
+
+
+
+exit;
+
+
+
+
+
+
+
+
+

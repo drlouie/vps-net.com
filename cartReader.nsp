@@ -1,0 +1,202 @@
+## --> Snif cookie, if present test for logged in status
+require ("cookiesnif.nsp");
+
+$CarterTheTotal = "0.00";
+$CarterAllItems = 0;
+$itemCount = "0";
+
+if ($Cookies{'Shicar'} ne "") {
+
+	use DBI;
+	$dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","c4!nCh|aT0n3555") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1; 
+
+		## ----------------->>> 	
+		## ----------------->>> FIRST read saved cart
+		## ----------------->>> 
+		$inUID = $Cookies{'Shicar'};
+		my $sth = $dbh->prepare("SELECT * FROM customerScarts WHERE UID = '$inUID'");
+		$sth->execute or die "Sorry, that Username/Password combination is incorrect, please try again.\n";
+		my $row = $sth->fetchrow_arrayref;
+		my $cartID = $row->[0];
+		my $cartContents = $row->[2];
+		my $cartEA = $row->[3];
+		my $cartCID = $row->[4];
+		my $cartDate = $row->[5];
+		
+		# more than one item
+		if ($cartContents =~ "!!!!!!--!!!!!!") { @myCContents = split(/!!!!!!--!!!!!!/,$cartContents); }
+		# one only
+		else { $myCContents[0] = $cartContents; }
+		
+		$cMcc = 0;
+		foreach $MCC (@myCContents) {
+			$FORM{$myINDEL} = "";			
+			## ----------------->>> IF COMING FROM CART, CHECK FOR DEL_ && QTY_
+			if ($MCC =~ " %%%%%%%%%%% ") { @allMCC = split(/ %%%%%%%%%%% /,$MCC); }
+			else { $allMCC[0] = $MCC; }
+			
+			$dontPush = 0;
+
+			## find QTY fields by looking at QTY_Layout = (QTY_PID_ORDERPARSED)
+			foreach $AMCC (@allMCC) {
+				@sAMCC = split(/ xxxxx /,$AMCC);
+				$myINQTY = "QTY_" . $sAMCC[0] . "_" . $cMcc;
+				$myINDEL = "DEL_" . $sAMCC[0] . "_" . $cMcc;
+				if ($FORM{$myINQTY}) {
+					if ($MCC =~ " %%%%%%%%%%% ") { $MCC = "$sAMCC[0] xxxxx $FORM{$myINQTY} %%%%%%%%%%% $allMCC[1]"; }
+					else { $MCC = "$sAMCC[0] xxxxx $FORM{$myINQTY}"; }
+					
+					
+					## dont parse if chosen to delete
+					if ($FORM{$myINDEL} eq "on") {
+						# $cartTable = $cartTable . "<script>alert('$FORM{$myINDEL}');</script>";
+						$dontPush = 1;
+					}
+
+				}
+
+			 }
+
+
+			if ($dontPush eq "0") { push(@OldCartedItems,"$MCC"); }
+			$cMcc++;
+		}
+	
+
+	foreach $theamc (@myCContents) {
+		## --> if contains option split the item
+		if ($theamc =~ "OPT_") { 
+			@stamc = split(/ %%%%%%%%%%% /,$theamc);
+			$amc = $stamc[0];
+			$myOPTs = $stamc[1];
+		}
+		## --> else only product, no option
+		else { $amc = $theamc; $myOPTs = ""; }
+
+		if ($amc  =~ "xxxxx") {
+			@SPLITAMC = split(/ xxxxx /, $amc);
+			$thyPID = $SPLITAMC[0];
+			$quant = $SPLITAMC[1];
+			my $sth = $dbh->prepare("SELECT * FROM newProducts WHERE ProductID='$thyPID'");
+			$sth->execute or die "Unable to execute query\n"; 
+			my @row;
+				while(@row = $sth->fetchrow_array) { 
+					$SavedPartNum = $row[1];
+					$SavedMFGName = $row[2];
+					$SavedMFGPartNum = $row[3];
+					$SavedMFGProdURL = $row[4];
+					$SavedItemName = $row[5];
+					$SavedDescription = $row[6];
+					$SavedTechSpecs = $row[7];
+					$SavedSmallPhoto = $row[8];
+					$SavedLargePhoto = $row[9];
+					$SavedWarranty = $row[10];
+					$SavedWeight = $row[11];
+					$SavedMasterDist = $row[12];
+					$SavedDistributor = $row[13];
+					$SavedDealer = $row[14];
+					$SavedLawEnforce = $row[15];
+					$SavedRetail = $row[16];
+					$SavedAccessories = $row[17];
+					$SavedProdUsage = $row[18];
+					$SavedProductType = $row[19];
+					$SavedGeneration = $row[20];
+					$BrochureBulletPoints = $row[23];
+					$SavedIncludedItems = $row[28];
+					$SavedSpecialDiscount = $row[37];
+					$SavedProductOptions = $row[38];
+					if ($SavedProductOptions =~ ":::::") {
+						@splitPO = split(/\n\b/,$SavedProductOptions);
+						$cPOs = 1;
+						foreach $PO (@splitPO) { $allSavedPOs[$cPOs] = "$PO"; $cPOs++; }
+					}
+				}
+			$sth->execute or die "Unable to execute query\n"; 
+			$sth->finish;
+				
+				
+			if ($custUName =~ "@") {
+				## NOW YOU KNOW
+				if ($custTipo eq "MasterDist") { $lePrice = "$SavedMasterDist"; }
+				elsif ($custTipo eq "Distributor") { $lePrice = "$SavedDistributor"; }
+				elsif ($custTipo eq "Dealer") { $lePrice = "$SavedDealer"; }
+				elsif ($custTipo eq "LawEnforce") { $lePrice = "$SavedLawEnforce"; }
+				else { $lePrice = "$SavedRetail"; }
+			}
+			elsif ($Cookies{'Logged'} eq "SI") {
+				if ($Cookies{'CT'} eq "MasterDist") { $lePrice = "$SavedMasterDist"; }		
+				elsif ($Cookies{'CT'} eq "Distributor") { $lePrice = "$SavedDistributor"; }		
+				elsif ($Cookies{'CT'} eq "Dealer") { $lePrice = "$SavedDealer"; }		
+				elsif ($Cookies{'CT'} eq "LawEnforce") { $lePrice = "$SavedLawEnforce"; }
+				else { $lePrice = "$SavedRetail"; }
+			}
+			else { $lePrice = "$SavedRetail"; }
+			if ($SavedSpecialDiscount ne "0" && $SavedSpecialDiscount ne "" && $SavedSpecialDiscount ne "0.00") {
+				$newPrice = $lePrice - $SavedSpecialDiscount;
+				$TP = $quant * $newPrice;
+				$TP=$TP;
+				$lePrice=$newPrice;
+			}
+			else {
+				$TP = $quant * $lePrice;
+				$TP=$TP;
+				$lePrice=$TP;
+			}			
+			push(@CT,"$TP");
+			$itemCount = int($quant + $itemCount);
+
+			#################################
+			#### product options inserts ####
+			#################################
+			if ($myOPTs =~ "OPT_") {
+				## --> more than one option chosen
+				if ($myOPTs =~ " %%%%% ") { @allOPTs = split(/ %%%%% /,$myOPTs); }
+				## --> only one option chosen
+				else { $allOPTs[0] = $myOPTs; }
+				foreach $aOPTs (@allOPTs) {
+					$aOPTs =~ s/OPT_//gi;
+					@splitAOPTS = split(/:::::/,$allSavedPOs[$aOPTs]);
+					$mydollar = int($splitAOPTS[1]);
+					$tpOPT = $quant * $mydollar;
+					$MD=&format_money($tpOPT);
+					push(@CT,"$tpOPT");
+				}
+			}
+			$CarterAllWeights = ($SavedWeight * $quant) + $CarterAllWeights;
+		
+		}
+	}
+
+
+	## --->>>ADD ALL PRICES TOGETHER FOR TOTAL
+	foreach $myCT (@CT) {
+		$theTotalPrice = $theTotalPrice+=$myCT;
+	}
+	$theTotal=&format_money($theTotalPrice);
+	$CarterTheTotal = $theTotal;
+	$CarterAllItems = $itemCount;
+	$dbh->disconnect;
+}
+
+
+
+if ($ENV{'SCRIPT_NAME'} =~ "cart" || $ENV{'SCRIPT_NAME'} =~ "calculateShipping") {
+	$itemsInYourCart = "";
+	$showCartPreview =  0;
+}
+else {
+	$showCartPreview =  1;
+	if ($itemCount eq "0") { $itemsInYourCart = "Your Cart is Empty"; }
+	elsif ($itemCount eq "1") { $itemsInYourCart = "<a href=\"cart.htm\" class=\"qsFont\" title=\"Click to review your cart\">1 Item in Your Cart</a>"; }	
+	else { $itemsInYourCart = "<a href=\"cart.htm\" class=\"qsFont\" title=\"Click to review your cart\">$itemCount Items in Your Cart</a>"; }
+}
+
+
+
+
+
+
+
+1;
+	

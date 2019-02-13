@@ -1,0 +1,95 @@
+#!/usr/bin/perl -s
+
+################################################################
+#   Program:    TrueType Font File Information Reader          #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+use CGI ':standard';
+use Font::TTF::Font;
+print "Content-type: text/html\n\n";
+
+   	##- simple string encryption using DB
+	use DBI;
+   	##- log unto DB using MYSQL DBNAME[vpsnetcom] USER[vpsnetcom] PASS[YOUR-MySQL-PASSWORD]
+	$dbh = DBI->connect('DBI:mysql:vpsnetcom','vpsnetcom','YOUR-MySQL-PASSWORD') or die "Unable to connect to database\n"; 
+	$dbh->{RaiseError} = 1;
+
+	my $aDir = "/usr/share/fonts/";
+	opendir(FILE, $aDir) or die "can't opendir $aDir $!";
+	while (defined($file = readdir(FILE))) {
+		next if $file =~ /^\.\.?$/; ## skip . and .. directories
+		next if $file =~ /.txt\.?$/; ## skip .txt files
+		if (lc($file) =~ ".ttf") {
+			#- $fontFile = $aDir . "" . $file;
+			$fontFile = $aDir . "" . $file;
+			
+			my $f = Font::TTF::Font->open($fontFile);
+			my $t = $f->{name}->read;
+			$fontName = $t->{strings}[6][1][0]{0};
+
+			if (length($fontName) > 5) {
+				# my $sth = $dbh->prepare("UPDATE Fontastic set FontName ='$fontName' where FileName='$file'");
+				# $sth->execute;
+				# $sth->finish;
+				print $fontName . ": " . $file . "\n";
+			}
+
+		}
+		else {
+			# print "\n\nNot a true type font: " . $file . "\n\n";
+		}
+	}
+
+
+	my $sth = $dbh->prepare("SELECT * FROM Fontastic ORDER BY FID ASC");
+	$sth->execute or die "Unable to execute query\n"; 
+	my @row;
+	while(@row = $sth->fetchrow_array) {
+		$FID = $row[0];
+		$FontName = $row[1];
+		$FileName = $row[2];
+		$PointSize = $row[3];
+		$HighSecurity = int($CatID);
+		$theFontFiles{$FID} = "$FileName";
+		$theFontSizes{$FID} = "$PointSize";
+	}
+
+	$dbh->disconnect;
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+exit;

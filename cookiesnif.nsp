@@ -1,0 +1,362 @@
+################################################################
+#   Program:    Cookie Sniffer (Reader)                        #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+require $HTTPRoot.'cookie.lib';
+
+$notlogged = 0;
+
+## -- eyeCaptcha image verification [last seen] 
+if (&GetCookies('IMVER') && &GetCookies('VPSFC')) {
+	&GetCookies('IMVER');
+	&GetCookies('VPSFC');
+	#-WAS
+	#-use Crypt::Tea;
+	#-IS
+	use Crypt::Tea_JS;
+	$ECcode = &decrypt ($Cookies{'IMVER'}, $ECkey);
+	##-- VPSFC = [VPS-FreeCaptcha: secondary encryption layer]
+	$ECtwo = &decrypt ($Cookies{'VPSFC'}, $ECkey);
+}
+if (&GetCookies('OpenCanvasDesign')) {
+	&GetCookies('OpenCanvasDesign');
+	$OpenCanvasDesign = $Cookies{'OpenCanvasDesign'};
+}
+if (&GetCookies('OpenCanvasVersion')) {
+	&GetCookies('OpenCanvasVersion');
+	$OpenCanvasVersion = $Cookies{'OpenCanvasVersion'};
+}
+if (&GetCookies('VirtualPrivateCart')) {
+	&GetCookies('VirtualPrivateCart');
+	$VirtualPrivateCart = $Cookies{'VirtualPrivateCart'};
+}
+if (&GetCookies('VirtualPrivateDomain')) {
+	&GetCookies('VirtualPrivateDomain');
+	$VirtualPrivateDomain = $Cookies{'VirtualPrivateDomain'};
+}
+
+if ($OpenCanvasVersion) {
+	if ($OpenCanvasVersion =~ m/[^0-9]/) {
+		##--> Hack attempt / or bad input
+		print "Cache-Control: must-revalidate\n\n";
+		print "<script language=\"Javascript\" type=\"text/javascript\">alert('Error 2251: It is advisable you take note of this error and report it to the site administrator. Thanks.');</script>";
+		exit;	
+	}
+}
+if ($OpenCanvasDesign) {
+	if ($OpenCanvasDesign =~ m/[^0-9A-Za-z_-]/) {
+		##--> Hack attempt / or bad input
+		print "Cache-Control: must-revalidate\n\n";
+		print "<script language=\"Javascript\" type=\"text/javascript\">alert('Error 2251: It is advisable you take note of this error and report it to the site administrator. Thanks.');</script>";
+		exit;	
+	}
+}
+
+if ($VirtualPrivateCart) {
+	if ($VirtualPrivateCart =~ m/[^0-9A-Za-z_-]/) {
+		##--> Hack attempt / or bad input
+		print "Cache-Control: must-revalidate\n\n";
+		print "<script language=\"Javascript\" type=\"text/javascript\">alert('Error 2251: It is advisable you take note of this error and report it to the site administrator. Thanks.');</script>";
+		exit;	
+	}
+}
+
+
+
+
+
+
+
+$resultado = "";
+$ISLT = "";
+$RECAPTCHA = 0;
+## bad login tracker
+if (&GetCookies('LT')) {
+	&GetCookies('LT');
+	$ISLT = $Cookies{'LT'};
+	if ($ISLT =~ m/[^0-9A-Za-z-_]/){
+		##--> Hack attempt / or bad input
+		print "Cache-Control: must-revalidate\n\n";
+		print "<script language=\"Javascript\" type=\"text/javascript\">if(!(!parent.runFancyFancy)){parent.runFancyFancy('/login.htm','Virtual Private',560,260);}else{document.location.href='/login.htm';}</script>";
+		exit;
+	}
+
+	$IP = "$ENV{'REMOTE_ADDR'}";
+
+
+	$cdata = $ISLT;
+
+	#-WAS
+	#-use Crypt::Tea;
+	#-IS
+	use Crypt::Tea_JS;
+	$llave = $IP;
+	$RELID = &decrypt ($cdata, $llave);
+
+	###REFORM UID FROM COOKIE PER SE
+	##-- add dashes to reformat UUID 8,4,4,4,12
+	#$remadeLID = substr($RELID,0,8) . '-' . substr($RELID,8,4) . '-' . substr($RELID,12,4) . '-' . substr($RELID,16,4) . '-' . substr($RELID,20,32);
+		
+	#use Data::UUID;
+	#$ug2 = new Data::UUID;
+	#$reDATA = $ug2->from_string($remadeLID);
+	#$logdata = $reDATA;
+	##-$logdata =~ s/[^a-zA-Z0-9-]//g;
+
+	$logdata = $RELID;
+	
+	##--unStack
+	($uNAME, $uIP, $CFAIL) = split(/@/,$logdata);
+	if (!$CFAIL) {$CFAIL=0;}
+	if (!$uIP) {$uIP="";}
+	$CFAIL =~ s/[^0-9]//g;
+	
+	##--deSalt
+	$uIP =~ s/B/0/gi; $uIP =~ s/Y/1/gi; $uIP =~ s/D/2/gi; $uIP =~ s/R/3/gi; $uIP =~ s/L/4/gi; $uIP =~ s/O/5/gi; $uIP =~ s/U/6/gi; $uIP =~ s/I/7/gi; $uIP =~ s/E/8/gi; $uIP =~ s/G/9/gi;
+
+	##--recreate IP
+	use Net::IPAddress::Minimal ('invert_ip');
+	$testIP = invert_ip( $uIP );
+		
+	##--readd @ if needed
+	#$uNAME =~ s/[at]/@/g;
+
+	##-- sea o no, quiebratelo
+	if ($testIP eq $IP) {
+		#-print "Cache-Control: must-revalidate\n\n"; print "<script>alert('$testIP ($IP) - $uNAME - $uTRIES');</script>"; exit;
+		$resultado = 1;
+		if ($testIP eq $IP) {
+			$RECAPTCHA = int($CFAIL);
+			$Username = $uNAME;
+		}
+	}
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$xentrado = 0;
+$XIN = "";
+## login cookie
+##-- username needs at least 6
+if (&GetCookies('XN')) {
+	&GetCookies('XN');
+	$XIN = $Cookies{'XN'};
+	if (!$FORM{'p'}) {$FORM{'p'}="";}
+	$XUsername = $FORM{'p'};
+	if ($XIN =~ m/[^0-9A-Za-z]/ || $XUsername =~ m/[^0-9A-Za-z_-]/){
+		##--> Hack attempt / or bad input
+		print "Cache-Control: must-revalidate\n\n";
+		print "<script language=\"Javascript\" type=\"text/javascript\">if(!(!parent.runFancyFancy)){parent.runFancyFancy('/login.htm','Virtual Private',560,260);}else{document.location.href='/login.htm';}</script>";
+		exit;
+	}
+	if (length($XUsername) >= 6 && length($XUsername) <= 12) {
+
+		use DBI;
+		my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","gr00bertub3r") or die "No data access: <b>VPS-NET</b>\n"; 
+		$dbh->{RaiseError} = 1;
+		my $sth = $dbh->prepare("SELECT UserID, Email, Password, AccountSince, IP FROM Users WHERE GUID = '$XIN'");
+		$sth->execute or die "Unable to execute query\n";
+			my $row = $sth->fetchrow_arrayref;
+			$XUserID = $row->[0];
+			$XEmail = $row->[1];
+			$XPWD = $row->[2];
+			$XAS = $row->[3];
+			$XsaltedIP = $row->[4];
+		$sth->finish;
+
+		$XIP = "$ENV{'REMOTE_ADDR'}";
+
+		###---->> turn IP into numeric value
+		use Net::IPAddress::Minimal ('invert_ip');
+		my $Xinput_string = $XIP;
+		my $XnumericIP = invert_ip( $Xinput_string );
+		if ($XnumericIP =~ m/[^0-9]/) { 
+			print "Cache-Control: must-revalidate\n\n"; 
+			print "<script>alert('Error 3250: IP Address disparity. Fix your IP address issues before attempting to revisit this website. Thank you.'); parent.location.href='/';</script>"; 
+			##--always disconnect before exit
+			$dbh->disconnect; 
+			exit; 
+		}
+
+		##-- some salty substitutions [SECURecOMs]
+		$XnumericIP =~ s/0/S/gi; $XnumericIP =~ s/1/E/gi; $XnumericIP =~ s/2/C/gi; $XnumericIP =~ s/3/U/gi; $XnumericIP =~ s/4/R/gi; $XnumericIP =~ s/5/e/gi; $XnumericIP =~ s/6/c/gi; $XnumericIP =~ s/7/O/gi; $XnumericIP =~ s/8/M/gi; $XnumericIP =~ s/9/s/gi;
+
+		##--shouldn't have the ampersand in email in DB, but just to make sure we clean it, for consistency [maybe full email addresses, ones containing ampersands, should be admin ones? or something special like allowing admins to quickly log into admin section using full email, wheras using just username renders common user experience (w admin functions engrained)]
+		$XEmail =~ s/@/[at]/g;
+		$Xascii_HASH = $XUsername . '@' . $XnumericIP . '@' . $XEmail;
+		$Xascii_HASHR = reverse $Xascii_HASH;
+
+		$xrencrem = 0;
+		$sth = $dbh->prepare("SELECT MD5('$Xascii_HASHR')");
+		$sth->execute or die "Unable to execute query\n";
+		my $row2 = $sth->fetchrow_arrayref;
+		$xrencrem = $row2->[0];
+		$sth->finish;
+		$dbh->disconnect;
+		
+		##-- if remade cookie matches saved cookie -> same IP still
+		if ($xrencrem eq $XIN) {
+			$xentrado = 1;
+		}
+		else {
+			##-kill the cookie and forward to re-log
+			#-print "Cache-Control: must-revalidate\n";
+				## make it expire one year ago at midnight :)
+			#-	my $ahora = today();
+			#-	my $CCD = $ahora - 365;
+				## set proper expiration datetime stamp (Sat, 31-Dec-2011 23:59:59 GMT)
+			#-	$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+			#-	&SetCookies('XN','');
+			#-print "\n";
+
+			##--> bad cookie-based log attempt [for instance end-user IP and/or user email address have changed since last log-in]
+			#-print qq~
+			#-	<script language="javascript">
+			#-		alert('Your session has expired, please log back into your account to continue.');
+			#-		if(!(!parent.runFancyFancy)){parent.runFancyFancy('/login.htm','Virtual Private',560,260);}else{document.location.href='/login.htm';}
+			#-	</script>
+			#-~;
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+$resulta = "";
+$ISIN = "";
+## login cookie
+if (&GetCookies('IN')) {
+	&GetCookies('IN');
+	$ISIN = $Cookies{'IN'};
+	if ($ISIN =~ m/[^0-9A-Za-z]/){
+		##--> Hack attempt / or bad input
+		print "Cache-Control: must-revalidate\n\n";
+		print "<script language=\"Javascript\" type=\"text/javascript\">if(!(!parent.runFancyFancy)){parent.runFancyFancy('/login.htm','Virtual Private',560,260);}else{document.location.href='/login.htm';}</script>";
+		exit;
+	}
+
+	use DBI;
+	my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","gr00bertub3r") or die "No data access: <b>VPS-NET</b>\n"; 
+	$dbh->{RaiseError} = 1;
+	my $sth = $dbh->prepare("SELECT UserID, Email, FirstName, LastName, ProfessionalTitle, IP, History FROM Users WHERE GUID = '$ISIN'");
+	$sth->execute or die "Unable to execute query\n";
+		my $row = $sth->fetchrow_arrayref;
+		$UserID = $row->[0];
+		$Email = $row->[1];
+		$First = $row->[2];
+		$Last = $row->[3];
+		$UserTitle = $row->[4];
+		$UserIP = $row->[5];
+		$UserHistory = $row->[6];
+	$sth->finish;
+
+	$IP = "$ENV{'REMOTE_ADDR'}";
+	$dateCap = $datetime;
+
+	###---->> turn IP into numeric value
+	use Net::IPAddress::Minimal ('invert_ip');
+	my $input_string = $IP;
+	my $numericIP = invert_ip( $input_string );
+	if ($numericIP =~ m/[^0-9]/) { 
+		print "Cache-Control: must-revalidate\n\n"; 
+		print "<script>alert('Error 3250: IP Address disparity. Fix your IP address issues before attempting to revisit this website. Thank you.'); parent.location.href='/';</script>"; 
+		##--always disconnect before exit
+		$dbh->disconnect; 
+		exit; 
+	}
+
+	##-- some salty substitutions
+	$numericIP =~ s/0/N/gi; $numericIP =~ s/1/E/gi; $numericIP =~ s/2/T/gi; $numericIP =~ s/3/W/gi; $numericIP =~ s/4/O/gi; $numericIP =~ s/5/R/gi; $numericIP =~ s/6/K/gi; $numericIP =~ s/7/S/gi; $numericIP =~ s/8/P/gi; $numericIP =~ s/9/V/gi;
+
+	$Email =~ s/@/[at]/g;
+	$ascii_HASH = $Email . '@' . $numericIP;
+
+	$sth = $dbh->prepare("SELECT MD5('$ascii_HASH')");
+	$sth->execute or die "Unable to execute query\n"; 
+	my $row2 = $sth->fetchrow_arrayref;
+	my $rencrem = $row2->[0];
+	$sth->finish;
+	$dbh->disconnect;
+	
+	##-- if remade cookie matches saved cookie -> same IP still
+	if ($rencrem eq $ISIN) {
+		$resulta = "SI";
+	}
+	else {
+
+		##-kill the cookie and forward to re-log
+		print "Cache-Control: must-revalidate\n";
+			## make it expire one year ago at midnight :)
+			my $ahora = today();
+			my $CCD = $ahora - 365;
+			## set proper expiration datetime stamp (Sat, 31-Dec-2011 23:59:59 GMT)
+			$Cookie_Exp_Date = substr($days[$CCD->day_of_week],0,3) . ", " . $CCD->day . "-" . substr($months[($CCD->month-1)],0,3) . "-" . $CCD->year . " 23:59:59 GMT";
+			&SetCookies('IN','');
+		print "\n";
+
+		##--> bad cookie-based log attempt [for instance end-user IP and/or user email address have changed since last log-in]
+		print qq~
+			<script language="javascript">
+				alert('Your session has expired, please log back into your account to continue.');
+				if(!(!parent.runFancyFancy)){parent.runFancyFancy('/login.htm','Virtual Private',560,260);}else{document.location.href='/login.htm';}
+			</script>
+		~;
+		$notlogged = 1;
+	}
+}
+else {
+	$notlogged = 1;
+}
+if (!$logreq) {$logreq = 0;}
+if ($notlogged == 1 && $logreq == 1) {
+	$thiscall = "login.htm";
+	print "<script language='javascript'>if(!(!parent.runFancyFancy)){parent.runFancyFancy('/$thiscall','Virtual Private',560,260);}else{document.location.href='/$thiscall';}</script>";
+}
+
+1;

@@ -1,0 +1,28 @@
+sub url_encode {
+	my $strin=$_[0];
+	$URLpercent = '%25';$URLdollar = '%24';$URLamper = '%26';$URLplus = '%2B';$URLcomma = '%2C';$URLfwds = '%2F';$URLcolon = '%3A';$URLsemicolon = '%3B';$URLequals = '%3D';$URLquestion = '%3F';$URLat = '%40';$URLquotation = '%22';$URLlessthan = '%3C';$URLgreaterthan = '%3E';$URLpound = '%23';$URLlcurly = '%7B';$URLrcurly = '%7D';$URLbacks = '%5C';$URLcaret = '%5E';$URLtilde = '%7E';$URLlsquare = '%5B';$URLrsquare = '%5D';$URLgrave = '%60';	
+	$strin =~ s/\%/$URLpercent/gi;$strin =~ s/\$/$URLdollar/gi;$strin =~ s/\&/$URLamper/gi;$strin =~ s/\+/$URLplus/gi;$strin =~ s/\,/$URLcomma/gi;$strin =~ s/\//$URLfwds/gi;$strin =~ s/\:/$URLcolon/gi;$strin =~ s/\;/$URLsemicolon/gi;$strin =~ s/\=/$URLequals/gi;$strin =~ s/\?/$URLquestion/gi;$strin =~ s/\@/$URLat/gi;$strin =~ s/\"/$URLquotation/gi;$strin =~ s/\</$URLlessthan/gi;$strin =~ s/\>/$URLgreaterthan/gi;$strin =~ s/\#/$URLpound/gi;$strin =~ s/\{/$URLlcurly/gi;$strin =~ s/\}/$URLrcurly/gi;$strin =~ s/\\/$URLbacks/gi;$strin =~ s/\^/$URLcaret/gi;$strin =~ s/\~/$URLtilde/gi;$strin =~ s/\[/$URLlsquare/gi;$strin =~ s/\]/$URLrsquare/gi;$strin =~ s/\`/$URLgrave/gi;
+	return($strin);
+}
+
+### MONEY FORMATTER
+sub format_money {
+	my $number=$_[0];	
+	$number=sprintf("%.2f", $number);
+	my $stringlength=length($number);
+	if ($stringlength < 7) {return($number);}
+	$number=substr($number,0,$stringlength-6).",".substr($number,$stringlength-6,6);
+	return($number);
+}
+
+### shuffle an array
+sub fisher_yates_shuffle {
+	my $deck = shift;
+	my $i = @$deck;
+	while ($i--) {
+		my $j = int rand ($i+1);
+		@$deck[$i,$j] = @$deck[$j,$i];
+	}
+}
+
+1;

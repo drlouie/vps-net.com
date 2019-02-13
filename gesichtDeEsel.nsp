@@ -1,0 +1,78 @@
+################################################################
+#   Program:    freeCaptcha Code Deciphering and Validation    #
+#   Author:     Luis Gustavo Rodriguez (drlouie)               #
+#   Copyright:  (c) 2016 Luis G. Rodriguez                     #
+#   Licensing:  MIT License                                    #
+##################################################################################
+# Permission is hereby granted, free of charge, to any person obtaining a copy   #
+# of this software and associated documentation files (the "Software"), to deal  #
+# in the Software without restriction, including without limitation the rights   #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+# copies of the Software, and to permit persons to whom the Software is          #
+# furnished to do so, subject to the following conditions:                       #
+#                                                                                #
+# The above copyright notice and this permission notice shall be included in all #
+# copies or substantial portions of the Software.                                #
+#                                                                                #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  #
+# SOFTWARE.                                                                      #
+##################################################################################
+
+use locale;
+
+##-- LOGIC
+##-- $Cookies{'IMVER'} :: captchaCode = removeFirst(2) + encrypt(tea)
+##-- $Cookies{'VPSFC'} :: captchaCode = removeFirst(2) + encrypt(tea) + encrypt(db)
+
+##-- $ECcode :: decrypt($Cookies{'IMVER'} - the actual decrypted freeCaptcha code is
+##-- [ $ECcode MUST BE 6 CHAR LENGTH OTHERWISE ITS HACKED ]
+$IMVERCode = $Cookies{'IMVER'};
+$VPSFCode = $Cookies{'VPSFC'};
+$CHcode = $FORM{"Challenge"};
+$CookiePassed = 0;
+$UserPassed = 0;
+##--test length of input code
+if (length($CHcode) == 6) {
+
+	use Crypt::UnixCrypt;
+  	my $vpsfcCrypto = crypt("$IMVERCode",":X");
+
+	##-- remove the key
+	$vpsfcCrypto = substr $vpsfcCrypto, 2;
+
+	##-- COOKIE HACK TEST
+	##-- pass hack test
+	if ("$vpsfcCrypto" eq "$VPSFCode") {
+		#-print "cookie pass ";
+		$CookiePassed = 1;
+		##-- USER INPUT TEST
+		##-- validate submitted code
+		use Crypt::Tea_JS;
+		##--decrypt the IMVERCode to reveal CHALLENGE code given to user
+		$ECcode = Crypt::Tea_JS::decrypt ($IMVERCode, $ECkey);
+		##--if the CHALLENGE code and USER INPUT match
+		if (lc($CHcode) eq $ECcode) {
+			#-print "user pass ";
+			$UserPassed = 1;
+		}
+		##-- try again OR new code??
+		else {
+			#-print "user fail ";
+			$UserPassed = 0;
+		}
+	}
+	##-- fail hack test
+	else { 
+		#-print "cookie fail ";
+		$CookiePassed = 0; 
+	}
+
+	#print $VPSFCode . " (".$vpsfcCrypto.") " . $IMVERCode . " [".$ECcode."]";
+}
+
+1;
