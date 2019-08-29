@@ -113,8 +113,8 @@ if ($FORM{'em'} && ($FORM{'em'} =~ "\@" && $FORM{'em'} =~ '.')) {
 			use DBI;
 			my $dbh = DBI->connect("DBI:mysql:vpsnetcom","vpsnetcom","YOUR-MySQL-PASSWORD") or die "No data access: <b>VPS-NET</b>\n"; 
 			$dbh->{RaiseError} = 1; 
-			my $sth = $dbh->prepare("SELECT UserID, FirstName, LastName, Email, Username FROM Users WHERE Email = '$elEmail'");
-			$sth->execute or die "Sorry, that Username/Password combination are incorrect, try again at your own risk.\n";
+			my $sth = $dbh->prepare("SELECT UserID, FirstName, LastName, Email, Username FROM Users WHERE Email = ?");
+			$sth->execute($elEmail) or die "Sorry, that Username/Password combination are incorrect, try again at your own risk.\n";
 				my $row = $sth->fetchrow_arrayref;
 				$UserID = $row->[0];
 				$First = $row->[1];
