@@ -8,7 +8,7 @@ Furthermore, I've decided to let people 'take apart' my scripting and programmin
 
 Note: To execute .htm or .nsp files simply set up you server configuration to handle those extensions as Perl executables, as with all executables you must set their permissions as well: chmod 755.
 
-What is an .nsp or .nsf file? Why do .htm files have Perl code in them? Well, I've been using .nsp and. htm files as Perl scripts on my servers for a very long time, over a decade and a half. NSP is a Netmedia Solutions Program and NSF is Netmedia Solutions File, the latter of which is a simple data file. As just mentioned, on my servers .htm files are executable Perl scripts, whereas .html files are data files. Netmedia Solutions was my old company name, hence the .nsp and .nsf file extension convention which has stuck around since.
+What is an .nsp or .nsf file? Why do .htm files have Perl code in them? Well, I've been using .nsp and. htm files as Perl scripts on my servers for a very long time, over a decade and a half. NSP is a Netmedia Solutions Program and NSF is Netmedia Solutions File, the latter of which is a simple data file. As just mentioned, on my servers .htm files are executable Perl scripts, whereas .html files are generally static Hypertext Markup files. Netmedia Solutions was my old company name, hence the .nsp and .nsf file extension convention which has stuck around since.
 
 Enjoy.
 
