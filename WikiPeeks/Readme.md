@@ -6,7 +6,7 @@ WHAT IS: Wikipeeks?
 
 Wikipeeks was envisioned as a data plugin, which would allow an information system (think website) to take full advantage of all the data that's part of Wikipedia (or other sources, through Wiki feeds). For example, by taking full advantage, a developer could make a website much more attractive to search engine algorithms by lacing responses with contextually relative information, and links, to futher enhance SEO visibility and upward mobility in the spaces of interest. I've since adapted it to take on W3C's (World Wide Web Consortium) Standards and Drafts, to show the versatility in the codebase and approach.
 
-This repository contains the hard-coded and soft-coded content for https://myvirtualprivate.com/wikipeeks as it sits, live, today.
+This repository contains the hard-coded and soft-coded content for https://myvirtualprivate.com/wikipeeks as it sits, live, today. To access it, simply point your browser to either: myvirtualprivate.com/wikipeeks.htm or myvirtualprivate.com/w3c.htm.
 
 Note: To execute .htm or .nsp files simply set up you server configuration to handle those extensions as Perl executables, as with all executables you must set their permissions as well: chmod 755.
 
