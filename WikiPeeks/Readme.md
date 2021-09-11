@@ -4,7 +4,7 @@ HINT: If you find something in this directory you will also find it live at http
 
 WHAT IS: Wikipeeks?
 
-Wikipeeks was envisioned as a data plugin, which would allow an information system (think website) to take full advantage of all the data that's part of Wikipedia (or other sources, through Wiki feeds). By taking full advantage, a developer could make a website much more attractive to search engine algorithms by lacing responses with contextually relative information, and links, to futher enhance SEO visibility and upward mobility. I've since adapted it to take on W3C's (World Wide Web Consortium) Standards and Drafts documents, to show the versatility in the codebase and approach.
+Wikipeeks was envisioned as a data plugin, which would allow an information system (think website) to take full advantage of all the data that's part of Wikipedia (or other sources, through Wiki feeds). For example, by taking full advantage, a developer could make a website much more attractive to search engine algorithms by lacing responses with contextually relative information, and links, to futher enhance SEO visibility and upward mobility in the spaces of interest. I've since adapted it to take on W3C's (World Wide Web Consortium) Standards and Drafts, to show the versatility in the codebase and approach.
 
 This repository contains the hard-coded and soft-coded content for https://myvirtualprivate.com/wikipeeks as it sits, live, today.
 
